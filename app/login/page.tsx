@@ -54,7 +54,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="ites@cellpromote.biz"
+              placeholder="メールアドレスを入力"
               required
               style={styles.input}
               autoComplete="email"
