@@ -659,7 +659,7 @@ export default function DashboardPage() {
                   <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#e74c3c", display: "inline-block" }} />
                   金額セクター<span style={{ fontSize: 11, fontWeight: 400, color: "#999" }}>※件数セクターでRA受注数またはCA受注数が1以上の担当者のみ表示されます</span>
                 </h4>
-                <p style={{ fontSize: 11, color: "#999", margin: "0 0 10px", paddingLeft: 16 }}>入力単位：万円（整数4桁・小数1桁まで）</p>
+                <p style={{ fontSize: 11, color: "#999", margin: "0 0 10px", paddingLeft: 16, lineHeight: 1.8 }}>入力単位：万円（整数4桁・小数1桁まで）<br />企業が複数の場合　例＞TIS・ニューソン</p>
                 {/* RA受注：件数降順 */}
                 {(() => {
                   const raEntries = staffActivities.map((s, i) => ({ s, i })).filter(({ s }) => (s.ordersRA || 0) > 0).sort((a, b) => (b.s.ordersRA || 0) - (a.s.ordersRA || 0));
