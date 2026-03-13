@@ -827,15 +827,15 @@ function Row({ label, value, labelColor, valueColor }: { label: string; value: s
 
 function FocusPeopleDisplay({ people }: { people: FocusPerson[] }) {
   return (
-    <div style={{ background: "#fff", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", overflowX: "auto" }}>
-      <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a1a2e", marginBottom: 12 }}>注力人材</h3>
+    <div style={{ background: "linear-gradient(135deg, #f0faf4 0%, #e8f5e9 100%)", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", overflowX: "auto", borderLeft: "4px solid #2ecc71" }}>
+      <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a7a4c", marginBottom: 12 }}>注力人材</h3>
       {people.length === 0 ? <p style={{ color: "#bbb", fontSize: 14 }}>未入力</p> : (
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 500 }}>
-          <thead><tr style={{ borderBottom: "2px solid #f0f2f5" }}>
+          <thead><tr style={{ borderBottom: "2px solid rgba(46,204,113,0.25)" }}>
             <th style={thStyle}>氏名</th><th style={thStyle}>所属</th><th style={thStyle}>ポジション</th><th style={thStyle}>担当</th><th style={thStyle}>スキル</th><th style={thStyle}>仕入れ額</th>
           </tr></thead>
           <tbody>{people.map((p, i) => (
-            <tr key={i} style={{ borderBottom: "1px solid #f8f9fa" }}>
+            <tr key={i} style={{ borderBottom: "1px solid rgba(46,204,113,0.15)" }}>
               <td style={{ padding: "8px 0", fontWeight: 600, color: "#1a1a2e" }}>{p.name || "-"}</td>
               <td style={{ padding: "8px 0" }}><Badge text={p.affiliation} type={p.affiliation === "BP" ? "bp" : p.affiliation === "フリーランス" ? "fl" : "proper"} /></td>
               <td style={{ padding: "8px 0", color: "#555", fontWeight: 600 }}>{p.position || "-"}</td>
@@ -852,15 +852,15 @@ function FocusPeopleDisplay({ people }: { people: FocusPerson[] }) {
 
 function FocusProjectsDisplay({ projects }: { projects: FocusProject[] }) {
   return (
-    <div style={{ background: "#fff", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", overflowX: "auto" }}>
-      <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a1a2e", marginBottom: 12 }}>注力案件</h3>
+    <div style={{ background: "linear-gradient(135deg, #eef6fc 0%, #e3f0fa 100%)", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", overflowX: "auto", borderLeft: "4px solid #0077b6" }}>
+      <h3 style={{ fontSize: 16, fontWeight: 700, color: "#005a8c", marginBottom: 12 }}>注力案件</h3>
       {projects.length === 0 ? <p style={{ color: "#bbb", fontSize: 14 }}>未入力</p> : (
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 650 }}>
-          <thead><tr style={{ borderBottom: "2px solid #f0f2f5" }}>
+          <thead><tr style={{ borderBottom: "2px solid rgba(0,119,182,0.25)" }}>
             <th style={thStyle}>企業名</th><th style={thStyle}>案件</th><th style={thStyle}>ポジション</th><th style={thStyle}>担当</th><th style={thStyle}>単価</th><th style={thStyle}>契約</th><th style={thStyle}>勤務場所</th>
           </tr></thead>
           <tbody>{projects.map((p, i) => (
-            <tr key={i} style={{ borderBottom: "1px solid #f8f9fa" }}>
+            <tr key={i} style={{ borderBottom: "1px solid rgba(0,119,182,0.15)" }}>
               <td style={{ padding: "8px 0", fontWeight: 600, color: "#1a1a2e" }}>{p.company || "-"}</td>
               <td style={{ padding: "8px 0", color: "#555" }}>{p.title || "-"}</td>
               <td style={{ padding: "8px 0", color: "#555", fontWeight: 600 }}>{p.position || "-"}</td>
