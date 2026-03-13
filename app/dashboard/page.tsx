@@ -61,6 +61,8 @@ interface StaffActivity {
   interviewSetups: number;
   interviewsConducted: number;
   appointmentAcquisitions: number;
+  ordersRA: number;
+  ordersCA: number;
 }
 
 interface DayData {
@@ -247,7 +249,20 @@ export default function DashboardPage() {
   const dProjects = Array.isArray(displayData.focusProjects) ? displayData.focusProjects : [];
   const dAnnouncements = Array.isArray(displayData.announcements) ? displayData.announcements.filter(a => a) : [];
   const dRA = displayData.ra || { acquisitionTarget: 0, acquisitionProgress: 0, acquisitionCompanies: [], joinTarget: 0, joinProgress: 0, joinCompanies: [] };
-  const dStaffActivities = Array.isArray(displayData.staffActivities) ? displayData.staffActivities.filter(s => s.staff) : [];
+  // 担当別活動は前日の最新データを表示（当日入力分は翌日以降に表示される）
+  const prevDayStaffActivities = (() => {
+    const keys = Object.keys(allData).sort().reverse();
+    for (const k of keys) {
+      if (k < selectedDate) {
+        const d = allData[k];
+        if (d && Array.isArray(d.staffActivities) && d.staffActivities.filter(s => s.staff).length > 0) {
+          return d.staffActivities.filter(s => s.staff);
+        }
+      }
+    }
+    return [];
+  })();
+  const dStaffActivities = prevDayStaffActivities;
   const dataSourceInfo = !result ? "データなし" : result.isExact ? "この日のデータを表示中" : `${formatDateJP(result.sourceKey)} のデータを反映中`;
 
   // 入力画面を開く
@@ -269,7 +284,7 @@ export default function DashboardPage() {
       setRaInp({ acquisitionTarget: formatNumStr(ra.acquisitionTarget), acquisitionProgress: formatNumStr(ra.acquisitionProgress), joinTarget: formatNumStr(ra.joinTarget), joinProgress: formatNumStr(ra.joinProgress) });
       setRaAcqCompanies(ra.acquisitionCompanies?.length ? ra.acquisitionCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
       setRaJoinCompanies(ra.joinCompanies?.length ? ra.joinCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
-      setStaffActivities(d.staffActivities?.length ? d.staffActivities.map(s => ({ ...s })) : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0 }]);
+      setStaffActivities(d.staffActivities?.length ? d.staffActivities.map(s => ({ ...s, ordersRA: s.ordersRA || 0, ordersCA: s.ordersCA || 0 })) : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0 }]);
     } else {
       // データがない場合は前日までの最新データをフォールバックで表示
       const fallback = getLatestDataForDate(allData, selectedDate);
@@ -288,7 +303,7 @@ export default function DashboardPage() {
         setRaInp({ acquisitionTarget: formatNumStr(ra.acquisitionTarget), acquisitionProgress: formatNumStr(ra.acquisitionProgress), joinTarget: formatNumStr(ra.joinTarget), joinProgress: formatNumStr(ra.joinProgress) });
         setRaAcqCompanies(ra.acquisitionCompanies?.length ? ra.acquisitionCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
         setRaJoinCompanies(ra.joinCompanies?.length ? ra.joinCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
-        setStaffActivities(d.staffActivities?.length ? d.staffActivities.map(s => ({ ...s })) : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0 }]);
+        setStaffActivities(d.staffActivities?.length ? d.staffActivities.map(s => ({ ...s, ordersRA: s.ordersRA || 0, ordersCA: s.ordersCA || 0 })) : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0 }]);
       } else {
         setInp({ properTarget: "", properProgress: "", properForecast: "", properStandby: "", bpTarget: "", bpProgress: "", bpForecast: "", flTarget: "", flProgress: "", flForecast: "" });
         setFocusPeople([{ name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }]);
@@ -297,7 +312,7 @@ export default function DashboardPage() {
         setRaInp({ acquisitionTarget: "", acquisitionProgress: "", joinTarget: "", joinProgress: "" });
         setRaAcqCompanies([{ name: "", staff: "" }]);
         setRaJoinCompanies([{ name: "", staff: "" }]);
-        setStaffActivities([{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0 }]);
+        setStaffActivities([{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0 }]);
       }
     }
   };
@@ -313,7 +328,7 @@ export default function DashboardPage() {
       focusPeople: focusPeople.filter((p) => p.name || p.cost),
       focusProjects: focusProjects.filter((p) => p.company || p.title || p.price),
       announcements: announcements.filter((a) => a.trim()),
-      staffActivities: staffActivities.filter(s => s.staff && (s.interviewSetups || s.interviewsConducted || s.appointmentAcquisitions)),
+      staffActivities: staffActivities.filter(s => s.staff && (s.interviewSetups || s.interviewsConducted || s.appointmentAcquisitions || s.ordersRA || s.ordersCA)),
       ra: {
         acquisitionTarget: parseNum(raInp.acquisitionTarget), acquisitionProgress: parseNum(raInp.acquisitionProgress),
         acquisitionCompanies: raAcqCompanies.filter(c => c.name),
@@ -472,11 +487,13 @@ export default function DashboardPage() {
               <SummaryCard title="フリーランス" data={fl} rate={calcRate(fl.progress, fl.target)} />
             </div>
 
-            {/* 担当別活動（2段目：3カード） */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: isMobile ? 16 : 24 }} className="focus-grid">
+            {/* 担当別活動（2段目：5カード）※前日のデータを表示 */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginBottom: isMobile ? 16 : 24 }} className="focus-grid">
               <ActivityRankCard title="面談設定数" data={dStaffActivities} field="interviewSetups" color="#0077b6" />
               <ActivityRankCard title="面談実施数" data={dStaffActivities} field="interviewsConducted" color="#e67e22" />
               <ActivityRankCard title="案件アポ獲得企業数" data={dStaffActivities} field="appointmentAcquisitions" color="#2ecc71" />
+              <ActivityRankCard title="RA受注数" data={dStaffActivities} field="ordersRA" color="#e74c3c" />
+              <ActivityRankCard title="CA受注数" data={dStaffActivities} field="ordersCA" color="#9b59b6" />
             </div>
 
             {/* 注力セクション */}
@@ -544,10 +561,12 @@ export default function DashboardPage() {
                       <FieldWrap label="面談設定数" w={100}><input type="text" inputMode="numeric" value={s.interviewSetups || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], interviewSetups: parseNum(e.target.value) }; setStaffActivities(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
                       <FieldWrap label="面談実施数" w={100}><input type="text" inputMode="numeric" value={s.interviewsConducted || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], interviewsConducted: parseNum(e.target.value) }; setStaffActivities(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
                       <FieldWrap label="案件アポ獲得企業数" w={130}><input type="text" inputMode="numeric" value={s.appointmentAcquisitions || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], appointmentAcquisitions: parseNum(e.target.value) }; setStaffActivities(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                      <FieldWrap label="RA受注数" w={100}><input type="text" inputMode="numeric" value={s.ordersRA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], ordersRA: parseNum(e.target.value) }; setStaffActivities(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                      <FieldWrap label="CA受注数" w={100}><input type="text" inputMode="numeric" value={s.ordersCA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], ordersCA: parseNum(e.target.value) }; setStaffActivities(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
                       <button onClick={() => setStaffActivities(staffActivities.filter((_, j) => j !== i))} style={removeBtnStyle}>×</button>
                     </div>
                   ))}
-                  <button onClick={() => setStaffActivities([...staffActivities, { staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0 }])} style={addBtnStyle}>＋ 担当を追加</button>
+                  <button onClick={() => setStaffActivities([...staffActivities, { staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0 }])} style={addBtnStyle}>＋ 担当を追加</button>
                 </div>
 
                 {/* 注力入力 */}
