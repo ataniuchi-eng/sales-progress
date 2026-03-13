@@ -221,8 +221,8 @@ export default function DashboardPage() {
 
     // マージ：前日データをベースに、当日の既存データ（RA等）を上書き
     const merged: DayData = JSON.parse(JSON.stringify(prevData));
-    // 担当別活動は日次入力のため継承しない（毎日0から入力）
-    merged.staffActivities = [];
+    // 担当別活動は日次入力のため一切継承しない（当日分は保存時にのみ書き込まれる）
+    merged.staffActivities = existing?.staffActivities?.length ? existing.staffActivities : [];
     if (existing) {
       // 当日に既に入っているデータを優先マージ
       if (existing.announcements?.length) merged.announcements = existing.announcements;
@@ -232,7 +232,6 @@ export default function DashboardPage() {
           merged.ra = existing.ra;
         }
       }
-      if (existing.staffActivities?.length) merged.staffActivities = existing.staffActivities;
     }
     try {
       const res = await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dateKey: targetKey, data: merged }) });
@@ -281,16 +280,14 @@ export default function DashboardPage() {
   const dProjects = Array.isArray(displayData.focusProjects) ? displayData.focusProjects : [];
   const dAnnouncements = Array.isArray(displayData.announcements) ? displayData.announcements.filter(a => a) : [];
   const dRA = displayData.ra || { acquisitionTarget: 0, acquisitionProgress: 0, acquisitionCompanies: [], joinTarget: 0, joinProgress: 0, joinCompanies: [] };
-  // 担当別活動は前日の最新データを表示（当日入力分は翌日以降に表示される）
+  // 担当別活動は選択日の前日のデータのみ表示（遡らない・継承データは対象外）
   const prevDayStaffActivities = (() => {
-    const keys = Object.keys(allData).sort().reverse();
-    for (const k of keys) {
-      if (k < selectedDate) {
-        const d = allData[k];
-        if (d && Array.isArray(d.staffActivities) && d.staffActivities.filter(s => s.staff).length > 0) {
-          return d.staffActivities.filter(s => s.staff);
-        }
-      }
+    const selDate = new Date(selectedDate + "T00:00:00");
+    selDate.setDate(selDate.getDate() - 1);
+    const prevKey = selDate.toISOString().slice(0, 10);
+    const d = allData[prevKey];
+    if (d && Array.isArray(d.staffActivities)) {
+      return d.staffActivities.filter(s => s.staff);
     }
     return [];
   })();
@@ -977,6 +974,37 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
         </select>
       </div>
 
+      {/* ベスト5（5分野まとめて表示） */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginBottom: 24 }} className="focus-grid">
+        {ACTIVITY_FIELDS.map(af => {
+          const ranked = STAFF_LIST
+            .map(staff => ({ staff, total: getStaffMonthTotal(staff, af.key) }))
+            .filter(s => s.total > 0)
+            .sort((a, b) => b.total - a.total)
+            .slice(0, 5);
+          const medals = ["🥇", "🥈", "🥉"];
+          return (
+            <div key={af.key} style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{af.label}</h3>
+                <span style={{ fontSize: 18, fontWeight: 700, color: af.color }}>{getMonthGrandTotal(af.key)}</span>
+              </div>
+              {ranked.length === 0 ? <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>データなし</p> : (
+                ranked.map((r, i) => (
+                  <div key={r.staff} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid #f0f2f5" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {i < 3 ? <span style={{ fontSize: 16 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: "#999", fontWeight: 700, width: 20, textAlign: "center" }}>{i + 1}</span>}
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>{r.staff}</span>
+                    </div>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: af.color }}>{r.total}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          );
+        })}
+      </div>
+
       {/* 各指標ごとにテーブル */}
       {ACTIVITY_FIELDS.map(af => (
         <div key={af.key} style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", marginBottom: 20, overflowX: "auto" }}>
@@ -1039,28 +1067,6 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
               </tr>
             </tbody>
           </table>
-          {/* ベスト5 */}
-          {(() => {
-            const ranked = STAFF_LIST
-              .map(staff => ({ staff, total: getStaffMonthTotal(staff, af.key) }))
-              .filter(s => s.total > 0)
-              .sort((a, b) => b.total - a.total)
-              .slice(0, 5);
-            if (ranked.length === 0) return null;
-            const medals = ["🥇", "🥈", "🥉", "4", "5"];
-            return (
-              <div style={{ marginTop: 12, padding: "10px 12px", background: "#f8f9fa", borderRadius: 8, display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#999" }}>BEST 5</span>
-                {ranked.map((r, i) => (
-                  <div key={r.staff} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: i < 3 ? 16 : 12, color: i >= 3 ? "#999" : undefined, fontWeight: i >= 3 ? 700 : undefined, width: 20, textAlign: "center" }}>{medals[i]}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>{r.staff}</span>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: af.color }}>{r.total}</span>
-                  </div>
-                ))}
-              </div>
-            );
-          })()}
         </div>
       ))}
     </div>
