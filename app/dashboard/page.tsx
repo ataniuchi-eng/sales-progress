@@ -660,16 +660,15 @@ export default function DashboardPage() {
                   金額セクター<span style={{ fontSize: 11, fontWeight: 400, color: "#999" }}>※件数セクターでRA受注数またはCA受注数が1以上の担当者のみ表示されます</span>
                 </h4>
                 <p style={{ fontSize: 11, color: "#999", margin: "0 0 10px", paddingLeft: 16 }}>入力単位：万円（整数4桁・小数1桁まで）</p>
-                {staffActivities.map((s, i) => {
-                  const hasRA = (s.ordersRA || 0) > 0;
-                  const hasCA = (s.ordersCA || 0) > 0;
-                  if (!hasRA && !hasCA) return null;
-                  return (
-                    <div key={`amount-${i}`} style={{ marginBottom: 12, padding: "12px", background: "#fef8f8", borderRadius: 8, borderLeft: "3px solid #e74c3c" }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e", marginBottom: 8 }}>{s.staff}</div>
-                      {hasRA && (
-                        <div style={{ marginBottom: hasCA ? 10 : 0 }}>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: "#e74c3c", marginBottom: 6 }}>RA受注（{s.ordersRA}件）</div>
+                {/* RA受注：件数降順 */}
+                {(() => {
+                  const raEntries = staffActivities.map((s, i) => ({ s, i })).filter(({ s }) => (s.ordersRA || 0) > 0).sort((a, b) => (b.s.ordersRA || 0) - (a.s.ordersRA || 0));
+                  return raEntries.length > 0 && (
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#e74c3c", marginBottom: 8 }}>RA受注</div>
+                      {raEntries.map(({ s, i }) => (
+                        <div key={`ra-${i}`} style={{ marginBottom: 8, padding: "10px 12px", background: "#fef8f8", borderRadius: 8, borderLeft: "3px solid #e74c3c" }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e", marginBottom: 6 }}>{s.staff}（{s.ordersRA}件）</div>
                           <div className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: isMobile ? "wrap" : "nowrap" }}>
                             <FieldWrap label="金額（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(s.amountRA)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; a[i] = { ...a[i], amountRA: parseAmount(v) }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
                             <FieldWrap label="企業名" grow><input type="text" value={s.companyRA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], companyRA: e.target.value }; setStaffActivities(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
@@ -677,10 +676,19 @@ export default function DashboardPage() {
                             <FieldWrap label="ポジション" className="fw-select" w={120}><select value={s.positionRA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], positionRA: e.target.value }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
                           </div>
                         </div>
-                      )}
-                      {hasCA && (
-                        <div>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: "#9b59b6", marginBottom: 6 }}>CA受注（{s.ordersCA}件）</div>
+                      ))}
+                    </div>
+                  );
+                })()}
+                {/* CA受注：件数降順 */}
+                {(() => {
+                  const caEntries = staffActivities.map((s, i) => ({ s, i })).filter(({ s }) => (s.ordersCA || 0) > 0).sort((a, b) => (b.s.ordersCA || 0) - (a.s.ordersCA || 0));
+                  return caEntries.length > 0 && (
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#9b59b6", marginBottom: 8 }}>CA受注</div>
+                      {caEntries.map(({ s, i }) => (
+                        <div key={`ca-${i}`} style={{ marginBottom: 8, padding: "10px 12px", background: "#f9f5fc", borderRadius: 8, borderLeft: "3px solid #9b59b6" }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e", marginBottom: 6 }}>{s.staff}（{s.ordersCA}件）</div>
                           <div className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: isMobile ? "wrap" : "nowrap" }}>
                             <FieldWrap label="金額（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(s.amountCA)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; a[i] = { ...a[i], amountCA: parseAmount(v) }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
                             <FieldWrap label="企業名" grow><input type="text" value={s.companyCA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], companyCA: e.target.value }; setStaffActivities(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
@@ -688,10 +696,10 @@ export default function DashboardPage() {
                             <FieldWrap label="ポジション" className="fw-select" w={120}><select value={s.positionCA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], positionCA: e.target.value }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
                           </div>
                         </div>
-                      )}
+                      ))}
                     </div>
                   );
-                })}
+                })()}
 
                 {/* 数値入力 */}
                 <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", marginBottom: 16, marginTop: 24, paddingTop: 20, borderTop: "2px solid #e0e0e0" }}>売上数値入力</h2>
