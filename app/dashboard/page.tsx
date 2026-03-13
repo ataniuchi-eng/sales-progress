@@ -254,10 +254,10 @@ export default function DashboardPage() {
     // 既にデータがあり、金額等が入力済みなら継承不要
     if (existing && !isDataEmpty(existing)) return;
 
-    // マージ：前日データをベースに、当日の既存データ（RA等）を上書き
+    // マージ：前営業日データをベースに、当日の既存データ（RA等）を上書き
     const merged: DayData = JSON.parse(JSON.stringify(prevData));
-    // 担当別活動は日次入力のため一切継承しない（当日分は保存時にのみ書き込まれる）
-    merged.staffActivities = existing?.staffActivities?.length ? existing.staffActivities : [];
+    // 担当別活動は日次入力のため一切継承しない（常に空）
+    merged.staffActivities = [];
     if (existing) {
       // 当日に既に入っているデータを優先マージ
       if (existing.announcements?.length) merged.announcements = existing.announcements;
