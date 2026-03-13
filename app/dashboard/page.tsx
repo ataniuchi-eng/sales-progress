@@ -221,6 +221,8 @@ export default function DashboardPage() {
 
     // マージ：前日データをベースに、当日の既存データ（RA等）を上書き
     const merged: DayData = JSON.parse(JSON.stringify(prevData));
+    // 担当別活動は日次入力のため継承しない（毎日0から入力）
+    merged.staffActivities = [];
     if (existing) {
       // 当日に既に入っているデータを優先マージ
       if (existing.announcements?.length) merged.announcements = existing.announcements;
@@ -314,7 +316,8 @@ export default function DashboardPage() {
       setRaInp({ acquisitionTarget: formatNumStr(ra.acquisitionTarget), acquisitionProgress: formatNumStr(ra.acquisitionProgress), joinTarget: formatNumStr(ra.joinTarget), joinProgress: formatNumStr(ra.joinProgress) });
       setRaAcqCompanies(ra.acquisitionCompanies?.length ? ra.acquisitionCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
       setRaJoinCompanies(ra.joinCompanies?.length ? ra.joinCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
-      setStaffActivities(d.staffActivities?.length ? d.staffActivities.map(s => ({ ...s, ordersRA: s.ordersRA || 0, ordersCA: s.ordersCA || 0 })) : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0 }]);
+      // 担当別活動は日次入力のため常に空で開始（前日データを引き継がない）
+      setStaffActivities([{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0 }]);
     } else {
       // データがない場合は前日までの最新データをフォールバックで表示
       const fallback = getLatestDataForDate(allData, selectedDate);
@@ -333,7 +336,8 @@ export default function DashboardPage() {
         setRaInp({ acquisitionTarget: formatNumStr(ra.acquisitionTarget), acquisitionProgress: formatNumStr(ra.acquisitionProgress), joinTarget: formatNumStr(ra.joinTarget), joinProgress: formatNumStr(ra.joinProgress) });
         setRaAcqCompanies(ra.acquisitionCompanies?.length ? ra.acquisitionCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
         setRaJoinCompanies(ra.joinCompanies?.length ? ra.joinCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
-        setStaffActivities(d.staffActivities?.length ? d.staffActivities.map(s => ({ ...s, ordersRA: s.ordersRA || 0, ordersCA: s.ordersCA || 0 })) : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0 }]);
+        // 担当別活動は日次入力のため常に空で開始
+        setStaffActivities([{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0 }]);
       } else {
         setInp({ properTarget: "", properProgress: "", properForecast: "", properStandby: "", bpTarget: "", bpProgress: "", bpForecast: "", flTarget: "", flProgress: "", flForecast: "" });
         setFocusPeople([{ name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }]);
@@ -1035,6 +1039,28 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
               </tr>
             </tbody>
           </table>
+          {/* ベスト5 */}
+          {(() => {
+            const ranked = STAFF_LIST
+              .map(staff => ({ staff, total: getStaffMonthTotal(staff, af.key) }))
+              .filter(s => s.total > 0)
+              .sort((a, b) => b.total - a.total)
+              .slice(0, 5);
+            if (ranked.length === 0) return null;
+            const medals = ["🥇", "🥈", "🥉", "4", "5"];
+            return (
+              <div style={{ marginTop: 12, padding: "10px 12px", background: "#f8f9fa", borderRadius: 8, display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#999" }}>BEST 5</span>
+                {ranked.map((r, i) => (
+                  <div key={r.staff} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: i < 3 ? 16 : 12, color: i >= 3 ? "#999" : undefined, fontWeight: i >= 3 ? 700 : undefined, width: 20, textAlign: "center" }}>{medals[i]}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>{r.staff}</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: af.color }}>{r.total}</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       ))}
     </div>
