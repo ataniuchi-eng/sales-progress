@@ -98,6 +98,12 @@ interface StaffActivity {
   ordersCA: number;
   amountRA: number;
   amountCA: number;
+  companyRA: string;
+  affiliationRA: string;
+  positionRA: string;
+  companyCA: string;
+  affiliationCA: string;
+  positionCA: string;
 }
 
 interface DayData {
@@ -356,7 +362,7 @@ export default function DashboardPage() {
       setRaAcqCompanies(ra.acquisitionCompanies?.length ? ra.acquisitionCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
       setRaJoinCompanies(ra.joinCompanies?.length ? ra.joinCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
       // 営業活動：当日に入力済みデータがあればそれを表示、なければ空で開始
-      setStaffActivities(d.staffActivities?.length ? d.staffActivities.map(s => ({ ...s, ordersRA: s.ordersRA || 0, ordersCA: s.ordersCA || 0, amountRA: s.amountRA || 0, amountCA: s.amountCA || 0 })) : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, amountRA: 0, amountCA: 0 }]);
+      setStaffActivities(d.staffActivities?.length ? d.staffActivities.map(s => ({ ...s, ordersRA: s.ordersRA || 0, ordersCA: s.ordersCA || 0, amountRA: s.amountRA || 0, amountCA: s.amountCA || 0, companyRA: s.companyRA || "", affiliationRA: s.affiliationRA || "", positionRA: s.positionRA || "", companyCA: s.companyCA || "", affiliationCA: s.affiliationCA || "", positionCA: s.positionCA || "" })) : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, amountRA: 0, amountCA: 0, companyRA: "", affiliationRA: "", positionRA: "", companyCA: "", affiliationCA: "", positionCA: "" }]);
     } else {
       // データがない場合は前日までの最新データをフォールバックで表示
       const fallback = getLatestDataForDate(allData, selectedDate);
@@ -376,7 +382,7 @@ export default function DashboardPage() {
         setRaAcqCompanies(ra.acquisitionCompanies?.length ? ra.acquisitionCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
         setRaJoinCompanies(ra.joinCompanies?.length ? ra.joinCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
         // 営業活動は日次入力のため常に空で開始
-        setStaffActivities([{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, amountRA: 0, amountCA: 0 }]);
+        setStaffActivities([{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, amountRA: 0, amountCA: 0, companyRA: "", affiliationRA: "", positionRA: "", companyCA: "", affiliationCA: "", positionCA: "" }]);
       } else {
         setInp({ properTarget: "", properProgress: "", properForecast: "", properStandby: "", bpTarget: "", bpProgress: "", bpForecast: "", flTarget: "", flProgress: "", flForecast: "" });
         setFocusPeople([{ name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }]);
@@ -385,7 +391,7 @@ export default function DashboardPage() {
         setRaInp({ acquisitionTarget: "", acquisitionProgress: "", joinTarget: "", joinProgress: "" });
         setRaAcqCompanies([{ name: "", staff: "" }]);
         setRaJoinCompanies([{ name: "", staff: "" }]);
-        setStaffActivities([{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, amountRA: 0, amountCA: 0 }]);
+        setStaffActivities([{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, amountRA: 0, amountCA: 0, companyRA: "", affiliationRA: "", positionRA: "", companyCA: "", affiliationCA: "", positionCA: "" }]);
       }
     }
   };
@@ -579,7 +585,7 @@ export default function DashboardPage() {
             </div>
 
             {/* 前日営業活動成績（件数5カード + 金額2カード） */}
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a1a2e", marginBottom: 12 }}>前日営業活動成績</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a1a2e", marginBottom: 12 }}>前営業日ー営業結果</h3>
             <h4 style={{ fontSize: 13, fontWeight: 600, color: "#0077b6", marginBottom: 8 }}>件数</h4>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginBottom: 16 }} className="focus-grid">
               <ActivityRankCard title="RA受注数" data={dStaffActivities} field="ordersRA" color="#e74c3c" />
@@ -590,8 +596,8 @@ export default function DashboardPage() {
             </div>
             <h4 style={{ fontSize: 13, fontWeight: 600, color: "#e74c3c", marginBottom: 8 }}>金額（万円）</h4>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: isMobile ? 16 : 24 }} className="focus-grid">
-              <ActivityRankCard title="RA受注金額" data={dStaffActivities} field="amountRA" color="#e74c3c" unit="万円" />
-              <ActivityRankCard title="CA受注金額" data={dStaffActivities} field="amountCA" color="#9b59b6" unit="万円" />
+              <AmountRankCard title="RA受注金額" data={dStaffActivities} amountField="amountRA" companyField="companyRA" affiliationField="affiliationRA" positionField="positionRA" color="#e74c3c" />
+              <AmountRankCard title="CA受注金額" data={dStaffActivities} amountField="amountCA" companyField="companyCA" affiliationField="affiliationCA" positionField="positionCA" color="#9b59b6" />
             </div>
 
             {/* 注力セクション */}
@@ -647,19 +653,45 @@ export default function DashboardPage() {
                     <button onClick={() => setStaffActivities(staffActivities.filter((_, j) => j !== i))} style={removeBtnStyle}>×</button>
                   </div>
                 ))}
-                <button onClick={() => setStaffActivities([...staffActivities, { staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, amountRA: 0, amountCA: 0 }])} style={addBtnStyle}>＋ 担当を追加</button>
+                <button onClick={() => setStaffActivities([...staffActivities, { staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, amountRA: 0, amountCA: 0, companyRA: "", affiliationRA: "", positionRA: "", companyCA: "", affiliationCA: "", positionCA: "" }])} style={addBtnStyle}>＋ 担当を追加</button>
 
-                <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 10, marginTop: 20, display: "flex", alignItems: "center", gap: 8 }}>
+                <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 4, marginTop: 20, display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#e74c3c", display: "inline-block" }} />
-                  金額セクター<span style={{ fontSize: 11, fontWeight: 400, color: "#999" }}>（単位：万円）</span>
+                  金額セクター<span style={{ fontSize: 11, fontWeight: 400, color: "#999" }}>※件数セクターでRA受注数またはCA受注数が1以上の担当者のみ表示されます</span>
                 </h4>
-                {staffActivities.map((s, i) => (
-                  <div key={`amount-${i}`} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "10px 12px", background: "#fef8f8", borderRadius: 8, flexWrap: isMobile ? "wrap" : "nowrap" }}>
-                    <FieldWrap label="担当" w={120}><span style={{ display: "block", padding: "7px 10px", fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>{s.staff || "（未選択）"}</span></FieldWrap>
-                    <FieldWrap label="RA受注金額（万円）" w={150}><input type="text" inputMode="decimal" value={formatAmount(s.amountRA)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; a[i] = { ...a[i], amountRA: parseAmount(v) }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
-                    <FieldWrap label="CA受注金額（万円）" w={150}><input type="text" inputMode="decimal" value={formatAmount(s.amountCA)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; a[i] = { ...a[i], amountCA: parseAmount(v) }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
-                  </div>
-                ))}
+                <p style={{ fontSize: 11, color: "#999", margin: "0 0 10px", paddingLeft: 16 }}>入力単位：万円（整数4桁・小数1桁まで）</p>
+                {staffActivities.map((s, i) => {
+                  const hasRA = (s.ordersRA || 0) > 0;
+                  const hasCA = (s.ordersCA || 0) > 0;
+                  if (!hasRA && !hasCA) return null;
+                  return (
+                    <div key={`amount-${i}`} style={{ marginBottom: 12, padding: "12px", background: "#fef8f8", borderRadius: 8, borderLeft: "3px solid #e74c3c" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e", marginBottom: 8 }}>{s.staff}</div>
+                      {hasRA && (
+                        <div style={{ marginBottom: hasCA ? 10 : 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: "#e74c3c", marginBottom: 6 }}>RA受注（{s.ordersRA}件）</div>
+                          <div className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: isMobile ? "wrap" : "nowrap" }}>
+                            <FieldWrap label="金額（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(s.amountRA)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; a[i] = { ...a[i], amountRA: parseAmount(v) }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                            <FieldWrap label="企業名" grow><input type="text" value={s.companyRA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], companyRA: e.target.value }; setStaffActivities(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
+                            <FieldWrap label="所属" className="fw-select" w={110}><select value={s.affiliationRA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], affiliationRA: e.target.value }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option></select></FieldWrap>
+                            <FieldWrap label="ポジション" className="fw-select" w={120}><select value={s.positionRA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], positionRA: e.target.value }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
+                          </div>
+                        </div>
+                      )}
+                      {hasCA && (
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: "#9b59b6", marginBottom: 6 }}>CA受注（{s.ordersCA}件）</div>
+                          <div className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: isMobile ? "wrap" : "nowrap" }}>
+                            <FieldWrap label="金額（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(s.amountCA)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; a[i] = { ...a[i], amountCA: parseAmount(v) }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                            <FieldWrap label="企業名" grow><input type="text" value={s.companyCA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], companyCA: e.target.value }; setStaffActivities(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
+                            <FieldWrap label="所属" className="fw-select" w={110}><select value={s.affiliationCA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], affiliationCA: e.target.value }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option></select></FieldWrap>
+                            <FieldWrap label="ポジション" className="fw-select" w={120}><select value={s.positionCA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], positionCA: e.target.value }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
 
                 {/* 数値入力 */}
                 <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", marginBottom: 16, marginTop: 24, paddingTop: 20, borderTop: "2px solid #e0e0e0" }}>売上数値入力</h2>
@@ -1293,6 +1325,56 @@ function ActivityRankCard({ title, data, field, color, unit }: { title: string; 
                   <span style={{ fontSize: 14, fontWeight: 700, color }}>{fmtVal(s[field] as number)}</span>
                 </div>
               ))}
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function AmountRankCard({ title, data, amountField, companyField, affiliationField, positionField, color }: {
+  title: string; data: StaffActivity[]; amountField: keyof StaffActivity; companyField: keyof StaffActivity; affiliationField: keyof StaffActivity; positionField: keyof StaffActivity; color: string;
+}) {
+  const [showAll, setShowAll] = useState(false);
+  const sorted = [...data].filter(s => s.staff && (s[amountField] as number) > 0).sort((a, b) => (b[amountField] as number) - (a[amountField] as number));
+  const top3 = sorted.slice(0, 3);
+  const total = Math.round(sorted.reduce((sum, s) => sum + (s[amountField] as number), 0) * 10) / 10;
+  const medals = ["🥇", "🥈", "🥉"];
+  const fmtVal = (v: number) => `${Math.round(v * 10) / 10}万円`;
+  const renderEntry = (s: StaffActivity, i: number, isSub?: boolean) => {
+    const company = (s[companyField] as string) || "";
+    const affiliation = (s[affiliationField] as string) || "";
+    const position = (s[positionField] as string) || "";
+    const details = [company, affiliation, position].filter(Boolean).join(" / ");
+    return (
+      <div key={i} style={{ padding: "8px 0", borderBottom: "1px solid #f0f2f5" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {isSub ? <span style={{ fontSize: 12, color: "#999", width: 20, textAlign: "center" }}>{i + 1}</span> : <span style={{ fontSize: 16 }}>{medals[i]}</span>}
+            <span style={{ fontSize: isSub ? 13 : 14, fontWeight: 600, color: isSub ? "#555" : "#1a1a2e" }}>{s.staff}</span>
+          </div>
+          <span style={{ fontSize: isSub ? 14 : 16, fontWeight: 700, color }}>{fmtVal(s[amountField] as number)}</span>
+        </div>
+        {details && <div style={{ fontSize: 11, color: "#888", marginTop: 2, paddingLeft: isSub ? 28 : 28 }}>{details}</div>}
+      </div>
+    );
+  };
+  return (
+    <div style={{ background: "#fff", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{title}</h3>
+        <span style={{ fontSize: 20, fontWeight: 700, color }}>{total}万円</span>
+      </div>
+      {sorted.length === 0 ? <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>未入力</p> : (
+        <>
+          {top3.map((s, i) => renderEntry(s, i))}
+          {sorted.length > 3 && (
+            <>
+              <button onClick={() => setShowAll(!showAll)} style={{ marginTop: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, color: "#0077b6", background: "#e8f4fd", border: "1px solid #0077b6", borderRadius: 6, cursor: "pointer", width: "100%" }}>
+                {showAll ? "閉じる" : `全${sorted.length}件を表示`}
+              </button>
+              {showAll && sorted.slice(3).map((s, i) => renderEntry(s, i + 3, true))}
             </>
           )}
         </>
