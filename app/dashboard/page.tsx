@@ -42,6 +42,20 @@ interface FocusProject {
   location: string;
 }
 
+interface RACompany {
+  name: string;
+  staff: string;
+}
+
+interface RAData {
+  acquisitionTarget: number;
+  acquisitionProgress: number;
+  acquisitionCompanies: RACompany[];
+  joinTarget: number;
+  joinProgress: number;
+  joinCompanies: RACompany[];
+}
+
 interface DayData {
   proper: CategoryData;
   bp: CategoryData;
@@ -49,6 +63,7 @@ interface DayData {
   focusPeople: FocusPerson[];
   focusProjects: FocusProject[];
   announcements: string[];
+  ra: RAData;
 }
 
 type AllData = Record<string, DayData>;
@@ -84,6 +99,7 @@ function emptyData(): DayData {
     bp: { target: 0, progress: 0, forecast: 0 },
     fl: { target: 0, progress: 0, forecast: 0 },
     focusPeople: [], focusProjects: [], announcements: [],
+    ra: { acquisitionTarget: 0, acquisitionProgress: 0, acquisitionCompanies: [], joinTarget: 0, joinProgress: 0, joinCompanies: [] },
   };
 }
 function getLatestDataForDate(allData: AllData, targetKey: string) {
@@ -116,6 +132,9 @@ export default function DashboardPage() {
   const [focusPeople, setFocusPeople] = useState<FocusPerson[]>([]);
   const [focusProjects, setFocusProjects] = useState<FocusProject[]>([]);
   const [announcements, setAnnouncements] = useState<string[]>([]);
+  const [raInp, setRaInp] = useState({ acquisitionTarget: "", acquisitionProgress: "", joinTarget: "", joinProgress: "" });
+  const [raAcqCompanies, setRaAcqCompanies] = useState<RACompany[]>([]);
+  const [raJoinCompanies, setRaJoinCompanies] = useState<RACompany[]>([]);
 
   // レスポンシブ検知
   useEffect(() => {
@@ -155,6 +174,7 @@ export default function DashboardPage() {
   const dPeople = Array.isArray(displayData.focusPeople) ? displayData.focusPeople : [];
   const dProjects = Array.isArray(displayData.focusProjects) ? displayData.focusProjects : [];
   const dAnnouncements = Array.isArray(displayData.announcements) ? displayData.announcements.filter(a => a) : [];
+  const dRA = displayData.ra || { acquisitionTarget: 0, acquisitionProgress: 0, acquisitionCompanies: [], joinTarget: 0, joinProgress: 0, joinCompanies: [] };
   const dataSourceInfo = !result ? "データなし" : result.isExact ? "この日のデータを表示中" : `${formatDateJP(result.sourceKey)} のデータを反映中`;
 
   // 入力画面を開く
@@ -172,11 +192,18 @@ export default function DashboardPage() {
       setFocusPeople(d.focusPeople?.length ? d.focusPeople.map(p => ({ ...p, staff: p.staff || "", position: p.position || "", skill: p.skill || "" })) : [{ name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }]);
       setFocusProjects(d.focusProjects?.length ? d.focusProjects.map(p => ({ ...p, staff: p.staff || "", position: p.position || "", location: p.location || "" })) : [{ company: "", title: "", price: 0, contract: "派遣", staff: "", position: "", location: "" }]);
       setAnnouncements(d.announcements?.length ? [...d.announcements] : [""]);
+      const ra = d.ra || { acquisitionTarget: 0, acquisitionProgress: 0, acquisitionCompanies: [], joinTarget: 0, joinProgress: 0, joinCompanies: [] };
+      setRaInp({ acquisitionTarget: formatNumStr(ra.acquisitionTarget), acquisitionProgress: formatNumStr(ra.acquisitionProgress), joinTarget: formatNumStr(ra.joinTarget), joinProgress: formatNumStr(ra.joinProgress) });
+      setRaAcqCompanies(ra.acquisitionCompanies?.length ? ra.acquisitionCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
+      setRaJoinCompanies(ra.joinCompanies?.length ? ra.joinCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
     } else {
       setInp({ properTarget: "", properProgress: "", properForecast: "", properStandby: "", bpTarget: "", bpProgress: "", bpForecast: "", flTarget: "", flProgress: "", flForecast: "" });
       setFocusPeople([{ name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }]);
       setFocusProjects([{ company: "", title: "", price: 0, contract: "派遣", staff: "", position: "", location: "" }]);
       setAnnouncements([""]);
+      setRaInp({ acquisitionTarget: "", acquisitionProgress: "", joinTarget: "", joinProgress: "" });
+      setRaAcqCompanies([{ name: "", staff: "" }]);
+      setRaJoinCompanies([{ name: "", staff: "" }]);
     }
   };
 
@@ -191,6 +218,12 @@ export default function DashboardPage() {
       focusPeople: focusPeople.filter((p) => p.name || p.cost),
       focusProjects: focusProjects.filter((p) => p.company || p.title || p.price),
       announcements: announcements.filter((a) => a.trim()),
+      ra: {
+        acquisitionTarget: parseNum(raInp.acquisitionTarget), acquisitionProgress: parseNum(raInp.acquisitionProgress),
+        acquisitionCompanies: raAcqCompanies.filter(c => c.name),
+        joinTarget: parseNum(raInp.joinTarget), joinProgress: parseNum(raInp.joinProgress),
+        joinCompanies: raJoinCompanies.filter(c => c.name),
+      },
     };
     try {
       const res = await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dateKey: saveDate, data }) });
@@ -205,6 +238,10 @@ export default function DashboardPage() {
   const handleNumInput = (field: string, value: string) => {
     const raw = value.replace(/[^0-9]/g, "");
     setInp((prev) => ({ ...prev, [field]: raw ? parseInt(raw, 10).toLocaleString("ja-JP") : "" }));
+  };
+  const handleRaNumInput = (field: string, value: string) => {
+    const raw = value.replace(/[^0-9]/g, "");
+    setRaInp((prev) => ({ ...prev, [field]: raw ? parseInt(raw, 10).toLocaleString("ja-JP") : "" }));
   };
 
   // カレンダー
@@ -345,6 +382,11 @@ export default function DashboardPage() {
               <FocusProjectsDisplay projects={dProjects} />
             </div>
 
+            {/* RA開拓セクション（3段目） */}
+            <div style={{ marginBottom: isMobile ? 16 : 24 }}>
+              <RADisplay ra={dRA} />
+            </div>
+
             {/* 入力トグル */}
             <button onClick={() => inputOpen ? setInputOpen(false) : openInput()} style={{
               display: "block", width: "100%", padding: 14, fontSize: 15, fontWeight: 700,
@@ -422,6 +464,60 @@ export default function DashboardPage() {
                     </div>
                   ))}
                   <button onClick={() => setFocusProjects([...focusProjects, { company: "", title: "", price: 0, contract: "派遣", staff: "", position: "", location: "" }])} style={addBtnStyle}>＋ 案件を追加</button>
+
+                  {/* RA開拓入力 */}
+                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, marginTop: 24, paddingTop: 20, borderTop: "2px solid #e0e0e0", color: "#1a1a2e" }}>RA開拓</h3>
+
+                  <div className="input-3col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                    <div>
+                      <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 10 }}>案件獲得</h4>
+                      <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+                        <div style={{ flex: 1 }}>
+                          <label style={{ display: "block", fontSize: 12, color: "#666", marginBottom: 3 }}>企業数目標</label>
+                          <input type="text" inputMode="numeric" value={raInp.acquisitionTarget} onChange={(e) => handleRaNumInput("acquisitionTarget", e.target.value)} placeholder="0"
+                            style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 15, textAlign: "right", outline: "none", boxSizing: "border-box" }} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <label style={{ display: "block", fontSize: 12, color: "#666", marginBottom: 3 }}>進捗</label>
+                          <input type="text" inputMode="numeric" value={raInp.acquisitionProgress} onChange={(e) => handleRaNumInput("acquisitionProgress", e.target.value)} placeholder="0"
+                            style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 15, textAlign: "right", outline: "none", boxSizing: "border-box" }} />
+                        </div>
+                      </div>
+                      <label style={{ display: "block", fontSize: 12, color: "#666", marginBottom: 6 }}>案件獲得企業名</label>
+                      {raAcqCompanies.map((c, i) => (
+                        <div key={i} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "8px 10px", background: "#f8f9fa", borderRadius: 8 }}>
+                          <FieldWrap label="企業名" grow><input type="text" value={c.name} onChange={(e) => { const a = [...raAcqCompanies]; a[i] = { ...a[i], name: e.target.value }; setRaAcqCompanies(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
+                          <FieldWrap label="担当" className="fw-select" w={110}><select value={c.staff} onChange={(e) => { const a = [...raAcqCompanies]; a[i] = { ...a[i], staff: e.target.value }; setRaAcqCompanies(a); }} style={focusSelectStyle}><option value="">選択</option>{STAFF_LIST.map(s => <option key={s}>{s}</option>)}</select></FieldWrap>
+                          <button onClick={() => setRaAcqCompanies(raAcqCompanies.filter((_, j) => j !== i))} style={removeBtnStyle}>×</button>
+                        </div>
+                      ))}
+                      <button onClick={() => setRaAcqCompanies([...raAcqCompanies, { name: "", staff: "" }])} style={addBtnStyle}>＋ 企業を追加</button>
+                    </div>
+                    <div>
+                      <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 10 }}>参画決定</h4>
+                      <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+                        <div style={{ flex: 1 }}>
+                          <label style={{ display: "block", fontSize: 12, color: "#666", marginBottom: 3 }}>企業目標</label>
+                          <input type="text" inputMode="numeric" value={raInp.joinTarget} onChange={(e) => handleRaNumInput("joinTarget", e.target.value)} placeholder="0"
+                            style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 15, textAlign: "right", outline: "none", boxSizing: "border-box" }} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <label style={{ display: "block", fontSize: 12, color: "#666", marginBottom: 3 }}>進捗</label>
+                          <input type="text" inputMode="numeric" value={raInp.joinProgress} onChange={(e) => handleRaNumInput("joinProgress", e.target.value)} placeholder="0"
+                            style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 15, textAlign: "right", outline: "none", boxSizing: "border-box" }} />
+                        </div>
+                      </div>
+                      <label style={{ display: "block", fontSize: 12, color: "#666", marginBottom: 6 }}>参画決定企業名</label>
+                      {raJoinCompanies.map((c, i) => (
+                        <div key={i} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "8px 10px", background: "#f8f9fa", borderRadius: 8 }}>
+                          <FieldWrap label="企業名" grow><input type="text" value={c.name} onChange={(e) => { const a = [...raJoinCompanies]; a[i] = { ...a[i], name: e.target.value }; setRaJoinCompanies(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
+                          <FieldWrap label="担当" className="fw-select" w={110}><select value={c.staff} onChange={(e) => { const a = [...raJoinCompanies]; a[i] = { ...a[i], staff: e.target.value }; setRaJoinCompanies(a); }} style={focusSelectStyle}><option value="">選択</option>{STAFF_LIST.map(s => <option key={s}>{s}</option>)}</select></FieldWrap>
+                          <button onClick={() => setRaJoinCompanies(raJoinCompanies.filter((_, j) => j !== i))} style={removeBtnStyle}>×</button>
+                        </div>
+                      ))}
+                      <button onClick={() => setRaJoinCompanies([...raJoinCompanies, { name: "", staff: "" }])} style={addBtnStyle}>＋ 企業を追加</button>
+                    </div>
+                  </div>
 
                   <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 10, marginTop: 24, display: "flex", alignItems: "center", gap: 8 }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0077b6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -555,6 +651,77 @@ function FocusProjectsDisplay({ projects }: { projects: FocusProject[] }) {
             </tr>
           ))}</tbody>
         </table>
+      )}
+    </div>
+  );
+}
+
+function RADisplay({ ra }: { ra: RAData }) {
+  const acqCompanies = Array.isArray(ra.acquisitionCompanies) ? ra.acquisitionCompanies.filter(c => c.name) : [];
+  const joinCompanies = Array.isArray(ra.joinCompanies) ? ra.joinCompanies.filter(c => c.name) : [];
+  const hasData = ra.acquisitionTarget || ra.acquisitionProgress || ra.joinTarget || ra.joinProgress || acqCompanies.length || joinCompanies.length;
+  return (
+    <div style={{ background: "#fff", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", overflowX: "auto" }}>
+      <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a1a2e", marginBottom: 16 }}>RA開拓</h3>
+      {!hasData ? <p style={{ color: "#bbb", fontSize: 14 }}>未入力</p> : (
+        <div className="focus-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+          {/* 案件獲得 */}
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#0077b6", marginBottom: 10, paddingBottom: 6, borderBottom: "2px solid #e8f4fd" }}>案件獲得</div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 13 }}>
+              <span style={{ color: "#999" }}>企業数目標</span><span style={{ fontWeight: 700, color: "#1a1a2e" }}>{ra.acquisitionTarget}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
+              <span style={{ color: "#999" }}>進捗</span><span style={{ fontWeight: 700, color: "#0077b6" }}>{ra.acquisitionProgress}</span>
+            </div>
+            {ra.acquisitionTarget > 0 && (
+              <div style={{ height: 6, borderRadius: 3, background: "#f0f2f5", overflow: "hidden", marginBottom: 12 }}>
+                <div style={{ width: `${Math.min(Math.round((ra.acquisitionProgress / ra.acquisitionTarget) * 100), 100)}%`, height: "100%", borderRadius: 3, background: ra.acquisitionProgress >= ra.acquisitionTarget ? "#2ecc71" : "#0077b6", transition: "width 0.5s" }} />
+              </div>
+            )}
+            {acqCompanies.length > 0 && (
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead><tr style={{ borderBottom: "2px solid #f0f2f5" }}>
+                  <th style={thStyle}>企業名</th><th style={thStyle}>担当</th>
+                </tr></thead>
+                <tbody>{acqCompanies.map((c, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid #f8f9fa" }}>
+                    <td style={{ padding: "6px 0", fontWeight: 600, color: "#1a1a2e" }}>{c.name}</td>
+                    <td style={{ padding: "6px 0", color: "#555", fontWeight: 600 }}>{c.staff || "-"}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            )}
+          </div>
+          {/* 参画決定 */}
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#2ecc71", marginBottom: 10, paddingBottom: 6, borderBottom: "2px solid #e8f5e9" }}>参画決定</div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 13 }}>
+              <span style={{ color: "#999" }}>企業目標</span><span style={{ fontWeight: 700, color: "#1a1a2e" }}>{ra.joinTarget}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
+              <span style={{ color: "#999" }}>進捗</span><span style={{ fontWeight: 700, color: "#2ecc71" }}>{ra.joinProgress}</span>
+            </div>
+            {ra.joinTarget > 0 && (
+              <div style={{ height: 6, borderRadius: 3, background: "#f0f2f5", overflow: "hidden", marginBottom: 12 }}>
+                <div style={{ width: `${Math.min(Math.round((ra.joinProgress / ra.joinTarget) * 100), 100)}%`, height: "100%", borderRadius: 3, background: ra.joinProgress >= ra.joinTarget ? "#2ecc71" : "#f39c12", transition: "width 0.5s" }} />
+              </div>
+            )}
+            {joinCompanies.length > 0 && (
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead><tr style={{ borderBottom: "2px solid #f0f2f5" }}>
+                  <th style={thStyle}>企業名</th><th style={thStyle}>担当</th>
+                </tr></thead>
+                <tbody>{joinCompanies.map((c, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid #f8f9fa" }}>
+                    <td style={{ padding: "6px 0", fontWeight: 600, color: "#1a1a2e" }}>{c.name}</td>
+                    <td style={{ padding: "6px 0", color: "#555", fontWeight: 600 }}>{c.staff || "-"}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
