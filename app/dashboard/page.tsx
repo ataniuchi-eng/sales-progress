@@ -131,6 +131,34 @@ function getTitle(): string {
   if (month > 12) month = 1;
   return `${month}月稼働`;
 }
+// 営業日判定（土日祝以外）
+function isBusinessDay(key: string): boolean {
+  const d = parseDate(key);
+  const dow = d.getDay();
+  if (dow === 0 || dow === 6) return false;
+  if (JAPAN_HOLIDAYS[key]) return false;
+  return true;
+}
+// 翌営業日を取得
+function getNextBusinessDay(fromKey: string): string {
+  const d = parseDate(fromKey);
+  for (let i = 0; i < 10; i++) {
+    d.setDate(d.getDate() + 1);
+    const k = dateKey(d);
+    if (isBusinessDay(k)) return k;
+  }
+  return dateKey(d);
+}
+// 前営業日を取得
+function getPrevBusinessDay(fromKey: string): string {
+  const d = parseDate(fromKey);
+  for (let i = 0; i < 10; i++) {
+    d.setDate(d.getDate() - 1);
+    const k = dateKey(d);
+    if (isBusinessDay(k)) return k;
+  }
+  return dateKey(d);
+}
 function emptyData(): DayData {
   return {
     proper: { target: 0, progress: 0, forecast: 0, standby: 0 },
@@ -207,13 +235,20 @@ export default function DashboardPage() {
     return numbersEmpty && peopleEmpty && projectsEmpty;
   }, []);
 
-  // 前日データを自動継承してDBに保存する関数（マージ方式）
+  // 前営業日データを自動継承してDBに保存する関数（マージ方式）
   const inheritDataForDate = useCallback(async (targetKey: string, currentAllData: AllData) => {
-    // 前日までの最新データを取得
-    const keys = Object.keys(currentAllData).sort().reverse();
+    // 前営業日のデータを取得（土日祝を飛ばす）
+    const prevBizDay = getPrevBusinessDay(targetKey);
     let prevData: DayData | null = null;
-    for (const k of keys) { if (k < targetKey && !isDataEmpty(currentAllData[k])) { prevData = currentAllData[k]; break; } }
-    if (!prevData) return; // 前日データがない場合はスキップ
+    // 前営業日から遡って最新の実データを探す
+    const keys = Object.keys(currentAllData).sort().reverse();
+    for (const k of keys) {
+      if (k <= prevBizDay && isBusinessDay(k) && !isDataEmpty(currentAllData[k])) {
+        prevData = currentAllData[k];
+        break;
+      }
+    }
+    if (!prevData) return; // 前営業日データがない場合はスキップ
 
     const existing = currentAllData[targetKey];
     // 既にデータがあり、金額等が入力済みなら継承不要
@@ -280,12 +315,10 @@ export default function DashboardPage() {
   const dProjects = Array.isArray(displayData.focusProjects) ? displayData.focusProjects : [];
   const dAnnouncements = Array.isArray(displayData.announcements) ? displayData.announcements.filter(a => a) : [];
   const dRA = displayData.ra || { acquisitionTarget: 0, acquisitionProgress: 0, acquisitionCompanies: [], joinTarget: 0, joinProgress: 0, joinCompanies: [] };
-  // 担当別活動は選択日の前日のデータのみ表示（遡らない・継承データは対象外）
+  // 担当別活動は選択日の前営業日のデータのみ表示（土日祝スキップ）
+  const prevBizDayKey = getPrevBusinessDay(selectedDate);
   const prevDayStaffActivities = (() => {
-    const selDate = new Date(selectedDate + "T00:00:00");
-    selDate.setDate(selDate.getDate() - 1);
-    const prevKey = selDate.toISOString().slice(0, 10);
-    const d = allData[prevKey];
+    const d = allData[prevBizDayKey];
     if (d && Array.isArray(d.staffActivities)) {
       return d.staffActivities.filter(s => s.staff);
     }
@@ -482,14 +515,18 @@ export default function DashboardPage() {
                   {Array.from({ length: daysInMonth }).map((_, i) => {
                     const d = i + 1, dt = new Date(calYear, calMonth, d), key = dateKey(dt), dow = dt.getDay();
                     const isToday = key === today, isSelected = key === selectedDate, hasData = !!allData[key];
+                    const isBizDay = isBusinessDay(key);
+                    const maxClickable = getNextBusinessDay(today);
+                    const isDisabled = !isBizDay || key > maxClickable;
                     return (
-                      <div key={d} onClick={() => setSelectedDate(key)} style={{
+                      <div key={d} onClick={() => { if (!isDisabled) setSelectedDate(key); }} style={{
                         aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 14, borderRadius: 8, cursor: "pointer", position: "relative",
+                        fontSize: 14, borderRadius: 8, cursor: isDisabled ? "default" : "pointer", position: "relative",
                         border: isSelected ? "2px solid #0077b6" : "2px solid transparent",
-                        background: isToday ? "#1a1a2e" : "transparent",
-                        color: isToday ? "#fff" : dow === 0 ? "#e63946" : dow === 6 ? "#0077b6" : "#333",
+                        background: isToday ? "#1a1a2e" : isDisabled ? "#f5f5f5" : "transparent",
+                        color: isToday ? "#fff" : isDisabled ? "#ccc" : dow === 0 ? "#e63946" : dow === 6 ? "#0077b6" : JAPAN_HOLIDAYS[key] ? "#e63946" : "#333",
                         fontWeight: isToday || isSelected ? 700 : 400,
+                        opacity: isDisabled && !isToday ? 0.5 : 1,
                       }}>
                         {d}
                         {hasData && <span style={{ position: "absolute", bottom: 3, width: 5, height: 5, borderRadius: "50%", background: isToday ? "#4cc9f0" : "#0077b6" }} />}
