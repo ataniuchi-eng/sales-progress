@@ -152,13 +152,43 @@ export default function DashboardPage() {
     setTimeout(() => setToast(""), 2500);
   }, []);
 
+  // 前日データを自動継承してDBに保存する関数
+  const inheritDataForDate = useCallback(async (targetKey: string, currentAllData: AllData) => {
+    if (currentAllData[targetKey]) return; // 既にデータがある場合は何もしない
+    const result = getLatestDataForDate(currentAllData, targetKey);
+    if (!result || result.isExact) return; // データがない or 完全一致の場合はスキップ
+    const inheritedData = JSON.parse(JSON.stringify(result.data)) as DayData;
+    try {
+      const res = await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dateKey: targetKey, data: inheritedData }) });
+      if (res.ok) {
+        setAllData((prev) => ({ ...prev, [targetKey]: inheritedData }));
+      }
+    } catch { /* 失敗してもサイレント */ }
+  }, []);
+
   // データロード
   useEffect(() => {
     fetch("/api/data")
       .then((r) => { if (r.status === 401) { router.push("/login"); return null; } return r.json(); })
-      .then((data) => { if (data) setAllData(data); setLoading(false); })
+      .then((data) => {
+        if (data) {
+          setAllData(data);
+          // ロード完了後、今日のデータがなければ前日から自動継承
+          const today = todayKey();
+          if (!data[today]) {
+            inheritDataForDate(today, data);
+          }
+        }
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
-  }, [router]);
+  }, [router, inheritDataForDate]);
+
+  // 日付選択時に前日データを自動継承
+  useEffect(() => {
+    if (loading || !selectedDate || Object.keys(allData).length === 0) return;
+    inheritDataForDate(selectedDate, allData);
+  }, [selectedDate, loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 表示用データ
   const result = getLatestDataForDate(allData, selectedDate);
@@ -197,13 +227,32 @@ export default function DashboardPage() {
       setRaAcqCompanies(ra.acquisitionCompanies?.length ? ra.acquisitionCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
       setRaJoinCompanies(ra.joinCompanies?.length ? ra.joinCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
     } else {
-      setInp({ properTarget: "", properProgress: "", properForecast: "", properStandby: "", bpTarget: "", bpProgress: "", bpForecast: "", flTarget: "", flProgress: "", flForecast: "" });
-      setFocusPeople([{ name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }]);
-      setFocusProjects([{ company: "", title: "", price: 0, contract: "派遣", staff: "", position: "", location: "" }]);
-      setAnnouncements([""]);
-      setRaInp({ acquisitionTarget: "", acquisitionProgress: "", joinTarget: "", joinProgress: "" });
-      setRaAcqCompanies([{ name: "", staff: "" }]);
-      setRaJoinCompanies([{ name: "", staff: "" }]);
+      // データがない場合は前日までの最新データをフォールバックで表示
+      const fallback = getLatestDataForDate(allData, selectedDate);
+      if (fallback && !fallback.isExact) {
+        const d = fallback.data;
+        setInp({
+          properTarget: formatNumStr(d.proper?.target || 0), properProgress: formatNumStr(d.proper?.progress || 0),
+          properForecast: formatNumStr(d.proper?.forecast || 0), properStandby: formatNumStr(d.proper?.standby || 0),
+          bpTarget: formatNumStr(d.bp?.target || 0), bpProgress: formatNumStr(d.bp?.progress || 0), bpForecast: formatNumStr(d.bp?.forecast || 0),
+          flTarget: formatNumStr(d.fl?.target || 0), flProgress: formatNumStr(d.fl?.progress || 0), flForecast: formatNumStr(d.fl?.forecast || 0),
+        });
+        setFocusPeople(d.focusPeople?.length ? d.focusPeople.map(p => ({ ...p, staff: p.staff || "", position: p.position || "", skill: p.skill || "" })) : [{ name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }]);
+        setFocusProjects(d.focusProjects?.length ? d.focusProjects.map(p => ({ ...p, staff: p.staff || "", position: p.position || "", location: p.location || "" })) : [{ company: "", title: "", price: 0, contract: "派遣", staff: "", position: "", location: "" }]);
+        setAnnouncements(d.announcements?.length ? [...d.announcements] : [""]);
+        const ra = d.ra || { acquisitionTarget: 0, acquisitionProgress: 0, acquisitionCompanies: [], joinTarget: 0, joinProgress: 0, joinCompanies: [] };
+        setRaInp({ acquisitionTarget: formatNumStr(ra.acquisitionTarget), acquisitionProgress: formatNumStr(ra.acquisitionProgress), joinTarget: formatNumStr(ra.joinTarget), joinProgress: formatNumStr(ra.joinProgress) });
+        setRaAcqCompanies(ra.acquisitionCompanies?.length ? ra.acquisitionCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
+        setRaJoinCompanies(ra.joinCompanies?.length ? ra.joinCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
+      } else {
+        setInp({ properTarget: "", properProgress: "", properForecast: "", properStandby: "", bpTarget: "", bpProgress: "", bpForecast: "", flTarget: "", flProgress: "", flForecast: "" });
+        setFocusPeople([{ name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }]);
+        setFocusProjects([{ company: "", title: "", price: 0, contract: "派遣", staff: "", position: "", location: "" }]);
+        setAnnouncements([""]);
+        setRaInp({ acquisitionTarget: "", acquisitionProgress: "", joinTarget: "", joinProgress: "" });
+        setRaAcqCompanies([{ name: "", staff: "" }]);
+        setRaJoinCompanies([{ name: "", staff: "" }]);
+      }
     }
   };
 
