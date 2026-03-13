@@ -580,9 +580,9 @@ export default function DashboardPage() {
             </div>
 
             {/* 注力セクション */}
-            <div className="focus-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: isMobile ? 16 : 24 }}>
-              <FocusPeopleDisplay people={dPeople} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: isMobile ? 16 : 24 }}>
               <FocusProjectsDisplay projects={dProjects} />
+              <FocusPeopleDisplay people={dPeople} />
             </div>
 
             {/* RA開拓セクション（3段目） */}
@@ -656,25 +656,11 @@ export default function DashboardPage() {
                 <div style={{ marginTop: 24, paddingTop: 20, borderTop: "2px solid #e0e0e0" }}>
                   <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: "#1a1a2e" }}>注力入力</h3>
 
-                  <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 10 }}>注力人材</h4>
-                  {focusPeople.map((p, i) => (
-                    <div key={i} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "10px 12px", background: "#f8f9fa", borderRadius: 8, flexWrap: isMobile ? "wrap" : "nowrap" }}>
-                      <FieldWrap label="氏名" grow><input type="text" value={p.name} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], name: e.target.value }; setFocusPeople(a); }} placeholder="氏名" style={focusInputStyle} /></FieldWrap>
-                      <FieldWrap label="所属" className="fw-select" w={110}><select value={p.affiliation} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], affiliation: e.target.value }; setFocusPeople(a); }} style={focusSelectStyle}><option>プロパー</option><option>BP</option><option>フリーランス</option></select></FieldWrap>
-                      <FieldWrap label="ポジション" className="fw-select" w={120}><select value={p.position} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], position: e.target.value }; setFocusPeople(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(s => <option key={s}>{s}</option>)}</select></FieldWrap>
-                      <FieldWrap label="担当" className="fw-select" w={110}><select value={p.staff} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], staff: e.target.value }; setFocusPeople(a); }} style={focusSelectStyle}><option value="">選択</option>{STAFF_LIST.map(s => <option key={s}>{s}</option>)}</select></FieldWrap>
-                      <FieldWrap label="スキル" w={120}><input type="text" value={p.skill} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], skill: e.target.value.slice(0, 10) }; setFocusPeople(a); }} placeholder="スキル" maxLength={10} style={focusInputStyle} /></FieldWrap>
-                      <FieldWrap label="仕入れ額" className="fw-money" w={120}><input type="text" inputMode="numeric" value={p.cost ? p.cost.toLocaleString("ja-JP") : ""} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], cost: parseNum(e.target.value) }; setFocusPeople(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
-                      <button onClick={() => setFocusPeople(focusPeople.filter((_, j) => j !== i))} style={removeBtnStyle}>×</button>
-                    </div>
-                  ))}
-                  <button onClick={() => setFocusPeople([...focusPeople, { name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }])} style={addBtnStyle}>＋ 人材を追加</button>
-
-                  <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 10, marginTop: 24 }}>注力案件</h4>
+                  <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 10 }}>注力案件</h4>
                   {focusProjects.map((p, i) => (
                     <div key={i} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "10px 12px", background: "#f8f9fa", borderRadius: 8, flexWrap: isMobile ? "wrap" : "nowrap" }}>
                       <FieldWrap label="企業名" grow><input type="text" value={p.company} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], company: e.target.value }; setFocusProjects(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
-                      <FieldWrap label="案件タイトル" grow><input type="text" value={p.title} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], title: e.target.value }; setFocusProjects(a); }} placeholder="案件タイトル" style={focusInputStyle} /></FieldWrap>
+                      <FieldWrap label="案件タイトル" grow><input type="text" value={p.title} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], title: e.target.value.slice(0, 20) }; setFocusProjects(a); }} placeholder="案件タイトル" maxLength={20} style={focusInputStyle} /></FieldWrap>
                       <FieldWrap label="ポジション" className="fw-select" w={120}><select value={p.position} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], position: e.target.value }; setFocusProjects(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(s => <option key={s}>{s}</option>)}</select></FieldWrap>
                       <FieldWrap label="担当" className="fw-select" w={110}><select value={p.staff} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], staff: e.target.value }; setFocusProjects(a); }} style={focusSelectStyle}><option value="">選択</option>{STAFF_LIST.map(s => <option key={s}>{s}</option>)}</select></FieldWrap>
                       <FieldWrap label="単価" className="fw-money" w={120}><input type="text" inputMode="numeric" value={p.price ? p.price.toLocaleString("ja-JP") : ""} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], price: parseNum(e.target.value) }; setFocusProjects(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
@@ -684,6 +670,20 @@ export default function DashboardPage() {
                     </div>
                   ))}
                   <button onClick={() => setFocusProjects([...focusProjects, { company: "", title: "", price: 0, contract: "派遣", staff: "", position: "", location: "" }])} style={addBtnStyle}>＋ 案件を追加</button>
+
+                  <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 10, marginTop: 24 }}>注力人材</h4>
+                  {focusPeople.map((p, i) => (
+                    <div key={i} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "10px 12px", background: "#f8f9fa", borderRadius: 8, flexWrap: isMobile ? "wrap" : "nowrap" }}>
+                      <FieldWrap label="氏名" grow><input type="text" value={p.name} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], name: e.target.value }; setFocusPeople(a); }} placeholder="氏名" style={focusInputStyle} /></FieldWrap>
+                      <FieldWrap label="所属" className="fw-select" w={110}><select value={p.affiliation} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], affiliation: e.target.value }; setFocusPeople(a); }} style={focusSelectStyle}><option>プロパー</option><option>BP</option><option>フリーランス</option></select></FieldWrap>
+                      <FieldWrap label="ポジション" className="fw-select" w={120}><select value={p.position} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], position: e.target.value }; setFocusPeople(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(s => <option key={s}>{s}</option>)}</select></FieldWrap>
+                      <FieldWrap label="担当" className="fw-select" w={110}><select value={p.staff} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], staff: e.target.value }; setFocusPeople(a); }} style={focusSelectStyle}><option value="">選択</option>{STAFF_LIST.map(s => <option key={s}>{s}</option>)}</select></FieldWrap>
+                      <FieldWrap label="スキル" w={140}><input type="text" value={p.skill} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], skill: e.target.value.slice(0, 15) }; setFocusPeople(a); }} placeholder="スキル" maxLength={15} style={focusInputStyle} /></FieldWrap>
+                      <FieldWrap label="仕入れ額" className="fw-money" w={120}><input type="text" inputMode="numeric" value={p.cost ? p.cost.toLocaleString("ja-JP") : ""} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], cost: parseNum(e.target.value) }; setFocusPeople(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                      <button onClick={() => setFocusPeople(focusPeople.filter((_, j) => j !== i))} style={removeBtnStyle}>×</button>
+                    </div>
+                  ))}
+                  <button onClick={() => setFocusPeople([...focusPeople, { name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }])} style={addBtnStyle}>＋ 人材を追加</button>
 
                   {/* RA開拓入力 */}
                   <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, marginTop: 24, paddingTop: 20, borderTop: "2px solid #e0e0e0", color: "#1a1a2e" }}>RA開拓</h3>
@@ -832,7 +832,7 @@ function FocusPeopleDisplay({ people }: { people: FocusPerson[] }) {
       {people.length === 0 ? <p style={{ color: "#bbb", fontSize: 14 }}>未入力</p> : (
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 500 }}>
           <thead><tr style={{ borderBottom: "2px solid #f0f2f5" }}>
-            <th style={thStyle}>氏名</th><th style={thStyle}>所属</th><th style={thStyle}>ポジション</th><th style={thStyle}>担当</th><th style={thStyle}>スキル</th><th style={{ ...thStyle, textAlign: "right" }}>仕入れ額</th>
+            <th style={thStyle}>氏名</th><th style={thStyle}>所属</th><th style={thStyle}>ポジション</th><th style={thStyle}>担当</th><th style={thStyle}>スキル</th><th style={thStyle}>仕入れ額</th>
           </tr></thead>
           <tbody>{people.map((p, i) => (
             <tr key={i} style={{ borderBottom: "1px solid #f8f9fa" }}>
@@ -841,7 +841,7 @@ function FocusPeopleDisplay({ people }: { people: FocusPerson[] }) {
               <td style={{ padding: "8px 0", color: "#555", fontWeight: 600 }}>{p.position || "-"}</td>
               <td style={{ padding: "8px 0", color: "#555", fontWeight: 600 }}>{p.staff || "-"}</td>
               <td style={{ padding: "8px 0", color: "#555" }}>{p.skill || "-"}</td>
-              <td style={{ padding: "8px 0", textAlign: "right", fontWeight: 600, color: "#1a1a2e" }}>{p.cost ? formatYen(p.cost) : "-"}</td>
+              <td style={{ padding: "8px 0", fontWeight: 600, color: "#1a1a2e" }}>{p.cost ? formatYen(p.cost) : "-"}</td>
             </tr>
           ))}</tbody>
         </table>
@@ -857,7 +857,7 @@ function FocusProjectsDisplay({ projects }: { projects: FocusProject[] }) {
       {projects.length === 0 ? <p style={{ color: "#bbb", fontSize: 14 }}>未入力</p> : (
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 650 }}>
           <thead><tr style={{ borderBottom: "2px solid #f0f2f5" }}>
-            <th style={thStyle}>企業名</th><th style={thStyle}>案件</th><th style={thStyle}>ポジション</th><th style={thStyle}>担当</th><th style={{ ...thStyle, textAlign: "right" }}>単価</th><th style={thStyle}>契約</th><th style={thStyle}>勤務場所</th>
+            <th style={thStyle}>企業名</th><th style={thStyle}>案件</th><th style={thStyle}>ポジション</th><th style={thStyle}>担当</th><th style={thStyle}>単価</th><th style={thStyle}>契約</th><th style={thStyle}>勤務場所</th>
           </tr></thead>
           <tbody>{projects.map((p, i) => (
             <tr key={i} style={{ borderBottom: "1px solid #f8f9fa" }}>
@@ -865,7 +865,7 @@ function FocusProjectsDisplay({ projects }: { projects: FocusProject[] }) {
               <td style={{ padding: "8px 0", color: "#555" }}>{p.title || "-"}</td>
               <td style={{ padding: "8px 0", color: "#555", fontWeight: 600 }}>{p.position || "-"}</td>
               <td style={{ padding: "8px 0", color: "#555", fontWeight: 600 }}>{p.staff || "-"}</td>
-              <td style={{ padding: "8px 0", textAlign: "right", fontWeight: 600, color: "#1a1a2e" }}>{p.price ? formatYen(p.price) : "-"}</td>
+              <td style={{ padding: "8px 0", fontWeight: 600, color: "#1a1a2e" }}>{p.price ? formatYen(p.price) : "-"}</td>
               <td style={{ padding: "8px 0" }}><Badge text={p.contract} type={p.contract === "準委任" ? "quasi" : p.contract === "両方OK" ? "both" : "dispatch"} /></td>
               <td style={{ padding: "8px 0", color: "#555" }}>{p.location || "-"}</td>
             </tr>
