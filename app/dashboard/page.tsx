@@ -152,19 +152,50 @@ export default function DashboardPage() {
     setTimeout(() => setToast(""), 2500);
   }, []);
 
-  // 前日データを自動継承してDBに保存する関数
+  // データが実質空かどうか判定（金額系がすべて0、人材・案件が空）
+  const isDataEmpty = useCallback((d: DayData): boolean => {
+    const p = d.proper || { target: 0, progress: 0, forecast: 0 };
+    const b = d.bp || { target: 0, progress: 0, forecast: 0 };
+    const f = d.fl || { target: 0, progress: 0, forecast: 0 };
+    const numbersEmpty = p.target === 0 && p.progress === 0 && p.forecast === 0
+      && b.target === 0 && b.progress === 0 && b.forecast === 0
+      && f.target === 0 && f.progress === 0 && f.forecast === 0;
+    const peopleEmpty = !d.focusPeople || d.focusPeople.length === 0;
+    const projectsEmpty = !d.focusProjects || d.focusProjects.length === 0;
+    return numbersEmpty && peopleEmpty && projectsEmpty;
+  }, []);
+
+  // 前日データを自動継承してDBに保存する関数（マージ方式）
   const inheritDataForDate = useCallback(async (targetKey: string, currentAllData: AllData) => {
-    if (currentAllData[targetKey]) return; // 既にデータがある場合は何もしない
-    const result = getLatestDataForDate(currentAllData, targetKey);
-    if (!result || result.isExact) return; // データがない or 完全一致の場合はスキップ
-    const inheritedData = JSON.parse(JSON.stringify(result.data)) as DayData;
+    // 前日までの最新データを取得
+    const keys = Object.keys(currentAllData).sort().reverse();
+    let prevData: DayData | null = null;
+    for (const k of keys) { if (k < targetKey && !isDataEmpty(currentAllData[k])) { prevData = currentAllData[k]; break; } }
+    if (!prevData) return; // 前日データがない場合はスキップ
+
+    const existing = currentAllData[targetKey];
+    // 既にデータがあり、金額等が入力済みなら継承不要
+    if (existing && !isDataEmpty(existing)) return;
+
+    // マージ：前日データをベースに、当日の既存データ（RA等）を上書き
+    const merged: DayData = JSON.parse(JSON.stringify(prevData));
+    if (existing) {
+      // 当日に既に入っているデータを優先マージ
+      if (existing.announcements?.length) merged.announcements = existing.announcements;
+      if (existing.ra) {
+        const r = existing.ra;
+        if (r.acquisitionTarget || r.acquisitionProgress || r.acquisitionCompanies?.length || r.joinTarget || r.joinProgress || r.joinCompanies?.length) {
+          merged.ra = existing.ra;
+        }
+      }
+    }
     try {
-      const res = await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dateKey: targetKey, data: inheritedData }) });
+      const res = await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dateKey: targetKey, data: merged }) });
       if (res.ok) {
-        setAllData((prev) => ({ ...prev, [targetKey]: inheritedData }));
+        setAllData((prev) => ({ ...prev, [targetKey]: merged }));
       }
     } catch { /* 失敗してもサイレント */ }
-  }, []);
+  }, [isDataEmpty]);
 
   // データロード
   useEffect(() => {
