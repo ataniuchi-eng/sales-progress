@@ -12,6 +12,34 @@ const STAFF_LIST = [
 // ===== ポジションリスト =====
 const POSITION_LIST = ["AE", "Infra", "DD", "PMO", "PL", "PM", "Consultant"];
 
+// ===== 日本の祝日（2026-2028） =====
+const JAPAN_HOLIDAYS: Record<string, string> = {
+  "2026-01-01": "元日", "2026-01-12": "成人の日", "2026-02-11": "建国記念の日", "2026-02-23": "天皇誕生日",
+  "2026-03-20": "春分の日", "2026-04-29": "昭和の日", "2026-05-03": "憲法記念日", "2026-05-04": "みどりの日",
+  "2026-05-05": "こどもの日", "2026-05-06": "振替休日", "2026-07-20": "海の日", "2026-08-11": "山の日",
+  "2026-09-21": "敬老の日", "2026-09-22": "国民の休日", "2026-09-23": "秋分の日",
+  "2026-10-12": "スポーツの日", "2026-11-03": "文化の日", "2026-11-23": "勤労感謝の日",
+  "2027-01-01": "元日", "2027-01-11": "成人の日", "2027-02-11": "建国記念の日", "2027-02-23": "天皇誕生日",
+  "2027-03-21": "春分の日", "2027-04-29": "昭和の日", "2027-05-03": "憲法記念日", "2027-05-04": "みどりの日",
+  "2027-05-05": "こどもの日", "2027-07-19": "海の日", "2027-08-11": "山の日",
+  "2027-09-20": "敬老の日", "2027-09-23": "秋分の日",
+  "2027-10-11": "スポーツの日", "2027-11-03": "文化の日", "2027-11-23": "勤労感謝の日",
+  "2028-01-01": "元日", "2028-01-10": "成人の日", "2028-02-11": "建国記念の日", "2028-02-23": "天皇誕生日",
+  "2028-03-20": "春分の日", "2028-04-29": "昭和の日", "2028-05-03": "憲法記念日", "2028-05-04": "みどりの日",
+  "2028-05-05": "こどもの日", "2028-07-17": "海の日", "2028-08-11": "山の日",
+  "2028-09-18": "敬老の日", "2028-09-22": "秋分の日",
+  "2028-10-09": "スポーツの日", "2028-11-03": "文化の日", "2028-11-23": "勤労感謝の日",
+};
+
+// ===== 営業活動のフィールド定義 =====
+const ACTIVITY_FIELDS: { key: keyof StaffActivity; label: string; color: string }[] = [
+  { key: "ordersRA", label: "RA受注数", color: "#e74c3c" },
+  { key: "ordersCA", label: "CA受注数", color: "#9b59b6" },
+  { key: "interviewSetups", label: "面談設定数", color: "#0077b6" },
+  { key: "interviewsConducted", label: "面談実施数", color: "#e67e22" },
+  { key: "appointmentAcquisitions", label: "案件アポ獲得企業数", color: "#2ecc71" },
+];
+
 // ===== 勤務場所リスト =====
 const LOCATION_LIST = ["出社", "WFH", "ハイブリッド"];
 
@@ -134,6 +162,8 @@ export default function DashboardPage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [activeTab, setActiveTab] = useState<"main" | "monthly">("main");
+  const [monthlyYM, setMonthlyYM] = useState(`${new Date().getFullYear()}-${("0" + (new Date().getMonth() + 1)).slice(-2)}`);
 
   const [inp, setInp] = useState({
     properTarget: "", properProgress: "", properForecast: "", properStandby: "",
@@ -414,7 +444,21 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        <div className="layout-flex" style={{ display: "flex", gap: 24, maxWidth: 1400, margin: "0 auto" }}>
+        {/* タブ切り替え */}
+        <div style={{ display: "flex", gap: 0, maxWidth: 1400, margin: "0 auto 16px", borderBottom: "2px solid #e0e0e0" }}>
+          {[{ key: "main" as const, label: "メイン" }, { key: "monthly" as const, label: "月別営業活動成績" }].map(tab => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+              padding: "10px 24px", fontSize: 14, fontWeight: 700, cursor: "pointer", border: "none", borderBottom: activeTab === tab.key ? "3px solid #0077b6" : "3px solid transparent",
+              background: "transparent", color: activeTab === tab.key ? "#0077b6" : "#999", marginBottom: -2,
+            }}>{tab.label}</button>
+          ))}
+        </div>
+
+        {activeTab === "monthly" && (
+          <MonthlyActivityView allData={allData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} />
+        )}
+
+        {activeTab === "main" && <div className="layout-flex" style={{ display: "flex", gap: 24, maxWidth: 1400, margin: "0 auto" }}>
           {/* サイドバー: カレンダー */}
           {calendarOpen && (
             <div className="sidebar" style={{ width: 300, flexShrink: 0 }}>
@@ -488,12 +532,13 @@ export default function DashboardPage() {
             </div>
 
             {/* 担当別活動（2段目：5カード）※前日のデータを表示 */}
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a1a2e", marginBottom: 12 }}>前日営業活動成績</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginBottom: isMobile ? 16 : 24 }} className="focus-grid">
+              <ActivityRankCard title="RA受注数" data={dStaffActivities} field="ordersRA" color="#e74c3c" />
+              <ActivityRankCard title="CA受注数" data={dStaffActivities} field="ordersCA" color="#9b59b6" />
               <ActivityRankCard title="面談設定数" data={dStaffActivities} field="interviewSetups" color="#0077b6" />
               <ActivityRankCard title="面談実施数" data={dStaffActivities} field="interviewsConducted" color="#e67e22" />
               <ActivityRankCard title="案件アポ獲得企業数" data={dStaffActivities} field="appointmentAcquisitions" color="#2ecc71" />
-              <ActivityRankCard title="RA受注数" data={dStaffActivities} field="ordersRA" color="#e74c3c" />
-              <ActivityRankCard title="CA受注数" data={dStaffActivities} field="ordersCA" color="#9b59b6" />
             </div>
 
             {/* 注力セクション */}
@@ -682,7 +727,7 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
-        </div>
+        </div>}
 
         {/* Toast */}
         {toast && (
@@ -860,6 +905,138 @@ function RADisplay({ ra }: { ra: RAData }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ===== 月別営業活動成績コンポーネント =====
+function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { allData: AllData; monthlyYM: string; setMonthlyYM: (v: string) => void; isMobile: boolean }) {
+  const [ymYear, ymMonth] = monthlyYM.split("-").map(Number);
+  const daysInMonth = new Date(ymYear, ymMonth, 0).getDate();
+  const DOW = ["日", "月", "火", "水", "木", "金", "土"];
+
+  // 年月セレクトの選択肢を生成（2026-03 〜 2028-03）
+  const ymOptions: string[] = [];
+  for (let y = 2026; y <= 2028; y++) {
+    const startM = y === 2026 ? 3 : 1;
+    const endM = y === 2028 ? 3 : 12;
+    for (let m = startM; m <= endM; m++) {
+      ymOptions.push(`${y}-${("0" + m).slice(-2)}`);
+    }
+  }
+
+  // 日付情報を生成
+  const days = Array.from({ length: daysInMonth }, (_, i) => {
+    const d = i + 1;
+    const dt = new Date(ymYear, ymMonth - 1, d);
+    const key = `${ymYear}-${("0" + ymMonth).slice(-2)}-${("0" + d).slice(-2)}`;
+    const dow = dt.getDay();
+    const holiday = JAPAN_HOLIDAYS[key];
+    const isRed = dow === 0 || dow === 6 || !!holiday;
+    return { d, key, dow, holiday, isRed, dowLabel: DOW[dow] };
+  });
+
+  // 各担当×各日×各指標のデータを集計
+  const getStaffDayValue = (staff: string, dayKey: string, field: keyof StaffActivity): number => {
+    const dayData = allData[dayKey];
+    if (!dayData || !Array.isArray(dayData.staffActivities)) return 0;
+    const entry = dayData.staffActivities.find(s => s.staff === staff);
+    return entry ? ((entry[field] as number) || 0) : 0;
+  };
+
+  const getStaffMonthTotal = (staff: string, field: keyof StaffActivity): number => {
+    return days.reduce((sum, day) => sum + getStaffDayValue(staff, day.key, field), 0);
+  };
+
+  const getDayTotal = (dayKey: string, field: keyof StaffActivity): number => {
+    return STAFF_LIST.reduce((sum, staff) => sum + getStaffDayValue(staff, dayKey, field), 0);
+  };
+
+  const getMonthGrandTotal = (field: keyof StaffActivity): number => {
+    return STAFF_LIST.reduce((sum, staff) => sum + getStaffMonthTotal(staff, field), 0);
+  };
+
+  const cellStyle: React.CSSProperties = { padding: "4px 6px", textAlign: "center", fontSize: 12, borderRight: "1px solid #e0e0e0", borderBottom: "1px solid #e0e0e0", whiteSpace: "nowrap" };
+  const headerCellStyle: React.CSSProperties = { ...cellStyle, fontWeight: 700, background: "#f8f9fa", position: "sticky", top: 0, zIndex: 2 };
+  const staffCellStyle: React.CSSProperties = { ...cellStyle, fontWeight: 600, textAlign: "left", position: "sticky", left: 0, background: "#fff", zIndex: 1, minWidth: 70 };
+  const fieldHeaderStyle: React.CSSProperties = { ...cellStyle, fontWeight: 600, textAlign: "left", position: "sticky", left: 0, background: "#f0f2f5", zIndex: 3, minWidth: 70 };
+
+  return (
+    <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+      {/* 年月セレクト */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+        <select value={monthlyYM} onChange={(e) => setMonthlyYM(e.target.value)} style={{ padding: "8px 16px", border: "1px solid #ddd", borderRadius: 8, fontSize: 15, fontWeight: 600, background: "#fff", cursor: "pointer" }}>
+          {ymOptions.map(ym => {
+            const [y, m] = ym.split("-");
+            return <option key={ym} value={ym}>{y}年{parseInt(m)}月</option>;
+          })}
+        </select>
+      </div>
+
+      {/* 各指標ごとにテーブル */}
+      {ACTIVITY_FIELDS.map(af => (
+        <div key={af.key} style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", marginBottom: 20, overflowX: "auto" }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: af.color, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 10, height: 10, borderRadius: "50%", background: af.color, display: "inline-block" }} />
+            {af.label}
+            <span style={{ fontSize: 13, color: "#999", fontWeight: 400, marginLeft: 8 }}>月合計: {getMonthGrandTotal(af.key)}</span>
+          </h3>
+          <table style={{ borderCollapse: "collapse", fontSize: 12, width: "max-content", minWidth: "100%" }}>
+            <thead>
+              <tr>
+                <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, minWidth: 70 }}>担当</th>
+                {days.map(day => (
+                  <th key={day.d} style={{ ...headerCellStyle, color: day.isRed ? "#e63946" : "#333", minWidth: 36 }} title={day.holiday || ""}>
+                    {day.d}
+                  </th>
+                ))}
+                <th style={{ ...headerCellStyle, background: "#e8f4fd", minWidth: 50 }}>合計</th>
+              </tr>
+              <tr>
+                <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, fontSize: 10, padding: "2px 6px" }}></th>
+                {days.map(day => (
+                  <th key={`dow-${day.d}`} style={{ ...headerCellStyle, fontSize: 10, padding: "2px 6px", color: day.isRed ? "#e63946" : "#999" }}>
+                    {day.holiday ? "祝" : day.dowLabel}
+                  </th>
+                ))}
+                <th style={{ ...headerCellStyle, background: "#e8f4fd", fontSize: 10, padding: "2px 6px" }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {STAFF_LIST.map(staff => {
+                const monthTotal = getStaffMonthTotal(staff, af.key);
+                return (
+                  <tr key={staff}>
+                    <td style={staffCellStyle}>{staff}</td>
+                    {days.map(day => {
+                      const val = getStaffDayValue(staff, day.key, af.key);
+                      return (
+                        <td key={day.d} style={{ ...cellStyle, color: val > 0 ? af.color : "#ddd", fontWeight: val > 0 ? 700 : 400, background: day.isRed ? "#fef8f8" : undefined }}>
+                          {val || "-"}
+                        </td>
+                      );
+                    })}
+                    <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : "#999", background: "#e8f4fd" }}>{monthTotal}</td>
+                  </tr>
+                );
+              })}
+              {/* 合計行 */}
+              <tr style={{ background: "#f8f9fa" }}>
+                <td style={{ ...staffCellStyle, fontWeight: 700, background: "#f0f2f5" }}>合計</td>
+                {days.map(day => {
+                  const dayTotal = getDayTotal(day.key, af.key);
+                  return (
+                    <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? "#1a1a2e" : "#ddd", background: day.isRed ? "#fef2f2" : "#f8f9fa" }}>
+                      {dayTotal || "-"}
+                    </td>
+                  );
+                })}
+                <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: "#d6eaf8", fontSize: 14 }}>{getMonthGrandTotal(af.key)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      ))}
     </div>
   );
 }
