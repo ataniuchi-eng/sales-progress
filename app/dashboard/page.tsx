@@ -501,7 +501,7 @@ export default function DashboardPage() {
                   <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{calYear}年{calMonth + 1}月</h3>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button onClick={() => changeMonth(-1)} style={calBtnStyle}>&#9664;</button>
-                    <button onClick={() => { setCalYear(new Date().getFullYear()); setCalMonth(new Date().getMonth()); setSelectedDate(todayKey()); setSaveDate(todayKey()); }} style={{ ...calBtnStyle, width: "auto", padding: "0 10px", fontSize: 12 }}>今月</button>
+                    <button onClick={() => { setCalYear(new Date().getFullYear()); setCalMonth(new Date().getMonth()); setSelectedDate(todayKey()); setSaveDate(todayKey()); setInputOpen(false); }} style={{ ...calBtnStyle, width: "auto", padding: "0 10px", fontSize: 12 }}>今月</button>
                     <button onClick={() => changeMonth(1)} style={calBtnStyle}>&#9654;</button>
                   </div>
                 </div>
@@ -519,7 +519,7 @@ export default function DashboardPage() {
                     const maxClickable = getNextBusinessDay(today);
                     const isDisabled = !isBizDay || key > maxClickable;
                     return (
-                      <div key={d} onClick={() => { if (!isDisabled) { setSelectedDate(key); setSaveDate(key); } }} style={{
+                      <div key={d} onClick={() => { if (!isDisabled) { setSelectedDate(key); setSaveDate(key); setInputOpen(false); } }} style={{
                         aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: 14, borderRadius: 8, cursor: isDisabled ? "default" : "pointer", position: "relative",
                         border: isSelected ? "2px solid #0077b6" : "2px solid transparent",
