@@ -41,7 +41,7 @@ const ACTIVITY_FIELDS: { key: keyof StaffActivity; label: string; color: string 
 ];
 
 // ===== 勤務場所リスト =====
-const LOCATION_LIST = ["出社", "WFH", "ハイブリッド"];
+const LOCATION_LIST = ["出社", "リモート", "ハイブリッド"];
 
 // ===== 型定義 =====
 interface CategoryData {
@@ -516,7 +516,7 @@ export default function DashboardPage() {
                     const d = i + 1, dt = new Date(calYear, calMonth, d), key = dateKey(dt), dow = dt.getDay();
                     const isToday = key === today, isSelected = key === selectedDate, hasData = !!allData[key];
                     const isBizDay = isBusinessDay(key);
-                    const maxClickable = getNextBusinessDay(today);
+                    const maxClickable = today;
                     const isDisabled = !isBizDay || key > maxClickable;
                     return (
                       <div key={d} onClick={() => { if (!isDisabled) { setSelectedDate(key); setSaveDate(key); setInputOpen(false); } }} style={{

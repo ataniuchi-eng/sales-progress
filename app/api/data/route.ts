@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getAllData, saveData, bulkSave } from "@/lib/db";
+import { getAllData, saveData, bulkSave, deleteData } from "@/lib/db";
 
 // GET: 全データ取得
 export async function GET() {
@@ -51,6 +51,45 @@ export async function POST(request: Request) {
     console.error("Data save error:", error);
     return NextResponse.json(
       { error: "データの保存に失敗しました" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE: データ削除
+export async function DELETE(request: Request) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+
+    // 複数日削除
+    if (body.dateKeys && Array.isArray(body.dateKeys)) {
+      let count = 0;
+      for (const dateKey of body.dateKeys) {
+        await deleteData(dateKey);
+        count++;
+      }
+      return NextResponse.json({ success: true, deletedCount: count });
+    }
+
+    // 単一日削除
+    if (body.dateKey) {
+      await deleteData(body.dateKey);
+      return NextResponse.json({ success: true, dateKey: body.dateKey });
+    }
+
+    return NextResponse.json(
+      { error: "不正なリクエスト形式です" },
+      { status: 400 }
+    );
+  } catch (error) {
+    console.error("Data delete error:", error);
+    return NextResponse.json(
+      { error: "データの削除に失敗しました" },
       { status: 500 }
     );
   }
