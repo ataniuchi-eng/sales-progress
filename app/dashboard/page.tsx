@@ -826,22 +826,23 @@ function Row({ label, value, labelColor, valueColor }: { label: string; value: s
 }
 
 function FocusPeopleDisplay({ people }: { people: FocusPerson[] }) {
+  const darkTh: React.CSSProperties = { textAlign: "left", padding: "8px 0", color: "rgba(255,255,255,0.55)", fontWeight: 600 };
   return (
-    <div style={{ background: "linear-gradient(135deg, #f0faf4 0%, #e8f5e9 100%)", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", overflowX: "auto", borderLeft: "4px solid #2ecc71" }}>
-      <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a7a4c", marginBottom: 12 }}>注力人材</h3>
-      {people.length === 0 ? <p style={{ color: "#bbb", fontSize: 14 }}>未入力</p> : (
+    <div style={{ background: "linear-gradient(135deg, #1a1a2e, #16213e)", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.15)", overflowX: "auto", color: "#fff" }}>
+      <h3 style={{ fontSize: 16, fontWeight: 700, color: "#a8e6cf", marginBottom: 12 }}>注力人材</h3>
+      {people.length === 0 ? <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>未入力</p> : (
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 500 }}>
-          <thead><tr style={{ borderBottom: "2px solid rgba(46,204,113,0.25)" }}>
-            <th style={thStyle}>氏名</th><th style={thStyle}>所属</th><th style={thStyle}>ポジション</th><th style={thStyle}>担当</th><th style={thStyle}>スキル</th><th style={thStyle}>仕入れ額</th>
+          <thead><tr style={{ borderBottom: "2px solid rgba(255,255,255,0.12)" }}>
+            <th style={darkTh}>氏名</th><th style={darkTh}>所属</th><th style={darkTh}>ポジション</th><th style={darkTh}>担当</th><th style={darkTh}>スキル</th><th style={darkTh}>仕入れ額</th>
           </tr></thead>
           <tbody>{people.map((p, i) => (
-            <tr key={i} style={{ borderBottom: "1px solid rgba(46,204,113,0.15)" }}>
-              <td style={{ padding: "8px 0", fontWeight: 600, color: "#1a1a2e" }}>{p.name || "-"}</td>
+            <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <td style={{ padding: "8px 0", fontWeight: 600, color: "#fff" }}>{p.name || "-"}</td>
               <td style={{ padding: "8px 0" }}><Badge text={p.affiliation} type={p.affiliation === "BP" ? "bp" : p.affiliation === "フリーランス" ? "fl" : "proper"} /></td>
-              <td style={{ padding: "8px 0", color: "#555", fontWeight: 600 }}>{p.position || "-"}</td>
-              <td style={{ padding: "8px 0", color: "#555", fontWeight: 600 }}>{p.staff || "-"}</td>
-              <td style={{ padding: "8px 0", color: "#555" }}>{p.skill || "-"}</td>
-              <td style={{ padding: "8px 0", fontWeight: 600, color: "#1a1a2e" }}>{p.cost ? formatYen(p.cost) : "-"}</td>
+              <td style={{ padding: "8px 0", color: "#4cc9f0", fontWeight: 600 }}>{p.position || "-"}</td>
+              <td style={{ padding: "8px 0", color: "rgba(255,255,255,0.8)", fontWeight: 600 }}>{p.staff || "-"}</td>
+              <td style={{ padding: "8px 0", color: "#ffd6a5" }}>{p.skill || "-"}</td>
+              <td style={{ padding: "8px 0", fontWeight: 600, color: "#a8e6cf" }}>{p.cost ? formatYen(p.cost) : "-"}</td>
             </tr>
           ))}</tbody>
         </table>
@@ -851,23 +852,24 @@ function FocusPeopleDisplay({ people }: { people: FocusPerson[] }) {
 }
 
 function FocusProjectsDisplay({ projects }: { projects: FocusProject[] }) {
+  const darkTh: React.CSSProperties = { textAlign: "left", padding: "8px 0", color: "rgba(255,255,255,0.55)", fontWeight: 600 };
   return (
-    <div style={{ background: "linear-gradient(135deg, #eef6fc 0%, #e3f0fa 100%)", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", overflowX: "auto", borderLeft: "4px solid #0077b6" }}>
-      <h3 style={{ fontSize: 16, fontWeight: 700, color: "#005a8c", marginBottom: 12 }}>注力案件</h3>
-      {projects.length === 0 ? <p style={{ color: "#bbb", fontSize: 14 }}>未入力</p> : (
+    <div style={{ background: "linear-gradient(135deg, #1a1a2e, #16213e)", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.15)", overflowX: "auto", color: "#fff" }}>
+      <h3 style={{ fontSize: 16, fontWeight: 700, color: "#4cc9f0", marginBottom: 12 }}>注力案件</h3>
+      {projects.length === 0 ? <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>未入力</p> : (
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 650 }}>
-          <thead><tr style={{ borderBottom: "2px solid rgba(0,119,182,0.25)" }}>
-            <th style={thStyle}>企業名</th><th style={thStyle}>案件</th><th style={thStyle}>ポジション</th><th style={thStyle}>担当</th><th style={thStyle}>単価</th><th style={thStyle}>契約</th><th style={thStyle}>勤務場所</th>
+          <thead><tr style={{ borderBottom: "2px solid rgba(255,255,255,0.12)" }}>
+            <th style={darkTh}>企業名</th><th style={darkTh}>案件</th><th style={darkTh}>ポジション</th><th style={darkTh}>担当</th><th style={darkTh}>単価</th><th style={darkTh}>契約</th><th style={darkTh}>勤務場所</th>
           </tr></thead>
           <tbody>{projects.map((p, i) => (
-            <tr key={i} style={{ borderBottom: "1px solid rgba(0,119,182,0.15)" }}>
-              <td style={{ padding: "8px 0", fontWeight: 600, color: "#1a1a2e" }}>{p.company || "-"}</td>
-              <td style={{ padding: "8px 0", color: "#555" }}>{p.title || "-"}</td>
-              <td style={{ padding: "8px 0", color: "#555", fontWeight: 600 }}>{p.position || "-"}</td>
-              <td style={{ padding: "8px 0", color: "#555", fontWeight: 600 }}>{p.staff || "-"}</td>
-              <td style={{ padding: "8px 0", fontWeight: 600, color: "#1a1a2e" }}>{p.price ? formatYen(p.price) : "-"}</td>
+            <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <td style={{ padding: "8px 0", fontWeight: 600, color: "#fff" }}>{p.company || "-"}</td>
+              <td style={{ padding: "8px 0", color: "rgba(255,255,255,0.8)" }}>{p.title || "-"}</td>
+              <td style={{ padding: "8px 0", color: "#4cc9f0", fontWeight: 600 }}>{p.position || "-"}</td>
+              <td style={{ padding: "8px 0", color: "rgba(255,255,255,0.8)", fontWeight: 600 }}>{p.staff || "-"}</td>
+              <td style={{ padding: "8px 0", fontWeight: 600, color: "#a8e6cf" }}>{p.price ? formatYen(p.price) : "-"}</td>
               <td style={{ padding: "8px 0" }}><Badge text={p.contract} type={p.contract === "準委任" ? "quasi" : p.contract === "両方OK" ? "both" : "dispatch"} /></td>
-              <td style={{ padding: "8px 0", color: "#555" }}>{p.location || "-"}</td>
+              <td style={{ padding: "8px 0", color: "rgba(255,255,255,0.8)" }}>{p.location || "-"}</td>
             </tr>
           ))}</tbody>
         </table>
