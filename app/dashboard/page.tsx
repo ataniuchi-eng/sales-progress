@@ -536,22 +536,23 @@ export default function DashboardPage() {
                   {Array.from({ length: firstDay }).map((_, i) => <div key={`e${i}`} />)}
                   {Array.from({ length: daysInMonth }).map((_, i) => {
                     const d = i + 1, dt = new Date(calYear, calMonth, d), key = dateKey(dt), dow = dt.getDay();
-                    const isToday = key === today, isSelected = key === selectedDate, hasData = !!allData[key];
+                    const isSelected = key === selectedDate, hasData = !!allData[key];
                     const isBizDay = isBusinessDay(key);
                     const maxClickable = isBusinessDay(today) ? today : getNextBusinessDay(today);
                     const isDisabled = !isBizDay || key > maxClickable;
+                    const isActiveDay = key === maxClickable;
                     return (
                       <div key={d} onClick={() => { if (!isDisabled) { setSelectedDate(key); setSaveDate(key); setInputOpen(false); } }} style={{
                         aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: 14, borderRadius: 8, cursor: isDisabled ? "default" : "pointer", position: "relative",
                         border: isSelected ? "2px solid #0077b6" : "2px solid transparent",
-                        background: isToday ? "#1a1a2e" : isDisabled ? "#f5f5f5" : "transparent",
-                        color: isToday ? "#fff" : isDisabled ? "#ccc" : dow === 0 ? "#e63946" : dow === 6 ? "#0077b6" : JAPAN_HOLIDAYS[key] ? "#e63946" : "#333",
-                        fontWeight: isToday || isSelected ? 700 : 400,
-                        opacity: isDisabled && !isToday ? 0.5 : 1,
+                        background: isActiveDay ? "#1a1a2e" : isDisabled ? "#f5f5f5" : "transparent",
+                        color: isActiveDay ? "#fff" : isDisabled ? "#ccc" : dow === 0 ? "#e63946" : dow === 6 ? "#0077b6" : JAPAN_HOLIDAYS[key] ? "#e63946" : "#333",
+                        fontWeight: isActiveDay || isSelected ? 700 : 400,
+                        opacity: isDisabled ? 0.5 : 1,
                       }}>
                         {d}
-                        {hasData && <span style={{ position: "absolute", bottom: 3, width: 5, height: 5, borderRadius: "50%", background: isToday ? "#4cc9f0" : "#0077b6" }} />}
+                        {hasData && <span style={{ position: "absolute", bottom: 3, width: 5, height: 5, borderRadius: "50%", background: isActiveDay ? "#4cc9f0" : "#0077b6" }} />}
                       </div>
                     );
                   })}
