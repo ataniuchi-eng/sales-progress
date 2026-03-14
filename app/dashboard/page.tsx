@@ -541,12 +541,20 @@ export default function DashboardPage() {
                     const maxClickable = isBusinessDay(today) ? today : getNextBusinessDay(today);
                     const isDisabled = !isBizDay || key > maxClickable;
                     const isActiveDay = key === maxClickable;
+                    // ヒートマップ: データ充実度に応じた背景色
+                    let heatBg = "transparent";
+                    if (hasData && !isActiveDay && !isDisabled) {
+                      const dayData = allData[key];
+                      const acts = dayData?.staffActivities || [];
+                      const totalActs = acts.reduce((s: number, a: StaffActivity) => s + (a.ordersRA||0) + (a.ordersCA||0) + (a.interviewSetups||0) + (a.interviewsConducted||0) + (a.appointmentAcquisitions||0), 0);
+                      heatBg = totalActs >= 5 ? "rgba(0,119,182,0.2)" : totalActs >= 1 ? "rgba(0,119,182,0.1)" : "rgba(0,119,182,0.05)";
+                    }
                     return (
                       <div key={d} onClick={() => { if (!isDisabled) { setSelectedDate(key); setSaveDate(key); setInputOpen(false); } }} style={{
                         aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: 14, borderRadius: 8, cursor: isDisabled ? "default" : "pointer", position: "relative",
                         border: isSelected ? "2px solid #0077b6" : "2px solid transparent",
-                        background: isActiveDay ? "#1a1a2e" : isDisabled ? "#f5f5f5" : "transparent",
+                        background: isActiveDay ? "#1a1a2e" : isDisabled ? "#f5f5f5" : heatBg,
                         color: isActiveDay ? "#fff" : isDisabled ? "#ccc" : dow === 0 ? "#e63946" : dow === 6 ? "#0077b6" : JAPAN_HOLIDAYS[key] ? "#e63946" : "#333",
                         fontWeight: isActiveDay || isSelected ? 700 : 400,
                         opacity: isDisabled ? 0.5 : 1,
@@ -593,8 +601,13 @@ export default function DashboardPage() {
             </div>
 
             {/* 前日営業活動成績（件数5カード + 金額2カード） */}
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a1a2e", marginBottom: 12 }}>前営業日ー営業結果</h3>
-            <h4 style={{ fontSize: 13, fontWeight: 600, color: "#0077b6", marginBottom: 8 }}>件数</h4>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingBottom: 8, borderBottom: "3px solid #e67e22" }}>
+              <div style={{ width: 6, height: 24, borderRadius: 3, background: "#e67e22" }} />
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>前営業日ー営業結果</h3>
+            </div>
+            <h4 style={{ fontSize: 13, fontWeight: 600, color: "#0077b6", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#0077b6", display: "inline-block" }} />件数
+            </h4>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginBottom: 16 }} className="focus-grid">
               <ActivityRankCard title="RA受注数" data={dStaffActivities} field="ordersRA" color="#e74c3c" />
               <ActivityRankCard title="CA受注数" data={dStaffActivities} field="ordersCA" color="#9b59b6" />
@@ -602,19 +615,29 @@ export default function DashboardPage() {
               <ActivityRankCard title="面談実施数" data={dStaffActivities} field="interviewsConducted" color="#e67e22" />
               <ActivityRankCard title="案件アポ獲得企業数" data={dStaffActivities} field="appointmentAcquisitions" color="#2ecc71" />
             </div>
-            <h4 style={{ fontSize: 13, fontWeight: 600, color: "#e74c3c", marginBottom: 8 }}>金額（万円）</h4>
+            <h4 style={{ fontSize: 13, fontWeight: 600, color: "#e74c3c", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#e74c3c", display: "inline-block" }} />金額（万円）
+            </h4>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: isMobile ? 16 : 24 }} className="focus-grid">
               <AmountRankCard title="RA受注金額" data={dStaffActivities} amountField="amountRA" companyField="companyRA" affiliationField="affiliationRA" positionField="positionRA" color="#e74c3c" />
               <AmountRankCard title="CA受注金額" data={dStaffActivities} amountField="amountCA" companyField="companyCA" affiliationField="affiliationCA" positionField="positionCA" color="#9b59b6" />
             </div>
 
             {/* 注力セクション */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingBottom: 8, borderBottom: "3px solid #4cc9f0" }}>
+              <div style={{ width: 6, height: 24, borderRadius: 3, background: "#4cc9f0" }} />
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>注力案件・人材</h3>
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: isMobile ? 16 : 24 }}>
               <FocusProjectsDisplay projects={dProjects} />
               <FocusPeopleDisplay people={dPeople} />
             </div>
 
             {/* RA開拓セクション（3段目） */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingBottom: 8, borderBottom: "3px solid #2ecc71" }}>
+              <div style={{ width: 6, height: 24, borderRadius: 3, background: "#2ecc71" }} />
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>RA開拓</h3>
+            </div>
             <div style={{ marginBottom: isMobile ? 16 : 24 }}>
               <RADisplay ra={dRA} />
             </div>
@@ -906,6 +929,17 @@ function FieldWrap({ label, children, grow, w, className }: { label: string; chi
 }
 
 // ===== サブコンポーネント =====
+function DonutChart({ rate, size, color, trackColor }: { rate: number; size: number; color: string; trackColor: string }) {
+  const r = (size - 8) / 2, c = Math.PI * 2 * r, pct = Math.min(rate, 100);
+  return (
+    <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={trackColor} strokeWidth={7} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={7}
+        strokeDasharray={`${(pct / 100) * c} ${c}`} strokeLinecap="round" style={{ transition: "stroke-dasharray 0.6s ease" }} />
+    </svg>
+  );
+}
+
 function SummaryCard({ title, data, rate, isTotal, standby }: {
   title: string; data: { target: number; progress: number; forecast: number };
   rate: number; isTotal?: boolean; standby?: number;
@@ -913,21 +947,23 @@ function SummaryCard({ title, data, rate, isTotal, standby }: {
   const bg = isTotal ? "linear-gradient(135deg, #1a1a2e, #16213e)" : "#fff";
   const color = isTotal ? "#fff" : "#333";
   const labelColor = isTotal ? "rgba(255,255,255,0.7)" : "#999";
-  const barBg = isTotal ? "rgba(255,255,255,0.2)" : "#f0f2f5";
   const barFill = isTotal ? "#4cc9f0" : rate >= 100 ? "#2ecc71" : rate >= 70 ? "#f39c12" : "#e63946";
+  const trackColor = isTotal ? "rgba(255,255,255,0.15)" : "#f0f2f5";
   return (
     <div style={{ background: bg, borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", color }}>
-      <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, paddingBottom: 6, borderBottom: `1px solid ${isTotal ? "rgba(255,255,255,0.15)" : "#f0f2f5"}` }}>{title}</div>
+      <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, paddingBottom: 6, borderBottom: `1px solid ${trackColor}` }}>{title}</div>
       <Row label="目標" value={formatYen(data.target)} labelColor={labelColor} valueColor={isTotal ? "#fff" : "#1a1a2e"} />
       <Row label="進捗" value={formatYen(data.progress)} labelColor={labelColor} valueColor={isTotal ? "#4cc9f0" : "#0077b6"} />
       <Row label="見込" value={formatYen(data.forecast)} labelColor={labelColor} valueColor={isTotal ? "#a8e6cf" : "#2ecc71"} />
       {standby !== undefined && <Row label="待機" value={`${standby}名`} labelColor={labelColor} valueColor={isTotal ? "#ffd6a5" : "#f39c12"} />}
-      <div style={{ marginTop: 12, paddingTop: 8, borderTop: `1px solid ${isTotal ? "rgba(255,255,255,0.15)" : "#f0f2f5"}` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
-          <span style={{ color: labelColor }}>達成率</span><span style={{ fontWeight: 700, color: barFill }}>{rate}%</span>
+      <div style={{ marginTop: 12, paddingTop: 8, borderTop: `1px solid ${trackColor}`, display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ position: "relative", flexShrink: 0 }}>
+          <DonutChart rate={rate} size={56} color={barFill} trackColor={trackColor} />
+          <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%) rotate(0deg)", fontSize: 11, fontWeight: 700, color: barFill }}>{rate}%</span>
         </div>
-        <div style={{ height: 6, borderRadius: 3, background: barBg, overflow: "hidden" }}>
-          <div style={{ width: `${Math.min(rate, 100)}%`, height: "100%", borderRadius: 3, background: barFill, transition: "width 0.5s" }} />
+        <div style={{ fontSize: 11, color: labelColor, lineHeight: 1.6 }}>
+          達成率<br />
+          <span style={{ fontSize: 18, fontWeight: 700, color: barFill }}>{rate}%</span>
         </div>
       </div>
     </div>
@@ -1001,7 +1037,6 @@ function RADisplay({ ra }: { ra: RAData }) {
   const hasData = ra.acquisitionTarget || ra.acquisitionProgress || ra.joinTarget || ra.joinProgress || acqCompanies.length || joinCompanies.length;
   return (
     <div style={{ background: "#fff", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", overflowX: "auto" }}>
-      <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a1a2e", marginBottom: 16 }}>RA開拓</h3>
       {!hasData ? <p style={{ color: "#bbb", fontSize: 14 }}>未入力</p> : (
         <div className="focus-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
           {/* 案件獲得 */}
@@ -1013,11 +1048,20 @@ function RADisplay({ ra }: { ra: RAData }) {
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
               <span style={{ color: "#999" }}>進捗</span><span style={{ fontWeight: 700, color: "#0077b6" }}>{ra.acquisitionProgress}</span>
             </div>
-            {ra.acquisitionTarget > 0 && (
-              <div style={{ height: 6, borderRadius: 3, background: "#f0f2f5", overflow: "hidden", marginBottom: 12 }}>
-                <div style={{ width: `${Math.min(Math.round((ra.acquisitionProgress / ra.acquisitionTarget) * 100), 100)}%`, height: "100%", borderRadius: 3, background: ra.acquisitionProgress >= ra.acquisitionTarget ? "#2ecc71" : "#0077b6", transition: "width 0.5s" }} />
-              </div>
-            )}
+            {ra.acquisitionTarget > 0 && (() => {
+              const acqRate = Math.min(Math.round((ra.acquisitionProgress / ra.acquisitionTarget) * 100), 100);
+              const acqColor = ra.acquisitionProgress >= ra.acquisitionTarget ? "#2ecc71" : "#0077b6";
+              return (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 3 }}>
+                    <span style={{ color: "#999" }}>達成率</span><span style={{ fontWeight: 700, color: acqColor }}>{acqRate}%</span>
+                  </div>
+                  <div style={{ height: 8, borderRadius: 4, background: "#f0f2f5", overflow: "hidden" }}>
+                    <div style={{ width: `${acqRate}%`, height: "100%", borderRadius: 4, background: `linear-gradient(90deg, ${acqColor}, ${acqColor}dd)`, transition: "width 0.5s" }} />
+                  </div>
+                </div>
+              );
+            })()}
             {acqCompanies.length > 0 && (
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead><tr style={{ borderBottom: "2px solid #f0f2f5" }}>
@@ -1041,11 +1085,20 @@ function RADisplay({ ra }: { ra: RAData }) {
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
               <span style={{ color: "#999" }}>進捗</span><span style={{ fontWeight: 700, color: "#2ecc71" }}>{ra.joinProgress}</span>
             </div>
-            {ra.joinTarget > 0 && (
-              <div style={{ height: 6, borderRadius: 3, background: "#f0f2f5", overflow: "hidden", marginBottom: 12 }}>
-                <div style={{ width: `${Math.min(Math.round((ra.joinProgress / ra.joinTarget) * 100), 100)}%`, height: "100%", borderRadius: 3, background: ra.joinProgress >= ra.joinTarget ? "#2ecc71" : "#f39c12", transition: "width 0.5s" }} />
-              </div>
-            )}
+            {ra.joinTarget > 0 && (() => {
+              const joinRate = Math.min(Math.round((ra.joinProgress / ra.joinTarget) * 100), 100);
+              const joinColor = ra.joinProgress >= ra.joinTarget ? "#2ecc71" : "#f39c12";
+              return (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 3 }}>
+                    <span style={{ color: "#999" }}>達成率</span><span style={{ fontWeight: 700, color: joinColor }}>{joinRate}%</span>
+                  </div>
+                  <div style={{ height: 8, borderRadius: 4, background: "#f0f2f5", overflow: "hidden" }}>
+                    <div style={{ width: `${joinRate}%`, height: "100%", borderRadius: 4, background: `linear-gradient(90deg, ${joinColor}, ${joinColor}dd)`, transition: "width 0.5s" }} />
+                  </div>
+                </div>
+              );
+            })()}
             {joinCompanies.length > 0 && (
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead><tr style={{ borderBottom: "2px solid #f0f2f5" }}>
@@ -1348,10 +1401,10 @@ function ActivityRankCard({ title, data, field, color, unit }: { title: string; 
   const medals = ["🥇", "🥈", "🥉"];
   const fmtVal = (v: number) => unit ? `${Math.round(v * 10) / 10}${unit}` : String(v);
   return (
-    <div style={{ background: "#fff", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
+    <div style={{ background: "#fff", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", borderTop: `3px solid ${color}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{title}</h3>
-        <span style={{ fontSize: 20, fontWeight: 700, color }}>{unit ? `${totalDisplay}${unit}` : totalDisplay}</span>
+        <span style={{ fontSize: 22, fontWeight: 800, color, lineHeight: 1 }}>{unit ? `${totalDisplay}${unit}` : totalDisplay}</span>
       </div>
       {sorted.length === 0 ? <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>未入力</p> : (
         <>
