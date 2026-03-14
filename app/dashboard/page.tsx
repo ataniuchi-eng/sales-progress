@@ -617,13 +617,10 @@ export default function DashboardPage() {
                   </div>
                 )}
                 {dailyQuote && (
-                  <div style={{ fontSize: 10, color: "#888", marginBottom: 10, lineHeight: 1.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={dailyQuote}>
+                  <div style={{ fontSize: 10, color: "#888", marginBottom: 10, lineHeight: 1.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingBottom: 10, borderBottom: "1px solid #eee" }} title={dailyQuote}>
                     💡 {dailyQuote}
                   </div>
                 )}
-                <div style={{ textAlign: "center", marginBottom: 12 }}>
-                  <strong style={{ color: "#1a1a2e", fontSize: 16 }}>{formatDateJP(selectedDate)}</strong>
-                </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{calYear}年{calMonth + 1}月</h3>
                   <div style={{ display: "flex", gap: 8 }}>
@@ -669,6 +666,9 @@ export default function DashboardPage() {
                       </div>
                     );
                   })}
+                </div>
+                <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid #eee", textAlign: "center" }}>
+                  <strong style={{ color: "#1a1a2e", fontSize: 16 }}>{formatDateJP(selectedDate)}</strong>
                 </div>
               </div>
 
