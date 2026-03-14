@@ -629,8 +629,8 @@ export default function DashboardPage() {
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#e74c3c", display: "inline-block" }} />金額（万円）
             </h4>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: isMobile ? 16 : 24 }} className="focus-grid">
-              <AmountRankCard title="RA受注金額" data={dStaffActivities} amountField="amountRA" companyField="companyRA" affiliationField="affiliationRA" positionField="positionRA" color="#e74c3c" />
-              <AmountRankCard title="CA受注金額" data={dStaffActivities} amountField="amountCA" companyField="companyCA" affiliationField="affiliationCA" positionField="positionCA" color="#9b59b6" />
+              <AmountRankCard title="RA受注金額" data={dStaffActivities} prevData={prevPrevStaffActivities} amountField="amountRA" companyField="companyRA" affiliationField="affiliationRA" positionField="positionRA" color="#e74c3c" />
+              <AmountRankCard title="CA受注金額" data={dStaffActivities} prevData={prevPrevStaffActivities} amountField="amountCA" companyField="companyCA" affiliationField="affiliationCA" positionField="positionCA" color="#9b59b6" />
             </div>
 
             {/* 注力セクション */}
@@ -1457,13 +1457,14 @@ function ActivityRankCard({ title, data, prevData, field, color, unit }: { title
   );
 }
 
-function AmountRankCard({ title, data, amountField, companyField, affiliationField, positionField, color }: {
-  title: string; data: StaffActivity[]; amountField: keyof StaffActivity; companyField: keyof StaffActivity; affiliationField: keyof StaffActivity; positionField: keyof StaffActivity; color: string;
+function AmountRankCard({ title, data, prevData, amountField, companyField, affiliationField, positionField, color }: {
+  title: string; data: StaffActivity[]; prevData?: StaffActivity[]; amountField: keyof StaffActivity; companyField: keyof StaffActivity; affiliationField: keyof StaffActivity; positionField: keyof StaffActivity; color: string;
 }) {
   const [showAll, setShowAll] = useState(false);
   const sorted = [...data].filter(s => s.staff && (s[amountField] as number) > 0).sort((a, b) => (b[amountField] as number) - (a[amountField] as number));
   const top3 = sorted.slice(0, 3);
   const total = Math.round(sorted.reduce((sum, s) => sum + (s[amountField] as number), 0) * 10) / 10;
+  const prevTotal = Math.round((prevData || []).reduce((sum, s) => sum + ((s[amountField] as number) || 0), 0) * 10) / 10;
   const medals = ["🥇", "🥈", "🥉"];
   const fmtVal = (v: number) => `${Math.round(v * 10) / 10}万円`;
   const renderEntry = (s: StaffActivity, i: number, isSub?: boolean) => {
@@ -1485,10 +1486,13 @@ function AmountRankCard({ title, data, amountField, companyField, affiliationFie
     );
   };
   return (
-    <div style={{ background: "#fff", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
+    <div style={{ background: "#fff", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", borderTop: `3px solid ${color}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{title}</h3>
-        <span style={{ fontSize: 20, fontWeight: 700, color }}>{total}万円</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          {prevData && <TrendIcon current={total} prev={prevTotal} />}
+          <span style={{ fontSize: 22, fontWeight: 800, color, lineHeight: 1 }}>{total}万円</span>
+        </div>
       </div>
       {sorted.length === 0 ? <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>未入力</p> : (
         <>
