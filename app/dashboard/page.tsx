@@ -195,7 +195,10 @@ function getLatestDataForDate(allData: AllData, targetKey: string) {
 export default function DashboardPage() {
   const router = useRouter();
   const [allData, setAllData] = useState<AllData>({});
-  const [selectedDate, setSelectedDate] = useState(todayKey());
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const t = todayKey();
+    return isBusinessDay(t) ? t : getPrevBusinessDay(t);
+  });
   const [calYear, setCalYear] = useState(new Date().getFullYear());
   const [calMonth, setCalMonth] = useState(new Date().getMonth());
   const [inputOpen, setInputOpen] = useState(false);
@@ -520,7 +523,7 @@ export default function DashboardPage() {
                   <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{calYear}年{calMonth + 1}月</h3>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button onClick={() => changeMonth(-1)} style={calBtnStyle}>&#9664;</button>
-                    <button onClick={() => { setCalYear(new Date().getFullYear()); setCalMonth(new Date().getMonth()); setSelectedDate(todayKey()); setSaveDate(todayKey()); setInputOpen(false); }} style={{ ...calBtnStyle, width: "auto", padding: "0 10px", fontSize: 12 }}>今月</button>
+                    <button onClick={() => { const t = todayKey(); const initDate = isBusinessDay(t) ? t : getPrevBusinessDay(t); setCalYear(new Date().getFullYear()); setCalMonth(new Date().getMonth()); setSelectedDate(initDate); setSaveDate(initDate); setInputOpen(false); }} style={{ ...calBtnStyle, width: "auto", padding: "0 10px", fontSize: 12 }}>今月</button>
                     <button onClick={() => changeMonth(1)} style={calBtnStyle}>&#9654;</button>
                   </div>
                 </div>
