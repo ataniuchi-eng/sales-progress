@@ -228,6 +228,11 @@ export default function DashboardPage() {
   const [raJoinCompanies, setRaJoinCompanies] = useState<RACompany[]>([]);
   const [staffActivities, setStaffActivities] = useState<StaffActivity[]>([]);
 
+  // 天気情報
+  const [weatherInfo, setWeatherInfo] = useState<{ shibuya: string; shinjuku: string } | null>(null);
+  // ビジネス格言
+  const [dailyQuote, setDailyQuote] = useState<string>("");
+
   // レスポンシブ検知
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -238,6 +243,79 @@ export default function DashboardPage() {
 
   // モバイルではカレンダー非表示がデフォルト
   useEffect(() => { if (isMobile) setCalendarOpen(false); }, [isMobile]);
+
+  // 天気取得（Open-Meteo API、渋谷・新宿）
+  useEffect(() => {
+    const cacheKey = `weather_${todayKey()}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) { setWeatherInfo(JSON.parse(cached)); return; }
+    const weatherCode: Record<number, string> = {
+      0: "☀️快晴", 1: "🌤️晴れ", 2: "⛅曇り", 3: "☁️曇り",
+      45: "🌫️霧", 48: "🌫️霧", 51: "🌦️小雨", 53: "🌧️雨", 55: "🌧️雨",
+      61: "🌧️雨", 63: "🌧️雨", 65: "🌧️大雨", 71: "🌨️雪", 73: "🌨️雪", 75: "❄️大雪",
+      80: "🌦️にわか雨", 81: "🌧️にわか雨", 82: "⛈️豪雨", 95: "⛈️雷雨", 96: "⛈️雷雨", 99: "⛈️雷雨",
+    };
+    const fetchW = async (lat: number, lon: number) => {
+      const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weather_code&timezone=Asia%2FTokyo&forecast_days=1`);
+      const d = await res.json();
+      const idx = 10; // 10時
+      const temp = Math.round(d.hourly.temperature_2m[idx]);
+      const code = d.hourly.weather_code[idx];
+      return `${weatherCode[code] || "—"} ${temp}°C`;
+    };
+    Promise.all([
+      fetchW(35.6580, 139.7016), // 渋谷
+      fetchW(35.6938, 139.7034), // 新宿
+    ]).then(([s, n]) => {
+      const info = { shibuya: s, shinjuku: n };
+      setWeatherInfo(info);
+      sessionStorage.setItem(cacheKey, JSON.stringify(info));
+    }).catch(() => {});
+  }, []);
+
+  // ビジネス格言（日替わり）
+  useEffect(() => {
+    const cacheKey = `quote_${todayKey()}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) { setDailyQuote(cached); return; }
+    const quotes = [
+      "成功とは、失敗を重ねても熱意を失わないことである — W.チャーチル",
+      "最大の危険は、目標が高すぎて失敗することではなく、低すぎて達成してしまうことだ — ミケランジェロ",
+      "行動は全ての成功の基本的な鍵である — P.ピカソ",
+      "今日できることを明日に延ばすな — B.フランクリン",
+      "準備を怠ることは、失敗を準備することだ — B.フランクリン",
+      "変化は脅威ではなく機会である — P.ドラッカー",
+      "顧客にとっての価値を創造せよ — P.ドラッカー",
+      "まず最も重要なことから始めよ — S.コヴィー",
+      "小さな改善の積み重ねが大きな差を生む — 豊田章男",
+      "リーダーとは希望を配る人のことだ — ナポレオン",
+      "品質とは、誰も見ていないときにきちんとやることだ — H.フォード",
+      "最善の投資先は自分自身である — W.バフェット",
+      "速さより方向が大事だ — 孫正義",
+      "困難の中に機会がある — A.アインシュタイン",
+      "信頼は最大の資産である — S.コヴィー",
+      "勝つことではなく、諦めないことが大事だ — 松下幸之助",
+      "現場が全ての答えを持っている — 大野耐一",
+      "まず動け、考えるのはそれからだ — 本田宗一郎",
+      "人を動かすには、まず自分が動け — 稲盛和夫",
+      "1%の改善を毎日続ければ、1年で37倍になる — J.クリア",
+      "計画のない目標は、ただの願望である — A.サン=テグジュペリ",
+      "成長とは、快適な領域を出ることだ — J.C.マクスウェル",
+      "チームワークは夢を実現する — M.ジョーダン",
+      "お客様の声に耳を傾けよ — S.ジョブズ",
+      "完璧を目指すより、まず終わらせろ — M.ザッカーバーグ",
+      "イノベーションが指導者と追随者を分ける — S.ジョブズ",
+      "時間は最も貴重な資源である — P.ドラッカー",
+      "やってみせ、言って聞かせて、させてみて、褒めてやらねば人は動かじ — 山本五十六",
+      "チャンスは準備された心に訪れる — L.パスツール",
+      "情熱なくして偉大なことは成し遂げられない — G.W.F.ヘーゲル",
+      "失敗は成功のもと — 日本のことわざ",
+    ];
+    const dayNum = parseInt(todayKey().replace(/-/g, ""), 10);
+    const q = quotes[dayNum % quotes.length];
+    setDailyQuote(q);
+    sessionStorage.setItem(cacheKey, q);
+  }, []);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -529,6 +607,20 @@ export default function DashboardPage() {
           {calendarOpen && (
             <div className="sidebar" style={{ width: 300, flexShrink: 0 }}>
               <div style={{ background: "#fff", borderRadius: 14, padding: 20, boxShadow: "0 2px 12px rgba(0,0,0,0.08)", position: isMobile ? "static" : "sticky", top: 24 }}>
+                {/* 天気 & 格言 */}
+                {weatherInfo && (
+                  <div style={{ fontSize: 11, color: "#555", marginBottom: 8, lineHeight: 1.6, background: "#f8f9fa", borderRadius: 8, padding: "6px 10px" }}>
+                    <div style={{ display: "flex", gap: 12, whiteSpace: "nowrap" }}>
+                      <span><b>渋谷</b> {weatherInfo.shibuya}</span>
+                      <span><b>新宿</b> {weatherInfo.shinjuku}</span>
+                    </div>
+                  </div>
+                )}
+                {dailyQuote && (
+                  <div style={{ fontSize: 10, color: "#888", marginBottom: 10, lineHeight: 1.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={dailyQuote}>
+                    💡 {dailyQuote}
+                  </div>
+                )}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{calYear}年{calMonth + 1}月</h3>
                   <div style={{ display: "flex", gap: 8 }}>
