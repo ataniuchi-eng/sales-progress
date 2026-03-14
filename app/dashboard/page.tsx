@@ -347,6 +347,13 @@ export default function DashboardPage() {
     return [];
   })();
   const dStaffActivities = prevDayStaffActivities;
+  // 前々営業日のデータ（前日比アイコン用）
+  const prevPrevBizDayKey = getPrevBusinessDay(prevBizDayKey);
+  const prevPrevStaffActivities = (() => {
+    const d = allData[prevPrevBizDayKey];
+    if (d && Array.isArray(d.staffActivities)) return d.staffActivities.filter(s => s.staff);
+    return [];
+  })();
   const dataSourceInfo = !result ? "データなし" : result.isExact ? "この日のデータを表示中" : `${formatDateJP(result.sourceKey)} のデータを反映中`;
 
   // 入力画面を開く
@@ -541,13 +548,13 @@ export default function DashboardPage() {
                     const maxClickable = isBusinessDay(today) ? today : getNextBusinessDay(today);
                     const isDisabled = !isBizDay || key > maxClickable;
                     const isActiveDay = key === maxClickable;
-                    // ヒートマップ: データ充実度に応じた背景色
+                    // ヒートマップ: 面談設定数に応じた背景色
                     let heatBg = "transparent";
                     if (hasData && !isActiveDay && !isDisabled) {
                       const dayData = allData[key];
                       const acts = dayData?.staffActivities || [];
-                      const totalActs = acts.reduce((s: number, a: StaffActivity) => s + (a.ordersRA||0) + (a.ordersCA||0) + (a.interviewSetups||0) + (a.interviewsConducted||0) + (a.appointmentAcquisitions||0), 0);
-                      heatBg = totalActs >= 5 ? "rgba(0,119,182,0.2)" : totalActs >= 1 ? "rgba(0,119,182,0.1)" : "rgba(0,119,182,0.05)";
+                      const totalSetups = acts.reduce((s: number, a: StaffActivity) => s + (a.interviewSetups || 0), 0);
+                      heatBg = totalSetups >= 15 ? "rgba(0,119,182,0.25)" : totalSetups >= 10 ? "rgba(0,119,182,0.13)" : totalSetups >= 1 ? "rgba(0,119,182,0.06)" : "transparent";
                     }
                     return (
                       <div key={d} onClick={() => { if (!isDisabled) { setSelectedDate(key); setSaveDate(key); setInputOpen(false); } }} style={{
@@ -609,11 +616,11 @@ export default function DashboardPage() {
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#0077b6", display: "inline-block" }} />件数
             </h4>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginBottom: 16 }} className="focus-grid">
-              <ActivityRankCard title="RA受注数" data={dStaffActivities} field="ordersRA" color="#e74c3c" />
-              <ActivityRankCard title="CA受注数" data={dStaffActivities} field="ordersCA" color="#9b59b6" />
-              <ActivityRankCard title="面談設定数" data={dStaffActivities} field="interviewSetups" color="#0077b6" />
-              <ActivityRankCard title="面談実施数" data={dStaffActivities} field="interviewsConducted" color="#e67e22" />
-              <ActivityRankCard title="案件アポ獲得企業数" data={dStaffActivities} field="appointmentAcquisitions" color="#2ecc71" />
+              <ActivityRankCard title="RA受注数" data={dStaffActivities} prevData={prevPrevStaffActivities} field="ordersRA" color="#e74c3c" />
+              <ActivityRankCard title="CA受注数" data={dStaffActivities} prevData={prevPrevStaffActivities} field="ordersCA" color="#9b59b6" />
+              <ActivityRankCard title="面談設定数" data={dStaffActivities} prevData={prevPrevStaffActivities} field="interviewSetups" color="#0077b6" />
+              <ActivityRankCard title="面談実施数" data={dStaffActivities} prevData={prevPrevStaffActivities} field="interviewsConducted" color="#e67e22" />
+              <ActivityRankCard title="案件アポ獲得企業数" data={dStaffActivities} prevData={prevPrevStaffActivities} field="appointmentAcquisitions" color="#2ecc71" />
             </div>
             <h4 style={{ fontSize: 13, fontWeight: 600, color: "#e74c3c", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#e74c3c", display: "inline-block" }} />金額（万円）
@@ -930,11 +937,12 @@ function FieldWrap({ label, children, grow, w, className }: { label: string; chi
 
 // ===== サブコンポーネント =====
 function DonutChart({ rate, size, color, trackColor }: { rate: number; size: number; color: string; trackColor: string }) {
-  const r = (size - 8) / 2, c = Math.PI * 2 * r, pct = Math.min(rate, 100);
+  const sw = Math.max(Math.round(size / 8), 5);
+  const r = (size - sw) / 2, c = Math.PI * 2 * r, pct = Math.min(rate, 100);
   return (
     <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={trackColor} strokeWidth={7} />
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={7}
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={trackColor} strokeWidth={sw} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={sw}
         strokeDasharray={`${(pct / 100) * c} ${c}`} strokeLinecap="round" style={{ transition: "stroke-dasharray 0.6s ease" }} />
     </svg>
   );
@@ -956,14 +964,11 @@ function SummaryCard({ title, data, rate, isTotal, standby }: {
       <Row label="進捗" value={formatYen(data.progress)} labelColor={labelColor} valueColor={isTotal ? "#4cc9f0" : "#0077b6"} />
       <Row label="見込" value={formatYen(data.forecast)} labelColor={labelColor} valueColor={isTotal ? "#a8e6cf" : "#2ecc71"} />
       {standby !== undefined && <Row label="待機" value={`${standby}名`} labelColor={labelColor} valueColor={isTotal ? "#ffd6a5" : "#f39c12"} />}
-      <div style={{ marginTop: 12, paddingTop: 8, borderTop: `1px solid ${trackColor}`, display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ position: "relative", flexShrink: 0 }}>
-          <DonutChart rate={rate} size={56} color={barFill} trackColor={trackColor} />
-          <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%) rotate(0deg)", fontSize: 11, fontWeight: 700, color: barFill }}>{rate}%</span>
-        </div>
-        <div style={{ fontSize: 11, color: labelColor, lineHeight: 1.6 }}>
-          達成率<br />
-          <span style={{ fontSize: 18, fontWeight: 700, color: barFill }}>{rate}%</span>
+      <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${trackColor}`, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+        <div style={{ fontSize: 11, color: labelColor }}>達成率</div>
+        <div style={{ position: "relative" }}>
+          <DonutChart rate={rate} size={76} color={barFill} trackColor={trackColor} />
+          <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%) rotate(0deg)", fontSize: 16, fontWeight: 800, color: barFill }}>{rate}%</span>
         </div>
       </div>
     </div>
@@ -1392,11 +1397,18 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
   );
 }
 
-function ActivityRankCard({ title, data, field, color, unit }: { title: string; data: StaffActivity[]; field: keyof StaffActivity; color: string; unit?: string }) {
+function TrendIcon({ current, prev }: { current: number; prev: number }) {
+  if (current > prev) return <span style={{ color: "#2ecc71", fontSize: 14, fontWeight: 700 }}>▲</span>;
+  if (current < prev) return <span style={{ color: "#e63946", fontSize: 14, fontWeight: 700 }}>▼</span>;
+  return <span style={{ color: "#999", fontSize: 12, fontWeight: 700 }}>→</span>;
+}
+
+function ActivityRankCard({ title, data, prevData, field, color, unit }: { title: string; data: StaffActivity[]; prevData?: StaffActivity[]; field: keyof StaffActivity; color: string; unit?: string }) {
   const [showAll, setShowAll] = useState(false);
   const sorted = [...data].filter(s => s.staff && (s[field] as number) > 0).sort((a, b) => (b[field] as number) - (a[field] as number));
   const top3 = sorted.slice(0, 3);
   const total = sorted.reduce((sum, s) => sum + (s[field] as number), 0);
+  const prevTotal = (prevData || []).reduce((sum, s) => sum + ((s[field] as number) || 0), 0);
   const totalDisplay = unit ? (Math.round(total * 10) / 10) : total;
   const medals = ["🥇", "🥈", "🥉"];
   const fmtVal = (v: number) => unit ? `${Math.round(v * 10) / 10}${unit}` : String(v);
@@ -1404,7 +1416,10 @@ function ActivityRankCard({ title, data, field, color, unit }: { title: string; 
     <div style={{ background: "#fff", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", borderTop: `3px solid ${color}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{title}</h3>
-        <span style={{ fontSize: 22, fontWeight: 800, color, lineHeight: 1 }}>{unit ? `${totalDisplay}${unit}` : totalDisplay}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          {prevData && <TrendIcon current={total} prev={prevTotal} />}
+          <span style={{ fontSize: 22, fontWeight: 800, color, lineHeight: 1 }}>{unit ? `${totalDisplay}${unit}` : totalDisplay}</span>
+        </div>
       </div>
       {sorted.length === 0 ? <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>未入力</p> : (
         <>
