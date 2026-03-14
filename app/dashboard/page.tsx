@@ -1221,6 +1221,7 @@ function RADisplay({ ra }: { ra: RAData }) {
 // ===== 月別営業活動成績コンポーネント =====
 function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { allData: AllData; monthlyYM: string; setMonthlyYM: (v: string) => void; isMobile: boolean }) {
   const [monthlyMode, setMonthlyMode] = useState<"count" | "amount">("count");
+  const [sortState, setSortState] = useState<Record<string, "asc" | "desc" | "none">>({});
   const [ymYear, ymMonth] = monthlyYM.split("-").map(Number);
   const daysInMonth = new Date(ymYear, ymMonth, 0).getDate();
   const DOW = ["日", "月", "火", "水", "木", "金", "土"];
@@ -1358,7 +1359,17 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
       )}
 
       {/* 各指標ごとにテーブル */}
-      {monthlyMode === "count" && ACTIVITY_FIELDS.map(af => (
+      {monthlyMode === "count" && ACTIVITY_FIELDS.map(af => {
+        const currentSort = sortState[af.key] || "none";
+        const toggleSort = () => {
+          setSortState(prev => ({ ...prev, [af.key]: currentSort === "none" ? "desc" : currentSort === "desc" ? "asc" : "none" }));
+        };
+        const sortedStaff = currentSort === "none" ? STAFF_LIST : [...STAFF_LIST].sort((a, b) => {
+          const aTotal = getStaffMonthTotal(a, af.key);
+          const bTotal = getStaffMonthTotal(b, af.key);
+          return currentSort === "asc" ? aTotal - bTotal : bTotal - aTotal;
+        });
+        return (
         <div key={af.key} style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", marginBottom: 20, overflowX: "auto" }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: af.color, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ width: 10, height: 10, borderRadius: "50%", background: af.color, display: "inline-block" }} />
@@ -1369,29 +1380,33 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
             <thead>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, minWidth: 70 }}>担当</th>
+                <th style={{ ...headerCellStyle, background: "#e8f4fd", minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSort}>
+                  月計 {currentSort === "asc" ? "▲" : currentSort === "desc" ? "▼" : "⇅"}
+                </th>
                 {days.map(day => (
                   <th key={day.d} style={{ ...headerCellStyle, color: day.isRed ? "#e63946" : "#333", minWidth: 36 }} title={day.holiday || ""}>
                     {day.d}
                   </th>
                 ))}
-                <th style={{ ...headerCellStyle, background: "#e8f4fd", minWidth: 50 }}>合計</th>
               </tr>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, fontSize: 10, padding: "2px 6px" }}></th>
+                <th style={{ ...headerCellStyle, background: "#e8f4fd", fontSize: 10, padding: "2px 6px" }}></th>
                 {days.map(day => (
                   <th key={`dow-${day.d}`} style={{ ...headerCellStyle, fontSize: 10, padding: "2px 6px", color: day.isRed ? "#e63946" : "#999" }}>
                     {day.holiday ? "祝" : day.dowLabel}
                   </th>
                 ))}
-                <th style={{ ...headerCellStyle, background: "#e8f4fd", fontSize: 10, padding: "2px 6px" }}></th>
               </tr>
             </thead>
             <tbody>
-              {STAFF_LIST.map(staff => {
+              {sortedStaff.map((staff, idx) => {
                 const monthTotal = getStaffMonthTotal(staff, af.key);
+                const rowBg = idx % 2 === 1 ? "#f8f9fb" : "#fff";
                 return (
-                  <tr key={staff}>
-                    <td style={staffCellStyle}>{staff}</td>
+                  <tr key={staff} style={{ background: rowBg }}>
+                    <td style={{ ...staffCellStyle, background: rowBg }}>{staff}</td>
+                    <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : "#999", background: idx % 2 === 1 ? "#e1eef8" : "#e8f4fd" }}>{monthTotal}</td>
                     {days.map(day => {
                       const val = getStaffDayValue(staff, day.key, af.key);
                       return (
@@ -1400,13 +1415,13 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
                         </td>
                       );
                     })}
-                    <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : "#999", background: "#e8f4fd" }}>{monthTotal}</td>
                   </tr>
                 );
               })}
-              {/* 合計行 */}
+              {/* 月計行 */}
               <tr style={{ background: "#f8f9fa" }}>
-                <td style={{ ...staffCellStyle, fontWeight: 700, background: "#f0f2f5" }}>合計</td>
+                <td style={{ ...staffCellStyle, fontWeight: 700, background: "#f0f2f5" }}>月計</td>
+                <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: "#d6eaf8", fontSize: 14 }}>{getMonthGrandTotal(af.key)}</td>
                 {days.map(day => {
                   const dayTotal = getDayTotal(day.key, af.key);
                   return (
@@ -1415,15 +1430,25 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
                     </td>
                   );
                 })}
-                <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: "#d6eaf8", fontSize: 14 }}>{getMonthGrandTotal(af.key)}</td>
               </tr>
             </tbody>
           </table>
         </div>
-      ))}
+        );
+      })}
 
       {/* 金額テーブル */}
-      {monthlyMode === "amount" && ACTIVITY_AMOUNT_FIELDS.map(af => (
+      {monthlyMode === "amount" && ACTIVITY_AMOUNT_FIELDS.map(af => {
+        const currentSort = sortState[af.key] || "none";
+        const toggleSort = () => {
+          setSortState(prev => ({ ...prev, [af.key]: currentSort === "none" ? "desc" : currentSort === "desc" ? "asc" : "none" }));
+        };
+        const sortedStaff = currentSort === "none" ? STAFF_LIST : [...STAFF_LIST].sort((a, b) => {
+          const aTotal = getStaffMonthTotal(a, af.key);
+          const bTotal = getStaffMonthTotal(b, af.key);
+          return currentSort === "asc" ? aTotal - bTotal : bTotal - aTotal;
+        });
+        return (
         <div key={af.key} style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", marginBottom: 20, overflowX: "auto" }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: af.color, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ width: 10, height: 10, borderRadius: "50%", background: af.color, display: "inline-block" }} />
@@ -1434,29 +1459,33 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
             <thead>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, minWidth: 70 }}>担当</th>
+                <th style={{ ...headerCellStyle, background: "#e8f4fd", minWidth: 60, cursor: "pointer", userSelect: "none" }} onClick={toggleSort}>
+                  月計 {currentSort === "asc" ? "▲" : currentSort === "desc" ? "▼" : "⇅"}
+                </th>
                 {days.map(day => (
                   <th key={day.d} style={{ ...headerCellStyle, color: day.isRed ? "#e63946" : "#333", minWidth: 46 }} title={day.holiday || ""}>
                     {day.d}
                   </th>
                 ))}
-                <th style={{ ...headerCellStyle, background: "#e8f4fd", minWidth: 60 }}>合計</th>
               </tr>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, fontSize: 10, padding: "2px 6px" }}></th>
+                <th style={{ ...headerCellStyle, background: "#e8f4fd", fontSize: 10, padding: "2px 6px" }}></th>
                 {days.map(day => (
                   <th key={`dow-${day.d}`} style={{ ...headerCellStyle, fontSize: 10, padding: "2px 6px", color: day.isRed ? "#e63946" : "#999" }}>
                     {day.holiday ? "祝" : day.dowLabel}
                   </th>
                 ))}
-                <th style={{ ...headerCellStyle, background: "#e8f4fd", fontSize: 10, padding: "2px 6px" }}></th>
               </tr>
             </thead>
             <tbody>
-              {STAFF_LIST.map(staff => {
+              {sortedStaff.map((staff, idx) => {
                 const monthTotal = Math.round(getStaffMonthTotal(staff, af.key) * 10) / 10;
+                const rowBg = idx % 2 === 1 ? "#f8f9fb" : "#fff";
                 return (
-                  <tr key={staff}>
-                    <td style={staffCellStyle}>{staff}</td>
+                  <tr key={staff} style={{ background: rowBg }}>
+                    <td style={{ ...staffCellStyle, background: rowBg }}>{staff}</td>
+                    <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : "#999", background: idx % 2 === 1 ? "#e1eef8" : "#e8f4fd" }}>{monthTotal}</td>
                     {days.map(day => {
                       const val = getStaffDayValue(staff, day.key, af.key);
                       const rounded = Math.round(val * 10) / 10;
@@ -1466,13 +1495,13 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
                         </td>
                       );
                     })}
-                    <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : "#999", background: "#e8f4fd" }}>{monthTotal}</td>
                   </tr>
                 );
               })}
-              {/* 合計行 */}
+              {/* 月計行 */}
               <tr style={{ background: "#f8f9fa" }}>
-                <td style={{ ...staffCellStyle, fontWeight: 700, background: "#f0f2f5" }}>合計</td>
+                <td style={{ ...staffCellStyle, fontWeight: 700, background: "#f0f2f5" }}>月計</td>
+                <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: "#d6eaf8", fontSize: 14 }}>{Math.round(getMonthGrandTotal(af.key) * 10) / 10}</td>
                 {days.map(day => {
                   const dayTotal = Math.round(getDayTotal(day.key, af.key) * 10) / 10;
                   return (
@@ -1481,12 +1510,12 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
                     </td>
                   );
                 })}
-                <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: "#d6eaf8", fontSize: 14 }}>{Math.round(getMonthGrandTotal(af.key) * 10) / 10}</td>
               </tr>
             </tbody>
           </table>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
