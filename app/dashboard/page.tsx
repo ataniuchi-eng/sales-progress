@@ -1418,9 +1418,9 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
                   </tr>
                 );
               })}
-              {/* 月計行 */}
+              {/* 合計行 */}
               <tr style={{ background: "#f8f9fa" }}>
-                <td style={{ ...staffCellStyle, fontWeight: 700, background: "#f0f2f5" }}>月計</td>
+                <td style={{ ...staffCellStyle, fontWeight: 700, background: "#f0f2f5" }}>合計</td>
                 <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: "#d6eaf8", fontSize: 14 }}>{getMonthGrandTotal(af.key)}</td>
                 {days.map(day => {
                   const dayTotal = getDayTotal(day.key, af.key);
@@ -1498,9 +1498,9 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
                   </tr>
                 );
               })}
-              {/* 月計行 */}
+              {/* 合計行 */}
               <tr style={{ background: "#f8f9fa" }}>
-                <td style={{ ...staffCellStyle, fontWeight: 700, background: "#f0f2f5" }}>月計</td>
+                <td style={{ ...staffCellStyle, fontWeight: 700, background: "#f0f2f5" }}>合計</td>
                 <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: "#d6eaf8", fontSize: 14 }}>{Math.round(getMonthGrandTotal(af.key) * 10) / 10}</td>
                 {days.map(day => {
                   const dayTotal = Math.round(getDayTotal(day.key, af.key) * 10) / 10;
