@@ -200,6 +200,10 @@ export default function DashboardPage() {
   const [calMonth, setCalMonth] = useState(new Date().getMonth());
   const [inputOpen, setInputOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(true);
+  const [sectionSalesOpen, setSectionSalesOpen] = useState(false);
+  const [sectionFocusOpen, setSectionFocusOpen] = useState(false);
+  const [sectionRAOpen, setSectionRAOpen] = useState(false);
+  const [sectionAnnouncementOpen, setSectionAnnouncementOpen] = useState(false);
   const [saveDate, setSaveDate] = useState(selectedDate);
   const [toast, setToast] = useState("");
   const [saving, setSaving] = useState(false);
@@ -531,7 +535,7 @@ export default function DashboardPage() {
                     const d = i + 1, dt = new Date(calYear, calMonth, d), key = dateKey(dt), dow = dt.getDay();
                     const isToday = key === today, isSelected = key === selectedDate, hasData = !!allData[key];
                     const isBizDay = isBusinessDay(key);
-                    const maxClickable = today;
+                    const maxClickable = isBusinessDay(today) ? today : getNextBusinessDay(today);
                     const isDisabled = !isBizDay || key > maxClickable;
                     return (
                       <div key={d} onClick={() => { if (!isDisabled) { setSelectedDate(key); setSaveDate(key); setInputOpen(false); } }} style={{
@@ -701,32 +705,45 @@ export default function DashboardPage() {
                   );
                 })()}
 
-                {/* 数値入力 */}
-                <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", marginBottom: 16, marginTop: 24, paddingTop: 20, borderTop: "2px solid #e0e0e0" }}>売上数値入力</h2>
-
-                <div className="input-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
-                  <InputGroup title="プロパー" fields={[
-                    { label: "目標", value: inp.properTarget, key: "properTarget" },
-                    { label: "進捗", value: inp.properProgress, key: "properProgress" },
-                    { label: "見込", value: inp.properForecast, key: "properForecast" },
-                    { label: "待機（人数）", value: inp.properStandby, key: "properStandby" },
-                  ]} onChange={handleNumInput} />
-                  <InputGroup title="BP" fields={[
-                    { label: "目標", value: inp.bpTarget, key: "bpTarget" },
-                    { label: "進捗", value: inp.bpProgress, key: "bpProgress" },
-                    { label: "見込", value: inp.bpForecast, key: "bpForecast" },
-                  ]} onChange={handleNumInput} />
-                  <InputGroup title="フリーランス" fields={[
-                    { label: "目標", value: inp.flTarget, key: "flTarget" },
-                    { label: "進捗", value: inp.flProgress, key: "flProgress" },
-                    { label: "見込", value: inp.flForecast, key: "flForecast" },
-                  ]} onChange={handleNumInput} />
+                {/* 売上数値セクション */}
+                <div style={{ marginTop: 24, borderTop: "3px solid #1a1a2e" }}>
+                  <div onClick={() => setSectionSalesOpen(!sectionSalesOpen)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "linear-gradient(135deg, #1a1a2e, #16213e)", borderRadius: sectionSalesOpen ? "0" : "0 0 10px 10px", cursor: "pointer", userSelect: "none" as const }}>
+                    <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>売上数値</h2>
+                    <span style={{ fontSize: 18, color: "#fff", transform: sectionSalesOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
+                  </div>
+                  {sectionSalesOpen && (
+                    <div style={{ padding: "16px", background: "#f8f9fa", borderRadius: "0 0 10px 10px", border: "1px solid #e0e0e0", borderTop: "none" }}>
+                      <div className="input-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
+                        <InputGroup title="プロパー" fields={[
+                          { label: "目標", value: inp.properTarget, key: "properTarget" },
+                          { label: "進捗", value: inp.properProgress, key: "properProgress" },
+                          { label: "見込", value: inp.properForecast, key: "properForecast" },
+                          { label: "待機（人数）", value: inp.properStandby, key: "properStandby" },
+                        ]} onChange={handleNumInput} />
+                        <InputGroup title="BP" fields={[
+                          { label: "目標", value: inp.bpTarget, key: "bpTarget" },
+                          { label: "進捗", value: inp.bpProgress, key: "bpProgress" },
+                          { label: "見込", value: inp.bpForecast, key: "bpForecast" },
+                        ]} onChange={handleNumInput} />
+                        <InputGroup title="フリーランス" fields={[
+                          { label: "目標", value: inp.flTarget, key: "flTarget" },
+                          { label: "進捗", value: inp.flProgress, key: "flProgress" },
+                          { label: "見込", value: inp.flForecast, key: "flForecast" },
+                        ]} onChange={handleNumInput} />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
 
-                {/* 注力入力 */}
-                <div style={{ marginTop: 24, paddingTop: 20, borderTop: "2px solid #e0e0e0" }}>
-                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: "#1a1a2e" }}>注力入力</h3>
+                {/* 注力セクション */}
+                <div style={{ marginTop: 24, borderTop: "3px solid #1a1a2e" }}>
+                  <div onClick={() => setSectionFocusOpen(!sectionFocusOpen)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "linear-gradient(135deg, #1a1a2e, #16213e)", borderRadius: sectionFocusOpen ? "0" : "0 0 10px 10px", cursor: "pointer", userSelect: "none" as const }}>
+                    <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>注力</h2>
+                    <span style={{ fontSize: 18, color: "#fff", transform: sectionFocusOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
+                  </div>
+                  {sectionFocusOpen && (
+                    <div style={{ padding: "16px", background: "#f8f9fa", borderRadius: "0 0 10px 10px", border: "1px solid #e0e0e0", borderTop: "none" }}>
 
                   <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 10 }}>注力案件</h4>
                   {focusProjects.map((p, i) => (
@@ -757,8 +774,18 @@ export default function DashboardPage() {
                   ))}
                   <button onClick={() => setFocusPeople([...focusPeople, { name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }])} style={addBtnStyle}>＋ 人材を追加</button>
 
-                  {/* RA開拓入力 */}
-                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, marginTop: 24, paddingTop: 20, borderTop: "2px solid #e0e0e0", color: "#1a1a2e" }}>RA開拓</h3>
+                    </div>
+                  )}
+                </div>
+
+                {/* RA開拓セクション */}
+                <div style={{ marginTop: 24, borderTop: "3px solid #1a1a2e" }}>
+                  <div onClick={() => setSectionRAOpen(!sectionRAOpen)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "linear-gradient(135deg, #1a1a2e, #16213e)", borderRadius: sectionRAOpen ? "0" : "0 0 10px 10px", cursor: "pointer", userSelect: "none" as const }}>
+                    <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>RA開拓</h2>
+                    <span style={{ fontSize: 18, color: "#fff", transform: sectionRAOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
+                  </div>
+                  {sectionRAOpen && (
+                    <div style={{ padding: "16px", background: "#f8f9fa", borderRadius: "0 0 10px 10px", border: "1px solid #e0e0e0", borderTop: "none" }}>
 
                   <div className="input-3col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
                     <div>
@@ -811,10 +838,21 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 10, marginTop: 24, display: "flex", alignItems: "center", gap: 8 }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0077b6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                    全体連絡
-                  </h4>
+                    </div>
+                  )}
+                </div>
+
+                {/* 全体連絡セクション */}
+                <div style={{ marginTop: 24, borderTop: "3px solid #1a1a2e" }}>
+                  <div onClick={() => setSectionAnnouncementOpen(!sectionAnnouncementOpen)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "linear-gradient(135deg, #1a1a2e, #16213e)", borderRadius: sectionAnnouncementOpen ? "0" : "0 0 10px 10px", cursor: "pointer", userSelect: "none" as const }}>
+                    <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                      全体連絡
+                    </h2>
+                    <span style={{ fontSize: 18, color: "#fff", transform: sectionAnnouncementOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
+                  </div>
+                  {sectionAnnouncementOpen && (
+                    <div style={{ padding: "16px", background: "#f8f9fa", borderRadius: "0 0 10px 10px", border: "1px solid #e0e0e0", borderTop: "none" }}>
                   {announcements.map((a, i) => (
                     <div key={i} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
                       <span style={{ fontSize: 13, color: "#999", flexShrink: 0 }}>・</span>
@@ -824,15 +862,18 @@ export default function DashboardPage() {
                   ))}
                   <button onClick={() => setAnnouncements([...announcements, ""])} style={addBtnStyle}>＋ 連絡事項を追加</button>
 
-                  {/* 下部の保存ボタン */}
-                  <div style={{ marginTop: 24, paddingTop: 20, borderTop: "2px solid #e0e0e0" }}>
-                    <button onClick={saveCurrentData} disabled={saving} style={{
-                      width: "100%", padding: "14px 24px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
-                      border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1,
-                    }}>
-                      {saving ? "保存中..." : "保存"}
-                    </button>
-                  </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 下部の保存ボタン */}
+                <div style={{ marginTop: 24, paddingTop: 20, borderTop: "2px solid #e0e0e0" }}>
+                  <button onClick={saveCurrentData} disabled={saving} style={{
+                    width: "100%", padding: "14px 24px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
+                    border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1,
+                  }}>
+                    {saving ? "保存中..." : "保存"}
+                  </button>
                 </div>
               </div>
             )}
