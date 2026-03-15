@@ -1220,13 +1220,16 @@ function RADisplay({ ra }: { ra: RAData }) {
 
 // ===== 月別営業活動成績コンポーネント =====
 function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isMobile }: { allData: AllData; setAllData: React.Dispatch<React.SetStateAction<AllData>>; monthlyYM: string; setMonthlyYM: (v: string) => void; isMobile: boolean }) {
-  const [monthlyMode, setMonthlyMode] = useState<"count" | "amount">("amount");
+  const [monthlyMode, setMonthlyMode] = useState<"count" | "amount" | "other">("amount");
   const [sortState, setSortState] = useState<Record<string, "asc" | "desc" | "none">>({});
   const [budgets, setBudgets] = useState<Record<string, Record<string, number>>>({});
   const [carryovers, setCarryovers] = useState<Record<string, Record<string, number>>>({});
   const [countTargets, setCountTargets] = useState<Record<string, Record<string, number>>>({});
   const [editingCell, setEditingCell] = useState<{ staff: string; field: string; type: "budget" | "carryover" | "countTarget" | "dailyTarget"; dayKey?: string } | null>(null);
   const [editingCellValue, setEditingCellValue] = useState("");
+  // その他
+  const [miscItems, setMiscItems] = useState<{ staff: string; content: string; status: string }[]>([]);
+  const [miscInput, setMiscInput] = useState<{ staff: string; content: string; status: string }>({ staff: "", content: "", status: "" });
   const [ymYear, ymMonth] = monthlyYM.split("-").map(Number);
   const daysInMonth = new Date(ymYear, ymMonth, 0).getDate();
   const DOW = ["日", "月", "火", "水", "木", "金", "土"];
@@ -1257,6 +1260,48 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
     };
     loadData();
   }, []);
+
+  // その他データのロード
+  useEffect(() => {
+    const loadMisc = async () => {
+      try {
+        const res = await fetch("/api/data");
+        if (!res.ok) return;
+        const data = await res.json();
+        const miscKey = `misc-${monthlyYM}`;
+        if (data[miscKey] && Array.isArray(data[miscKey].items)) {
+          setMiscItems(data[miscKey].items);
+        } else {
+          setMiscItems([]);
+        }
+      } catch {}
+    };
+    loadMisc();
+  }, [monthlyYM]);
+
+  // その他データを保存
+  const saveMiscItems = async (items: { staff: string; content: string; status: string }[]) => {
+    const miscKey = `misc-${monthlyYM}`;
+    try {
+      await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dateKey: miscKey, data: { items } }) });
+    } catch {}
+  };
+
+  // その他アイテム追加
+  const addMiscItem = () => {
+    if (!miscInput.staff || !miscInput.content || !miscInput.status) return;
+    const updated = [...miscItems, { ...miscInput }];
+    setMiscItems(updated);
+    saveMiscItems(updated);
+    setMiscInput({ staff: "", content: "", status: "" });
+  };
+
+  // その他アイテム削除
+  const removeMiscItem = (index: number) => {
+    const updated = miscItems.filter((_, i) => i !== index);
+    setMiscItems(updated);
+    saveMiscItems(updated);
+  };
 
   // 予算を保存
   const saveBudget = async (field: string, staff: string, value: number) => {
@@ -1407,7 +1452,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
           })}
         </select>
         <div style={{ display: "flex", gap: 0, borderRadius: 8, overflow: "hidden", border: "1px solid #ddd" }}>
-          {[{ key: "amount" as const, label: "金額" }, { key: "count" as const, label: "件数" }].map(tab => (
+          {[{ key: "amount" as const, label: "金額" }, { key: "count" as const, label: "件数" }, { key: "other" as const, label: "その他" }].map(tab => (
             <button key={tab.key} onClick={() => setMonthlyMode(tab.key)} style={{
               padding: "8px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer", border: "none",
               background: monthlyMode === tab.key ? "#1a1a2e" : "#fff", color: monthlyMode === tab.key ? "#fff" : "#666",
@@ -1876,6 +1921,123 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
         </div>
         );
       })}
+
+      {/* その他タブ */}
+      {monthlyMode === "other" && (
+        <div style={{ maxWidth: 900 }}>
+          {/* 一覧 */}
+          <div style={{ background: "#fff", borderRadius: 14, padding: "20px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", marginBottom: 20 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1a1a2e", margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#6c757d", display: "inline-block" }} />
+              登録一覧
+              <span style={{ fontSize: 13, color: "#999", fontWeight: 400, marginLeft: 8 }}>{miscItems.length}件</span>
+            </h3>
+            {miscItems.length === 0 ? (
+              <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>データなし</p>
+            ) : (
+              <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
+                <thead>
+                  <tr>
+                    <th style={{ padding: "8px 12px", textAlign: "left", borderBottom: "2px solid #e0e0e0", fontWeight: 700, color: "#1a1a2e", width: 80 }}>担当</th>
+                    <th style={{ padding: "8px 12px", textAlign: "left", borderBottom: "2px solid #e0e0e0", fontWeight: 700, color: "#1a1a2e" }}>内容</th>
+                    <th style={{ padding: "8px 12px", textAlign: "center", borderBottom: "2px solid #e0e0e0", fontWeight: 700, color: "#1a1a2e", width: 80 }}>進捗</th>
+                    <th style={{ padding: "8px 12px", textAlign: "center", borderBottom: "2px solid #e0e0e0", fontWeight: 700, color: "#1a1a2e", width: 50 }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...miscItems]
+                    .map((item, origIdx) => ({ ...item, origIdx }))
+                    .sort((a, b) => a.staff.localeCompare(b.staff, "ja"))
+                    .map((item, idx) => {
+                      const statusDisplay: Record<string, { icon: string; color: string }> = {
+                        rain: { icon: "🌧️", color: "#e74c3c" },
+                        cloudy: { icon: "⛅", color: "#f39c12" },
+                        sunny: { icon: "☀️", color: "#27ae60" },
+                        done: { icon: "達成", color: "#2980b9" },
+                      };
+                      const st = statusDisplay[item.status] || { icon: "—", color: "#999" };
+                      return (
+                        <tr key={item.origIdx} style={{ background: idx % 2 === 1 ? "#f8f9fb" : "#fff" }}>
+                          <td style={{ padding: "10px 12px", borderBottom: "1px solid #f0f2f5", fontWeight: 600 }}>{item.staff}</td>
+                          <td style={{ padding: "10px 12px", borderBottom: "1px solid #f0f2f5" }}>{item.content}</td>
+                          <td style={{ padding: "10px 12px", borderBottom: "1px solid #f0f2f5", textAlign: "center" }}>
+                            {item.status === "done" ? (
+                              <span style={{ fontWeight: 700, color: st.color, fontSize: 13 }}>{st.icon}</span>
+                            ) : (
+                              <span style={{ fontSize: 20 }} title={item.status}>{st.icon}</span>
+                            )}
+                          </td>
+                          <td style={{ padding: "10px 12px", borderBottom: "1px solid #f0f2f5", textAlign: "center" }}>
+                            <button onClick={() => removeMiscItem(item.origIdx)} style={{ border: "none", background: "transparent", color: "#e74c3c", cursor: "pointer", fontSize: 16, padding: 2, lineHeight: 1 }} title="削除">×</button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* 入力欄 */}
+          <div style={{ background: "#fff", borderRadius: 14, padding: "20px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1a1a2e", margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#0077b6", display: "inline-block" }} />
+              新規追加
+            </h3>
+            <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
+              {/* 担当 */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "#666" }}>担当</label>
+                <select value={miscInput.staff} onChange={(e) => setMiscInput(prev => ({ ...prev, staff: e.target.value }))}
+                  style={{ padding: "8px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 13, background: "#fff", minWidth: 100 }}>
+                  <option value="">選択</option>
+                  {STAFF_LIST.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              {/* 内容 */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 200 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "#666" }}>内容（20文字まで）</label>
+                <input type="text" value={miscInput.content} maxLength={20}
+                  onChange={(e) => setMiscInput(prev => ({ ...prev, content: e.target.value }))}
+                  placeholder="内容を入力..."
+                  style={{ padding: "8px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 13 }} />
+              </div>
+              {/* 進捗 */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "#666" }}>進捗</label>
+                <div style={{ display: "flex", gap: 4 }}>
+                  {[
+                    { key: "rain", icon: "🌧️", label: "雨" },
+                    { key: "cloudy", icon: "⛅", label: "曇" },
+                    { key: "sunny", icon: "☀️", label: "晴" },
+                    { key: "done", icon: "達成", label: "達成" },
+                  ].map(opt => (
+                    <button key={opt.key} onClick={() => setMiscInput(prev => ({ ...prev, status: opt.key }))}
+                      style={{
+                        padding: opt.key === "done" ? "6px 10px" : "6px 8px", border: miscInput.status === opt.key ? "2px solid #0077b6" : "1px solid #ddd",
+                        borderRadius: 8, background: miscInput.status === opt.key ? "#e8f4fd" : "#fff", cursor: "pointer",
+                        fontSize: opt.key === "done" ? 12 : 18, fontWeight: opt.key === "done" ? 700 : 400,
+                        color: opt.key === "done" ? "#2980b9" : undefined, lineHeight: 1,
+                      }} title={opt.label}>
+                      {opt.icon}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* 追加ボタン */}
+              <button onClick={addMiscItem}
+                disabled={!miscInput.staff || !miscInput.content || !miscInput.status}
+                style={{
+                  padding: "8px 24px", background: (!miscInput.staff || !miscInput.content || !miscInput.status) ? "#ccc" : "#1a1a2e",
+                  color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: (!miscInput.staff || !miscInput.content || !miscInput.status) ? "default" : "pointer",
+                  whiteSpace: "nowrap",
+                }}>
+                追加
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
