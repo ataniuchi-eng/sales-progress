@@ -1466,8 +1466,12 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
     return parts.join(".");
   };
 
-  // 繰越粗利ヘッダーラベル
-  const carryoverLabel = "繰越粗利";
+  // 繰越粗利ヘッダーラベル（X/1繰越粗利）
+  const carryoverLabel = (() => {
+    const [, m] = monthlyYM.split("-").map(Number);
+    const nextMonth = m === 12 ? 1 : m + 1;
+    return `${nextMonth}/1繰越粗利`;
+  })();
 
   // 月計ヘッダーラベル（金額タブ用：X月営業粗利）
   const monthlyAmountLabel = (() => {
