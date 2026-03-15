@@ -1523,37 +1523,50 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
 
       {/* 金額テーブル（新仕様：担当→予算→進捗→達成率→前月繰越→月計→日付） */}
       {monthlyMode === "amount" && ACTIVITY_AMOUNT_FIELDS.map(af => {
-        const sortKeyMonth = af.key + "_month";
+        const sortKeyBudget = af.key + "_budget";
+        const sortKeyProgress = af.key + "_progress";
         const sortKeyRate = af.key + "_rate";
-        const currentSortMonth = sortState[sortKeyMonth] || "none";
+        const sortKeyCarryover = af.key + "_carryover";
+        const sortKeyMonth = af.key + "_month";
+        const allAmountSortKeys = [sortKeyBudget, sortKeyProgress, sortKeyRate, sortKeyCarryover, sortKeyMonth];
+        const currentSortBudget = sortState[sortKeyBudget] || "none";
+        const currentSortProgress = sortState[sortKeyProgress] || "none";
         const currentSortRate = sortState[sortKeyRate] || "none";
-        const toggleSortMonth = () => {
-          setSortState(prev => ({ ...prev, [sortKeyMonth]: currentSortMonth === "none" ? "desc" : currentSortMonth === "desc" ? "asc" : "none", [sortKeyRate]: "none" }));
+        const currentSortCarryover = sortState[sortKeyCarryover] || "none";
+        const currentSortMonth = sortState[sortKeyMonth] || "none";
+        const makeToggle = (key: string, current: string) => () => {
+          const reset: Record<string, "none"> = {};
+          allAmountSortKeys.forEach(k => { reset[k] = "none"; });
+          setSortState(prev => ({ ...prev, ...reset, [key]: current === "none" ? "desc" : current === "desc" ? "asc" : "none" }));
         };
-        const toggleSortRate = () => {
-          setSortState(prev => ({ ...prev, [sortKeyRate]: currentSortRate === "none" ? "desc" : currentSortRate === "desc" ? "asc" : "none", [sortKeyMonth]: "none" }));
-        };
+        const toggleSortBudget = makeToggle(sortKeyBudget, currentSortBudget);
+        const toggleSortProgress = makeToggle(sortKeyProgress, currentSortProgress);
+        const toggleSortRate = makeToggle(sortKeyRate, currentSortRate);
+        const toggleSortCarryover = makeToggle(sortKeyCarryover, currentSortCarryover);
+        const toggleSortMonth = makeToggle(sortKeyMonth, currentSortMonth);
+        const sortIcon = (s: string) => s === "asc" ? "▲" : s === "desc" ? "▼" : "⇅";
 
         // ソート対象を決定
         let sortedStaff = [...STAFF_LIST];
-        if (currentSortMonth !== "none") {
-          sortedStaff.sort((a, b) => {
-            const aTotal = getStaffMonthTotal(a, af.key);
-            const bTotal = getStaffMonthTotal(b, af.key);
-            return currentSortMonth === "asc" ? aTotal - bTotal : bTotal - aTotal;
-          });
+        const getProgress = (staff: string) => {
+          const c = getStaffCarryover(staff, af.key);
+          const m = Math.round(getStaffMonthTotal(staff, af.key) * 10) / 10;
+          return Math.round((c + m) * 10) / 10;
+        };
+        const getRate = (staff: string) => {
+          const b = getStaffBudget(staff, af.key);
+          return b > 0 ? (getProgress(staff) / b) * 100 : 0;
+        };
+        if (currentSortBudget !== "none") {
+          sortedStaff.sort((a, b) => currentSortBudget === "asc" ? getStaffBudget(a, af.key) - getStaffBudget(b, af.key) : getStaffBudget(b, af.key) - getStaffBudget(a, af.key));
+        } else if (currentSortProgress !== "none") {
+          sortedStaff.sort((a, b) => currentSortProgress === "asc" ? getProgress(a) - getProgress(b) : getProgress(b) - getProgress(a));
         } else if (currentSortRate !== "none") {
-          sortedStaff.sort((a, b) => {
-            const aBudget = getStaffBudget(a, af.key);
-            const bBudget = getStaffBudget(b, af.key);
-            const aCarry = getStaffCarryover(a, af.key);
-            const bCarry = getStaffCarryover(b, af.key);
-            const aMonth = Math.round(getStaffMonthTotal(a, af.key) * 10) / 10;
-            const bMonth = Math.round(getStaffMonthTotal(b, af.key) * 10) / 10;
-            const aRate = aBudget > 0 ? ((aCarry + aMonth) / aBudget) * 100 : 0;
-            const bRate = bBudget > 0 ? ((bCarry + bMonth) / bBudget) * 100 : 0;
-            return currentSortRate === "asc" ? aRate - bRate : bRate - aRate;
-          });
+          sortedStaff.sort((a, b) => currentSortRate === "asc" ? getRate(a) - getRate(b) : getRate(b) - getRate(a));
+        } else if (currentSortCarryover !== "none") {
+          sortedStaff.sort((a, b) => currentSortCarryover === "asc" ? getStaffCarryover(a, af.key) - getStaffCarryover(b, af.key) : getStaffCarryover(b, af.key) - getStaffCarryover(a, af.key));
+        } else if (currentSortMonth !== "none") {
+          sortedStaff.sort((a, b) => currentSortMonth === "asc" ? getStaffMonthTotal(a, af.key) - getStaffMonthTotal(b, af.key) : getStaffMonthTotal(b, af.key) - getStaffMonthTotal(a, af.key));
         }
 
         return (
@@ -1577,14 +1590,20 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
             <thead>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, minWidth: 70 }}>担当</th>
-                <th style={{ ...headerCellStyle, background: "#fff3cd", minWidth: 70 }}>予算</th>
-                <th style={{ ...headerCellStyle, background: "#dbeafe", minWidth: 70 }}>進捗</th>
-                <th style={{ ...headerCellStyle, background: "#d4edda", minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortRate}>
-                  達成率 {currentSortRate === "asc" ? "▲" : currentSortRate === "desc" ? "▼" : "⇅"}
+                <th style={{ ...headerCellStyle, background: "#fff3cd", minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortBudget}>
+                  予算 {sortIcon(currentSortBudget)}
                 </th>
-                <th style={{ ...headerCellStyle, background: "#e2e3e5", minWidth: 70 }}>前月繰越</th>
+                <th style={{ ...headerCellStyle, background: "#dbeafe", minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortProgress}>
+                  進捗 {sortIcon(currentSortProgress)}
+                </th>
+                <th style={{ ...headerCellStyle, background: "#d4edda", minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortRate}>
+                  達成率 {sortIcon(currentSortRate)}
+                </th>
+                <th style={{ ...headerCellStyle, background: "#e2e3e5", minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortCarryover}>
+                  前月繰越 {sortIcon(currentSortCarryover)}
+                </th>
                 <th style={{ ...headerCellStyle, background: "#e8f4fd", minWidth: 60, cursor: "pointer", userSelect: "none" }} onClick={toggleSortMonth}>
-                  月計 {currentSortMonth === "asc" ? "▲" : currentSortMonth === "desc" ? "▼" : "⇅"}
+                  月計 {sortIcon(currentSortMonth)}
                 </th>
                 {days.map(day => (
                   <th key={day.d} style={{ ...headerCellStyle, color: day.isRed ? "#e63946" : "#333", minWidth: 46 }} title={day.holiday || ""}>
