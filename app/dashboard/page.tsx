@@ -1220,32 +1220,37 @@ function RADisplay({ ra }: { ra: RAData }) {
 
 // ===== 月別営業活動成績コンポーネント =====
 function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isMobile }: { allData: AllData; setAllData: React.Dispatch<React.SetStateAction<AllData>>; monthlyYM: string; setMonthlyYM: (v: string) => void; isMobile: boolean }) {
-  const [monthlyMode, setMonthlyMode] = useState<"count" | "amount">("count");
+  const [monthlyMode, setMonthlyMode] = useState<"count" | "amount">("amount");
   const [sortState, setSortState] = useState<Record<string, "asc" | "desc" | "none">>({});
   const [budgets, setBudgets] = useState<Record<string, Record<string, number>>>({});
-  const [editingBudget, setEditingBudget] = useState<{ staff: string; field: string } | null>(null);
-  const [editingBudgetValue, setEditingBudgetValue] = useState("");
+  const [carryovers, setCarryovers] = useState<Record<string, Record<string, number>>>({});
+  const [editingCell, setEditingCell] = useState<{ staff: string; field: string; type: "budget" | "carryover" } | null>(null);
+  const [editingCellValue, setEditingCellValue] = useState("");
   const [ymYear, ymMonth] = monthlyYM.split("-").map(Number);
   const daysInMonth = new Date(ymYear, ymMonth, 0).getDate();
   const DOW = ["日", "月", "火", "水", "木", "金", "土"];
 
-  // 予算データをロード
+  // 予算・前月繰越データをロード
   useEffect(() => {
-    const loadBudgets = async () => {
+    const loadData = async () => {
       try {
         const res = await fetch("/api/data");
         if (!res.ok) return;
         const data = await res.json();
         const budgetData: Record<string, Record<string, number>> = {};
+        const carryoverData: Record<string, Record<string, number>> = {};
         for (const key of Object.keys(data)) {
           if (key.startsWith("budget-")) {
             budgetData[key] = data[key];
+          } else if (key.startsWith("carryover-")) {
+            carryoverData[key] = data[key];
           }
         }
         setBudgets(budgetData);
+        setCarryovers(carryoverData);
       } catch {}
     };
-    loadBudgets();
+    loadData();
   }, []);
 
   // 予算を保存
@@ -1263,27 +1268,31 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
     } catch {}
   };
 
+  // 前月繰越を保存
+  const saveCarryover = async (field: string, staff: string, value: number) => {
+    const carryoverKey = `carryover-${field}-${monthlyYM}`;
+    const current = carryovers[carryoverKey] || {};
+    const updated = { ...current, [staff]: value };
+    setCarryovers(prev => ({ ...prev, [carryoverKey]: updated }));
+    try {
+      await fetch("/api/data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dateKey: carryoverKey, data: updated }),
+      });
+    } catch {}
+  };
+
   // 予算取得
   const getStaffBudget = (staff: string, field: string): number => {
     const budgetKey = `budget-${field}-${monthlyYM}`;
     return budgets[budgetKey]?.[staff] || 0;
   };
 
-  // 前月繰越を計算（前月の月計合計）
-  const getPrevMonthCarryover = (staff: string, field: keyof StaffActivity): number => {
-    let prevY = ymYear, prevM = ymMonth - 1;
-    if (prevM < 1) { prevM = 12; prevY--; }
-    const prevDaysInMonth = new Date(prevY, prevM, 0).getDate();
-    let total = 0;
-    for (let d = 1; d <= prevDaysInMonth; d++) {
-      const key = `${prevY}-${("0" + prevM).slice(-2)}-${("0" + d).slice(-2)}`;
-      const dayData = allData[key];
-      if (dayData && Array.isArray(dayData.staffActivities)) {
-        const entry = dayData.staffActivities.find(s => s.staff === staff);
-        if (entry) total += ((entry[field] as number) || 0);
-      }
-    }
-    return Math.round(total * 10) / 10;
+  // 前月繰越取得（手入力値）
+  const getStaffCarryover = (staff: string, field: string): number => {
+    const carryoverKey = `carryover-${field}-${monthlyYM}`;
+    return carryovers[carryoverKey]?.[staff] || 0;
   };
 
   // 達成率の色
@@ -1358,7 +1367,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
           })}
         </select>
         <div style={{ display: "flex", gap: 0, borderRadius: 8, overflow: "hidden", border: "1px solid #ddd" }}>
-          {[{ key: "count" as const, label: "件数" }, { key: "amount" as const, label: "金額" }].map(tab => (
+          {[{ key: "amount" as const, label: "金額" }, { key: "count" as const, label: "件数" }].map(tab => (
             <button key={tab.key} onClick={() => setMonthlyMode(tab.key)} style={{
               padding: "8px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer", border: "none",
               background: monthlyMode === tab.key ? "#1a1a2e" : "#fff", color: monthlyMode === tab.key ? "#fff" : "#666",
@@ -1512,7 +1521,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
         );
       })}
 
-      {/* 金額テーブル（新仕様：担当→予算→達成率→前月繰越→月計→日付） */}
+      {/* 金額テーブル（新仕様：担当→予算→進捗→達成率→前月繰越→月計→日付） */}
       {monthlyMode === "amount" && ACTIVITY_AMOUNT_FIELDS.map(af => {
         const sortKeyMonth = af.key + "_month";
         const sortKeyRate = af.key + "_rate";
@@ -1537,8 +1546,8 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
           sortedStaff.sort((a, b) => {
             const aBudget = getStaffBudget(a, af.key);
             const bBudget = getStaffBudget(b, af.key);
-            const aCarry = getPrevMonthCarryover(a, af.key);
-            const bCarry = getPrevMonthCarryover(b, af.key);
+            const aCarry = getStaffCarryover(a, af.key);
+            const bCarry = getStaffCarryover(b, af.key);
             const aMonth = Math.round(getStaffMonthTotal(a, af.key) * 10) / 10;
             const bMonth = Math.round(getStaffMonthTotal(b, af.key) * 10) / 10;
             const aRate = aBudget > 0 ? ((aCarry + aMonth) / aBudget) * 100 : 0;
@@ -1559,6 +1568,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, minWidth: 70 }}>担当</th>
                 <th style={{ ...headerCellStyle, background: "#fff3cd", minWidth: 70 }}>予算</th>
+                <th style={{ ...headerCellStyle, background: "#dbeafe", minWidth: 70 }}>進捗</th>
                 <th style={{ ...headerCellStyle, background: "#d4edda", minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortRate}>
                   達成率 {currentSortRate === "asc" ? "▲" : currentSortRate === "desc" ? "▼" : "⇅"}
                 </th>
@@ -1575,6 +1585,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, fontSize: 10, padding: "2px 6px" }}></th>
                 <th style={{ ...headerCellStyle, background: "#fff3cd", fontSize: 10, padding: "2px 6px" }}>万円</th>
+                <th style={{ ...headerCellStyle, background: "#dbeafe", fontSize: 10, padding: "2px 6px" }}>万円</th>
                 <th style={{ ...headerCellStyle, background: "#d4edda", fontSize: 10, padding: "2px 6px" }}>%</th>
                 <th style={{ ...headerCellStyle, background: "#e2e3e5", fontSize: 10, padding: "2px 6px" }}>万円</th>
                 <th style={{ ...headerCellStyle, background: "#e8f4fd", fontSize: 10, padding: "2px 6px" }}>万円</th>
@@ -1589,25 +1600,27 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
               {sortedStaff.map((staff, idx) => {
                 const monthTotal = Math.round(getStaffMonthTotal(staff, af.key) * 10) / 10;
                 const budget = getStaffBudget(staff, af.key);
-                const carryover = getPrevMonthCarryover(staff, af.key);
-                const achievementRate = budget > 0 ? Math.round(((carryover + monthTotal) / budget) * 1000) / 10 : 0;
+                const carryover = getStaffCarryover(staff, af.key);
+                const progress = Math.round((carryover + monthTotal) * 10) / 10;
+                const achievementRate = budget > 0 ? Math.round((progress / budget) * 1000) / 10 : 0;
                 const rowBg = idx % 2 === 1 ? "#f8f9fb" : "#fff";
-                const isEditing = editingBudget?.staff === staff && editingBudget?.field === af.key;
+                const isEditingBudget = editingCell?.staff === staff && editingCell?.field === af.key && editingCell?.type === "budget";
+                const isEditingCarryover = editingCell?.staff === staff && editingCell?.field === af.key && editingCell?.type === "carryover";
                 return (
                   <tr key={staff} style={{ background: rowBg }}>
                     <td style={{ ...staffCellStyle, background: rowBg }}>{staff}</td>
                     {/* 予算（クリックで編集） */}
                     <td style={{ ...cellStyle, background: idx % 2 === 1 ? "#fef9e7" : "#fffdf0", cursor: "pointer", minWidth: 70, padding: 0 }}
-                      onClick={() => { if (!isEditing) { setEditingBudget({ staff, field: af.key }); setEditingBudgetValue(budget ? String(budget) : ""); } }}>
-                      {isEditing ? (
+                      onClick={() => { if (!isEditingBudget) { setEditingCell({ staff, field: af.key, type: "budget" }); setEditingCellValue(budget ? String(budget) : ""); } }}>
+                      {isEditingBudget ? (
                         <input
                           type="text"
                           inputMode="decimal"
                           autoFocus
-                          value={editingBudgetValue}
-                          onChange={(e) => { const v = e.target.value; if (/^\d{0,6}(\.\d{0,1})?$/.test(v) || v === "") setEditingBudgetValue(v); }}
-                          onBlur={() => { const val = parseFloat(editingBudgetValue) || 0; saveBudget(af.key, staff, Math.round(val * 10) / 10); setEditingBudget(null); }}
-                          onKeyDown={(e) => { if (e.key === "Enter") { const val = parseFloat(editingBudgetValue) || 0; saveBudget(af.key, staff, Math.round(val * 10) / 10); setEditingBudget(null); } if (e.key === "Escape") setEditingBudget(null); }}
+                          value={editingCellValue}
+                          onChange={(e) => { const v = e.target.value; if (/^\d{0,6}(\.\d{0,1})?$/.test(v) || v === "") setEditingCellValue(v); }}
+                          onBlur={() => { const val = parseFloat(editingCellValue) || 0; saveBudget(af.key, staff, Math.round(val * 10) / 10); setEditingCell(null); }}
+                          onKeyDown={(e) => { if (e.key === "Enter") { const val = parseFloat(editingCellValue) || 0; saveBudget(af.key, staff, Math.round(val * 10) / 10); setEditingCell(null); } if (e.key === "Escape") setEditingCell(null); }}
                           style={{ width: "100%", border: "2px solid #f39c12", borderRadius: 4, padding: "3px 6px", fontSize: 12, textAlign: "right", outline: "none", background: "#fffef5", boxSizing: "border-box" }}
                         />
                       ) : (
@@ -1616,13 +1629,33 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                         </span>
                       )}
                     </td>
+                    {/* 進捗（前月繰越 + 月計） */}
+                    <td style={{ ...cellStyle, fontWeight: 700, color: progress > 0 ? "#1e40af" : "#ccc", background: idx % 2 === 1 ? "#eff6ff" : "#f0f7ff" }}>
+                      {progress > 0 ? progress : "—"}
+                    </td>
                     {/* 達成率 */}
                     <td style={{ ...cellStyle, fontWeight: 700, color: budget > 0 ? getAchievementColor(achievementRate) : "#ccc", background: budget > 0 ? getAchievementBg(achievementRate) : undefined }}>
                       {budget > 0 ? `${achievementRate.toFixed(1)}%` : "—"}
                     </td>
-                    {/* 前月繰越 */}
-                    <td style={{ ...cellStyle, fontWeight: 600, color: carryover > 0 ? "#555" : "#ccc", background: idx % 2 === 1 ? "#eff0f2" : "#f5f6f8" }}>
-                      {carryover > 0 ? carryover : "—"}
+                    {/* 前月繰越（クリックで編集） */}
+                    <td style={{ ...cellStyle, background: idx % 2 === 1 ? "#eff0f2" : "#f5f6f8", cursor: "pointer", minWidth: 70, padding: 0 }}
+                      onClick={() => { if (!isEditingCarryover) { setEditingCell({ staff, field: af.key, type: "carryover" }); setEditingCellValue(carryover ? String(carryover) : ""); } }}>
+                      {isEditingCarryover ? (
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          autoFocus
+                          value={editingCellValue}
+                          onChange={(e) => { const v = e.target.value; if (/^\d{0,6}(\.\d{0,1})?$/.test(v) || v === "") setEditingCellValue(v); }}
+                          onBlur={() => { const val = parseFloat(editingCellValue) || 0; saveCarryover(af.key, staff, Math.round(val * 10) / 10); setEditingCell(null); }}
+                          onKeyDown={(e) => { if (e.key === "Enter") { const val = parseFloat(editingCellValue) || 0; saveCarryover(af.key, staff, Math.round(val * 10) / 10); setEditingCell(null); } if (e.key === "Escape") setEditingCell(null); }}
+                          style={{ width: "100%", border: "2px solid #6c757d", borderRadius: 4, padding: "3px 6px", fontSize: 12, textAlign: "right", outline: "none", background: "#f8f9fa", boxSizing: "border-box" }}
+                        />
+                      ) : (
+                        <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 600, color: carryover > 0 ? "#555" : "#ccc" }}>
+                          {carryover > 0 ? carryover : "—"}
+                        </span>
+                      )}
                     </td>
                     {/* 月計 */}
                     <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : "#999", background: idx % 2 === 1 ? "#e1eef8" : "#e8f4fd" }}>{monthTotal || "—"}</td>
@@ -1644,17 +1677,26 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                 <td style={{ ...cellStyle, fontWeight: 700, color: "#856404", background: "#fff3cd" }}>
                   {Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffBudget(s, af.key), 0) * 10) / 10 || "—"}
                 </td>
+                <td style={{ ...cellStyle, fontWeight: 700, color: "#1e40af", background: "#dbeafe" }}>
+                  {(() => {
+                    const totalCarry = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffCarryover(s, af.key), 0) * 10) / 10;
+                    const totalMonth = Math.round(getMonthGrandTotal(af.key) * 10) / 10;
+                    const totalProgress = Math.round((totalCarry + totalMonth) * 10) / 10;
+                    return totalProgress > 0 ? totalProgress : "—";
+                  })()}
+                </td>
                 <td style={{ ...cellStyle, fontWeight: 700, background: "#d4edda" }}>
                   {(() => {
                     const totalBudget = STAFF_LIST.reduce((sum, s) => sum + getStaffBudget(s, af.key), 0);
-                    const totalCarry = Math.round(STAFF_LIST.reduce((sum, s) => sum + getPrevMonthCarryover(s, af.key), 0) * 10) / 10;
+                    const totalCarry = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffCarryover(s, af.key), 0) * 10) / 10;
                     const totalMonth = Math.round(getMonthGrandTotal(af.key) * 10) / 10;
-                    const totalRate = totalBudget > 0 ? Math.round(((totalCarry + totalMonth) / totalBudget) * 1000) / 10 : 0;
+                    const totalProgress = totalCarry + totalMonth;
+                    const totalRate = totalBudget > 0 ? Math.round((totalProgress / totalBudget) * 1000) / 10 : 0;
                     return totalBudget > 0 ? <span style={{ color: getAchievementColor(totalRate) }}>{totalRate.toFixed(1)}%</span> : "—";
                   })()}
                 </td>
                 <td style={{ ...cellStyle, fontWeight: 700, color: "#555", background: "#e2e3e5" }}>
-                  {Math.round(STAFF_LIST.reduce((sum, s) => sum + getPrevMonthCarryover(s, af.key), 0) * 10) / 10 || "—"}
+                  {Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffCarryover(s, af.key), 0) * 10) / 10 || "—"}
                 </td>
                 <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: "#d6eaf8", fontSize: 14 }}>{Math.round(getMonthGrandTotal(af.key) * 10) / 10 || "—"}</td>
                 {days.map(day => {
