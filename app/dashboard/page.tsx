@@ -32,12 +32,12 @@ const JAPAN_HOLIDAYS: Record<string, string> = {
 };
 
 // ===== 営業活動のフィールド定義 =====
-const ACTIVITY_FIELDS: { key: keyof StaffActivity; label: string; color: string }[] = [
-  { key: "ordersRA", label: "RA受注数", color: "#e74c3c" },
-  { key: "ordersCA", label: "CA受注数", color: "#9b59b6" },
-  { key: "interviewSetups", label: "面談設定数", color: "#0077b6" },
-  { key: "interviewsConducted", label: "面談実施数", color: "#e67e22" },
-  { key: "appointmentAcquisitions", label: "RA開拓アポ獲得", color: "#2ecc71" },
+const ACTIVITY_FIELDS: { key: keyof StaffActivity; label: string; color: string; targetType: "monthly" | "daily" }[] = [
+  { key: "ordersRA", label: "RA受注数", color: "#e74c3c", targetType: "monthly" },
+  { key: "ordersCA", label: "CA受注数", color: "#9b59b6", targetType: "monthly" },
+  { key: "interviewSetups", label: "面談設定数", color: "#0077b6", targetType: "daily" },
+  { key: "interviewsConducted", label: "面談実施数", color: "#e67e22", targetType: "monthly" },
+  { key: "appointmentAcquisitions", label: "RA開拓アポ獲得", color: "#2ecc71", targetType: "monthly" },
 ];
 
 const ACTIVITY_AMOUNT_FIELDS: { key: keyof StaffActivity; label: string; rankLabel: string; tableLabel: string; color: string }[] = [
@@ -1224,7 +1224,8 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
   const [sortState, setSortState] = useState<Record<string, "asc" | "desc" | "none">>({});
   const [budgets, setBudgets] = useState<Record<string, Record<string, number>>>({});
   const [carryovers, setCarryovers] = useState<Record<string, Record<string, number>>>({});
-  const [editingCell, setEditingCell] = useState<{ staff: string; field: string; type: "budget" | "carryover" } | null>(null);
+  const [countTargets, setCountTargets] = useState<Record<string, Record<string, number>>>({});
+  const [editingCell, setEditingCell] = useState<{ staff: string; field: string; type: "budget" | "carryover" | "countTarget" | "dailyTarget"; dayKey?: string } | null>(null);
   const [editingCellValue, setEditingCellValue] = useState("");
   const [ymYear, ymMonth] = monthlyYM.split("-").map(Number);
   const daysInMonth = new Date(ymYear, ymMonth, 0).getDate();
@@ -1239,15 +1240,19 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
         const data = await res.json();
         const budgetData: Record<string, Record<string, number>> = {};
         const carryoverData: Record<string, Record<string, number>> = {};
+        const countTargetData: Record<string, Record<string, number>> = {};
         for (const key of Object.keys(data)) {
           if (key.startsWith("budget-")) {
             budgetData[key] = data[key];
           } else if (key.startsWith("carryover-")) {
             carryoverData[key] = data[key];
+          } else if (key.startsWith("countTarget-") || key.startsWith("dailyTarget-")) {
+            countTargetData[key] = data[key];
           }
         }
         setBudgets(budgetData);
         setCarryovers(carryoverData);
+        setCountTargets(countTargetData);
       } catch {}
     };
     loadData();
@@ -1293,6 +1298,41 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
   const getStaffCarryover = (staff: string, field: string): number => {
     const carryoverKey = `carryover-${field}-${monthlyYM}`;
     return carryovers[carryoverKey]?.[staff] || 0;
+  };
+
+  // 件数・月目標を保存
+  const saveCountTarget = async (field: string, staff: string, value: number) => {
+    const key = `countTarget-${field}-${monthlyYM}`;
+    const current = countTargets[key] || {};
+    const updated = { ...current, [staff]: value };
+    setCountTargets(prev => ({ ...prev, [key]: updated }));
+    try {
+      await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dateKey: key, data: updated }) });
+    } catch {}
+  };
+
+  // 件数・日目標を保存（担当×日ごと）
+  const saveDailyTarget = async (field: string, staff: string, dayKey: string, value: number) => {
+    const key = `dailyTarget-${field}-${monthlyYM}`;
+    const current = countTargets[key] || {};
+    const staffKey = `${staff}_${dayKey}`;
+    const updated = { ...current, [staffKey]: value };
+    setCountTargets(prev => ({ ...prev, [key]: updated }));
+    try {
+      await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dateKey: key, data: updated }) });
+    } catch {}
+  };
+
+  // 件数・月目標取得
+  const getCountTarget = (staff: string, field: string): number => {
+    const key = `countTarget-${field}-${monthlyYM}`;
+    return countTargets[key]?.[staff] || 0;
+  };
+
+  // 件数・日目標取得
+  const getDailyTarget = (staff: string, field: string, dayKey: string): number => {
+    const key = `dailyTarget-${field}-${monthlyYM}`;
+    return countTargets[key]?.[`${staff}_${dayKey}`] || 0;
   };
 
   // 達成率の色
@@ -1444,15 +1484,45 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
 
       {/* 各指標ごとにテーブル（件数） */}
       {monthlyMode === "count" && ACTIVITY_FIELDS.map(af => {
-        const currentSort = sortState[af.key] || "none";
-        const toggleSort = () => {
-          setSortState(prev => ({ ...prev, [af.key]: currentSort === "none" ? "desc" : currentSort === "desc" ? "asc" : "none" }));
+        const isDaily = af.targetType === "daily";
+        const sortKeyMonth = af.key + "_cMonth";
+        const sortKeyTarget = af.key + "_cTarget";
+        const sortKeyRate = af.key + "_cRate";
+        const allCountSortKeys = [sortKeyMonth, sortKeyTarget, sortKeyRate];
+        const currentSortMonth = sortState[sortKeyMonth] || "none";
+        const currentSortTarget = sortState[sortKeyTarget] || "none";
+        const currentSortRate = sortState[sortKeyRate] || "none";
+        const makeToggleC = (key: string, current: string) => () => {
+          const reset: Record<string, "none"> = {};
+          allCountSortKeys.forEach(k => { reset[k] = "none"; });
+          setSortState(prev => ({ ...prev, ...reset, [key]: current === "none" ? "desc" : current === "desc" ? "asc" : "none" }));
         };
-        const sortedStaff = currentSort === "none" ? STAFF_LIST : [...STAFF_LIST].sort((a, b) => {
-          const aTotal = getStaffMonthTotal(a, af.key);
-          const bTotal = getStaffMonthTotal(b, af.key);
-          return currentSort === "asc" ? aTotal - bTotal : bTotal - aTotal;
-        });
+        const toggleSortMonth = makeToggleC(sortKeyMonth, currentSortMonth);
+        const toggleSortTarget = makeToggleC(sortKeyTarget, currentSortTarget);
+        const toggleSortRate = makeToggleC(sortKeyRate, currentSortRate);
+        const sortIconC = (s: string) => s === "asc" ? "▲" : s === "desc" ? "▼" : "⇅";
+
+        // ソート
+        let sortedStaff = [...STAFF_LIST];
+        if (currentSortMonth !== "none") {
+          sortedStaff.sort((a, b) => {
+            const av = getStaffMonthTotal(a, af.key), bv = getStaffMonthTotal(b, af.key);
+            return currentSortMonth === "asc" ? av - bv : bv - av;
+          });
+        } else if (currentSortTarget !== "none") {
+          sortedStaff.sort((a, b) => {
+            const av = getCountTarget(a, af.key), bv = getCountTarget(b, af.key);
+            return currentSortTarget === "asc" ? av - bv : bv - av;
+          });
+        } else if (currentSortRate !== "none" && !isDaily) {
+          sortedStaff.sort((a, b) => {
+            const aT = getCountTarget(a, af.key), bT = getCountTarget(b, af.key);
+            const aR = aT > 0 ? (getStaffMonthTotal(a, af.key) / aT) * 100 : 0;
+            const bR = bT > 0 ? (getStaffMonthTotal(b, af.key) / bT) * 100 : 0;
+            return currentSortRate === "asc" ? aR - bR : bR - aR;
+          });
+        }
+
         return (
         <div key={af.key} style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", marginBottom: 20, overflowX: "auto" }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: af.color, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8 }}>
@@ -1464,17 +1534,27 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
             <thead>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, minWidth: 70 }}>担当</th>
-                <th style={{ ...headerCellStyle, background: "#e8f4fd", minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSort}>
-                  月計 {currentSort === "asc" ? "▲" : currentSort === "desc" ? "▼" : "⇅"}
+                <th style={{ ...headerCellStyle, background: "#fff3cd", minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSortTarget}>
+                  {isDaily ? "日目標" : "目標"} {sortIconC(currentSortTarget)}
+                </th>
+                {!isDaily && (
+                  <th style={{ ...headerCellStyle, background: "#d4edda", minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSortRate}>
+                    達成率 {sortIconC(currentSortRate)}
+                  </th>
+                )}
+                <th style={{ ...headerCellStyle, background: "#e8f4fd", minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSortMonth}>
+                  月計 {sortIconC(currentSortMonth)}
                 </th>
                 {days.map(day => (
-                  <th key={day.d} style={{ ...headerCellStyle, color: day.isRed ? "#e63946" : "#333", minWidth: 36 }} title={day.holiday || ""}>
+                  <th key={day.d} style={{ ...headerCellStyle, color: day.isRed ? "#e63946" : "#333", minWidth: isDaily ? 56 : 36 }} title={day.holiday || ""}>
                     {day.d}
                   </th>
                 ))}
               </tr>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, fontSize: 10, padding: "2px 6px" }}></th>
+                <th style={{ ...headerCellStyle, background: "#fff3cd", fontSize: 10, padding: "2px 6px" }}>{isDaily ? "/日" : "件"}</th>
+                {!isDaily && <th style={{ ...headerCellStyle, background: "#d4edda", fontSize: 10, padding: "2px 6px" }}>%</th>}
                 <th style={{ ...headerCellStyle, background: "#e8f4fd", fontSize: 10, padding: "2px 6px" }}></th>
                 {days.map(day => (
                   <th key={`dow-${day.d}`} style={{ ...headerCellStyle, fontSize: 10, padding: "2px 6px", color: day.isRed ? "#e63946" : "#999" }}>
@@ -1486,18 +1566,78 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
             <tbody>
               {sortedStaff.map((staff, idx) => {
                 const monthTotal = getStaffMonthTotal(staff, af.key);
+                const target = getCountTarget(staff, af.key);
                 const rowBg = idx % 2 === 1 ? "#f8f9fb" : "#fff";
+                const isEditingTarget = editingCell?.staff === staff && editingCell?.field === af.key && editingCell?.type === "countTarget";
+                // 月目標の達成率
+                const monthRate = (!isDaily && target > 0) ? Math.round((monthTotal / target) * 1000) / 10 : 0;
                 return (
                   <tr key={staff} style={{ background: rowBg }}>
                     <td style={{ ...staffCellStyle, background: rowBg }}>{staff}</td>
+                    {/* 目標（クリックで編集） */}
+                    <td style={{ ...cellStyle, background: idx % 2 === 1 ? "#fef9e7" : "#fffdf0", cursor: "pointer", minWidth: 50, padding: 0 }}
+                      onClick={() => { if (!isEditingTarget) { setEditingCell({ staff, field: af.key, type: "countTarget" }); setEditingCellValue(target ? String(target) : ""); } }}>
+                      {isEditingTarget ? (
+                        <input type="text" inputMode="numeric" autoFocus value={editingCellValue}
+                          onChange={(e) => { const v = e.target.value; if (/^\d{0,5}$/.test(v) || v === "") setEditingCellValue(v); }}
+                          onBlur={() => { saveCountTarget(af.key, staff, parseInt(editingCellValue) || 0); setEditingCell(null); }}
+                          onKeyDown={(e) => { if (e.key === "Enter") { saveCountTarget(af.key, staff, parseInt(editingCellValue) || 0); setEditingCell(null); } if (e.key === "Escape") setEditingCell(null); }}
+                          style={{ width: "100%", border: "2px solid #f39c12", borderRadius: 4, padding: "3px 6px", fontSize: 12, textAlign: "right", outline: "none", background: "#fffef5", boxSizing: "border-box" }}
+                        />
+                      ) : (
+                        <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 600, color: target > 0 ? "#856404" : "#ccc" }}>
+                          {target > 0 ? target : "—"}
+                        </span>
+                      )}
+                    </td>
+                    {/* 達成率（月目標のみ） */}
+                    {!isDaily && (
+                      <td style={{ ...cellStyle, fontWeight: 700, color: target > 0 ? getAchievementColor(monthRate) : "#ccc", background: target > 0 ? getAchievementBg(monthRate) : undefined }}>
+                        {target > 0 ? `${monthRate.toFixed(1)}%` : "—"}
+                      </td>
+                    )}
+                    {/* 月計 */}
                     <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : "#999", background: idx % 2 === 1 ? "#e1eef8" : "#e8f4fd" }}>{monthTotal}</td>
+                    {/* 日付セル */}
                     {days.map(day => {
                       const val = getStaffDayValue(staff, day.key, af.key);
-                      return (
-                        <td key={day.d} style={{ ...cellStyle, color: val > 0 ? af.color : "#ddd", fontWeight: val > 0 ? 700 : 400, background: day.isRed ? "#fef8f8" : undefined }}>
-                          {val || "-"}
-                        </td>
-                      );
+                      if (isDaily) {
+                        // 日目標：値/目標 + 達成率色
+                        const dayTarget = getDailyTarget(staff, af.key, day.key);
+                        const dayRate = dayTarget > 0 && val > 0 ? Math.round((val / dayTarget) * 1000) / 10 : 0;
+                        const isEditingDay = editingCell?.staff === staff && editingCell?.field === af.key && editingCell?.type === "dailyTarget" && editingCell?.dayKey === day.key;
+                        const hasDayTarget = dayTarget > 0;
+                        const cellBg = day.isRed ? "#fef8f8" : (hasDayTarget && val > 0 ? getAchievementBg(dayRate) : undefined);
+                        return (
+                          <td key={day.d} style={{ ...cellStyle, background: cellBg, padding: 0, minWidth: 56, verticalAlign: "middle" }}>
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "2px 4px", gap: 0 }}>
+                              <span style={{ fontWeight: val > 0 ? 700 : 400, color: val > 0 ? (hasDayTarget ? getAchievementColor(dayRate) : af.color) : "#ddd", fontSize: 12 }}>
+                                {val || "-"}
+                              </span>
+                              <span style={{ fontSize: 9, color: "#999", cursor: "pointer", lineHeight: 1 }}
+                                onClick={(e) => { e.stopPropagation(); setEditingCell({ staff, field: af.key, type: "dailyTarget", dayKey: day.key }); setEditingCellValue(dayTarget ? String(dayTarget) : ""); }}>
+                                {isEditingDay ? (
+                                  <input type="text" inputMode="numeric" autoFocus value={editingCellValue}
+                                    onChange={(ev) => { const v = ev.target.value; if (/^\d{0,3}$/.test(v) || v === "") setEditingCellValue(v); }}
+                                    onBlur={() => { saveDailyTarget(af.key, staff, day.key, parseInt(editingCellValue) || 0); setEditingCell(null); }}
+                                    onKeyDown={(ev) => { if (ev.key === "Enter") { saveDailyTarget(af.key, staff, day.key, parseInt(editingCellValue) || 0); setEditingCell(null); } if (ev.key === "Escape") setEditingCell(null); }}
+                                    onClick={(ev) => ev.stopPropagation()}
+                                    style={{ width: 28, border: "1px solid #f39c12", borderRadius: 3, padding: "1px 2px", fontSize: 9, textAlign: "center", outline: "none", background: "#fffef5" }}
+                                  />
+                                ) : (
+                                  <span title="日目標をクリックで設定">/{dayTarget || "—"}</span>
+                                )}
+                              </span>
+                            </div>
+                          </td>
+                        );
+                      } else {
+                        return (
+                          <td key={day.d} style={{ ...cellStyle, color: val > 0 ? af.color : "#ddd", fontWeight: val > 0 ? 700 : 400, background: day.isRed ? "#fef8f8" : undefined }}>
+                            {val || "-"}
+                          </td>
+                        );
+                      }
                     })}
                   </tr>
                 );
@@ -1505,6 +1645,19 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
               {/* 合計行 */}
               <tr style={{ background: "#f8f9fa" }}>
                 <td style={{ ...staffCellStyle, fontWeight: 700, background: "#f0f2f5" }}>合計</td>
+                <td style={{ ...cellStyle, fontWeight: 700, color: "#856404", background: "#fff3cd" }}>
+                  {STAFF_LIST.reduce((sum, s) => sum + getCountTarget(s, af.key), 0) || "—"}
+                </td>
+                {!isDaily && (() => {
+                  const totalTarget = STAFF_LIST.reduce((sum, s) => sum + getCountTarget(s, af.key), 0);
+                  const totalMonth = getMonthGrandTotal(af.key);
+                  const totalRate = totalTarget > 0 ? Math.round((totalMonth / totalTarget) * 1000) / 10 : 0;
+                  return (
+                    <td style={{ ...cellStyle, fontWeight: 700, background: "#d4edda" }}>
+                      {totalTarget > 0 ? <span style={{ color: getAchievementColor(totalRate) }}>{totalRate.toFixed(1)}%</span> : "—"}
+                    </td>
+                  );
+                })()}
                 <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: "#d6eaf8", fontSize: 14 }}>{getMonthGrandTotal(af.key)}</td>
                 {days.map(day => {
                   const dayTotal = getDayTotal(day.key, af.key);
