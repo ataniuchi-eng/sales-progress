@@ -40,9 +40,9 @@ const ACTIVITY_FIELDS: { key: keyof StaffActivity; label: string; color: string 
   { key: "appointmentAcquisitions", label: "RA開拓アポ獲得", color: "#2ecc71" },
 ];
 
-const ACTIVITY_AMOUNT_FIELDS: { key: keyof StaffActivity; label: string; color: string }[] = [
-  { key: "amountRA", label: "RA受注金額", color: "#e74c3c" },
-  { key: "amountCA", label: "CA受注金額", color: "#9b59b6" },
+const ACTIVITY_AMOUNT_FIELDS: { key: keyof StaffActivity; label: string; rankLabel: string; tableLabel: string; color: string }[] = [
+  { key: "amountRA", label: "RA受注金額", rankLabel: "今月RA受注", tableLabel: "RA粗利", color: "#e74c3c" },
+  { key: "amountCA", label: "CA受注金額", rankLabel: "今月CA受注", tableLabel: "CA粗利", color: "#9b59b6" },
 ];
 
 // ===== 勤務場所リスト =====
@@ -1422,7 +1422,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
             return (
               <div key={af.key} style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{af.label}</h3>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{af.rankLabel}</h3>
                   <span style={{ fontSize: 18, fontWeight: 700, color: af.color }}>{grandTotal}万円</span>
                 </div>
                 {ranked.length === 0 ? <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>データなし</p> : (
@@ -1558,10 +1558,20 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
 
         return (
         <div key={af.key} style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", marginBottom: 20, overflowX: "auto" }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: af.color, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: af.color, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <span style={{ width: 10, height: 10, borderRadius: "50%", background: af.color, display: "inline-block" }} />
-            {af.label}
-            <span style={{ fontSize: 13, color: "#999", fontWeight: 400, marginLeft: 8 }}>月合計: {Math.round(getMonthGrandTotal(af.key) * 10) / 10}万円</span>
+            {af.tableLabel}
+            {(() => {
+              const totalCarry = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffCarryover(s, af.key), 0) * 10) / 10;
+              const totalMonth = Math.round(getMonthGrandTotal(af.key) * 10) / 10;
+              const totalProgress = Math.round((totalCarry + totalMonth) * 10) / 10;
+              return (
+                <>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#1e40af", marginLeft: 8 }}>進捗: {totalProgress}万円</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: af.color }}>今月新規: {totalMonth}万円</span>
+                </>
+              );
+            })()}
           </h3>
           <table style={{ borderCollapse: "collapse", fontSize: 12, width: "max-content", minWidth: "100%" }}>
             <thead>
