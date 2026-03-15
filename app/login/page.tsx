@@ -40,7 +40,7 @@ export default function LoginPage() {
     <div style={styles.container}>
       <div style={styles.card}>
         <div style={styles.logoArea}>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 80" width="200" height="48" style={{ marginBottom: 16 }}>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 80" width="200" height="76" style={{ marginBottom: 16 }}>
             <defs>
               <linearGradient id="la1" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" style={{ stopColor: "#0284c7", stopOpacity: 1 }} />

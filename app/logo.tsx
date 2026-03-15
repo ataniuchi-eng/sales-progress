@@ -5,11 +5,12 @@ import { useTheme } from "./theme-provider";
 export function ADashLogo({ height = 40 }: { height?: number }) {
   const { theme } = useTheme();
   const scale = height / 80;
-  const width = 340 * scale;
+  // viewBox is 0 0 210 80 — icon(64) + gap + "A Dash" text fits within ~210px
+  const width = 210 * scale;
 
   if (theme === "dark") {
     return (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 80" width={width} height={height}>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 80" width={width} height={height}>
         <defs>
           <linearGradient id="a1d" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" style={{ stopColor: "#0284c7", stopOpacity: 1 }} />
@@ -32,15 +33,12 @@ export function ADashLogo({ height = 40 }: { height?: number }) {
         <circle cx="21" cy="28" r="1.8" fill="white" opacity={0.5} />
         <text x="78" y="52" fontFamily="'Helvetica Neue', Arial, sans-serif" fontSize="36" fontWeight="700" fill="#e0f2fe" letterSpacing="-1">A Dash</text>
         <rect x="78" y="58" width="50" height="3" rx="1.5" fill="url(#a2d)" />
-        <rect x="240" y="35" width="28" height="3" rx="1.5" fill="url(#a2d)" opacity={0.6} />
-        <rect x="272" y="35" width="14" height="3" rx="1.5" fill="url(#a2d)" opacity={0.35} />
-        <rect x="290" y="35" width="7" height="3" rx="1.5" fill="url(#a2d)" opacity={0.15} />
       </svg>
     );
   }
 
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 80" width={width} height={height}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 80" width={width} height={height}>
       <defs>
         <linearGradient id="a1" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" style={{ stopColor: "#0284c7", stopOpacity: 1 }} />
@@ -63,9 +61,6 @@ export function ADashLogo({ height = 40 }: { height?: number }) {
       <circle cx="21" cy="28" r="1.8" fill="white" opacity={0.5} />
       <text x="78" y="52" fontFamily="'Helvetica Neue', Arial, sans-serif" fontSize="36" fontWeight="700" fill="#0c4a6e" letterSpacing="-1">A Dash</text>
       <rect x="78" y="58" width="50" height="3" rx="1.5" fill="url(#a2)" />
-      <rect x="240" y="35" width="28" height="3" rx="1.5" fill="url(#a2)" opacity={0.6} />
-      <rect x="272" y="35" width="14" height="3" rx="1.5" fill="url(#a2)" opacity={0.35} />
-      <rect x="290" y="35" width="7" height="3" rx="1.5" fill="url(#a2)" opacity={0.15} />
     </svg>
   );
 }

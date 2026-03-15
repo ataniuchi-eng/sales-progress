@@ -617,6 +617,10 @@ export default function DashboardPage() {
           {calendarOpen && (
             <div className="sidebar" style={{ width: 300, flexShrink: 0 }}>
               <div style={{ background: tc.bgCard, borderRadius: 14, padding: 20, boxShadow: tc.shadow, position: isMobile ? "static" : "sticky", top: 24 }}>
+                {/* 会社ロゴ */}
+                <div style={{ textAlign: "center", marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${tc.border}` }}>
+                  <img src="/logo.png" alt="Cell Promote" style={{ maxWidth: "80%", height: "auto", maxHeight: 40, objectFit: "contain" }} />
+                </div>
                 {/* 天気 & 格言 */}
                 {weatherInfo && (
                   <div style={{ fontSize: 11, color: tc.textSecondary, marginBottom: 8, lineHeight: 1.6, background: tc.bgSection, borderRadius: 8, padding: "6px 10px" }}>
@@ -1233,7 +1237,7 @@ function RADisplay({ ra }: { ra: RAData }) {
 
 // ===== 月別営業活動成績コンポーネント =====
 function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isMobile }: { allData: AllData; setAllData: React.Dispatch<React.SetStateAction<AllData>>; monthlyYM: string; setMonthlyYM: (v: string) => void; isMobile: boolean }) {
-  const { t: tc } = useTheme();
+  const { theme, t: tc } = useTheme();
   const [monthlyMode, setMonthlyMode] = useState<"count" | "amount" | "other">("amount");
   const [sortState, setSortState] = useState<Record<string, "asc" | "desc" | "none">>({});
   const [budgets, setBudgets] = useState<Record<string, Record<string, number>>>({});
@@ -1493,15 +1497,24 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
     return `${m}月営業粗利`;
   })();
 
-  const cellStyle: React.CSSProperties = { padding: "4px 6px", textAlign: "center", fontSize: 12, borderRight: "1px solid " + tc.border, borderBottom: "1px solid " + tc.border, whiteSpace: "nowrap" };
-  const headerCellStyle: React.CSSProperties = { ...cellStyle, fontWeight: 700, background: tc.bgSection, position: "sticky", top: 0, zIndex: 2 };
-  const staffCellStyle: React.CSSProperties = { ...cellStyle, fontWeight: 600, textAlign: "left", position: "sticky", left: 0, background: tc.bgCard, zIndex: 1, minWidth: 70 };
+  const isDark = theme === "dark";
+  const cellStyle: React.CSSProperties = { padding: "4px 6px", textAlign: "center", fontSize: 12, borderRight: "1px solid " + tc.border, borderBottom: "1px solid " + tc.border, whiteSpace: "nowrap", color: tc.text };
+  const headerCellStyle: React.CSSProperties = { ...cellStyle, fontWeight: 700, background: tc.bgSection, color: tc.text, position: "sticky", top: 0, zIndex: 2 };
+  const staffCellStyle: React.CSSProperties = { ...cellStyle, fontWeight: 600, textAlign: "left", position: "sticky", left: 0, background: tc.bgCard, color: tc.text, zIndex: 1, minWidth: 70 };
+  // Dark-safe accent backgrounds
+  const hdrYellow = isDark ? "#3d3200" : "#fff3cd";
+  const hdrGreen = isDark ? "#1a3a2a" : "#d4edda";
+  const hdrBlue = isDark ? "#1a2e4a" : "#e8f4fd";
+  const hdrBlueAlt = isDark ? "#1e3a5f" : "#dbeafe";
+  const hdrGray = isDark ? "#2d3748" : "#e2e3e5";
+  const rowEven = tc.bgCard;
+  const rowOdd = isDark ? "#1a2332" : "#f8f9fb";
 
   return (
     <div style={{ maxWidth: 1400, margin: "0 auto" }}>
       {/* 年月セレクト + 件数/金額 切替 */}
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
-        <select value={monthlyYM} onChange={(e) => setMonthlyYM(e.target.value)} style={{ padding: "8px 16px", border: "1px solid " + tc.inputBorder, borderRadius: 8, fontSize: 15, fontWeight: 600, background: tc.bgCard, cursor: "pointer" }}>
+        <select value={monthlyYM} onChange={(e) => setMonthlyYM(e.target.value)} style={{ padding: "8px 16px", border: "1px solid " + tc.inputBorder, borderRadius: 8, fontSize: 15, fontWeight: 600, background: tc.bgCard, color: tc.text, cursor: "pointer" }}>
           {ymOptions.map(ym => {
             const [y, m] = ym.split("-");
             return <option key={ym} value={ym}>{y}年{parseInt(m)}月</option>;
@@ -1511,7 +1524,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
           {[{ key: "amount" as const, label: "金額" }, { key: "count" as const, label: "件数" }, { key: "other" as const, label: "その他" }].map(tab => (
             <button key={tab.key} onClick={() => setMonthlyMode(tab.key)} style={{
               padding: "8px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer", border: "none",
-              background: monthlyMode === tab.key ? "#1a1a2e" : tc.bgCard, color: monthlyMode === tab.key ? "#fff" : tc.textSecondary,
+              background: monthlyMode === tab.key ? tc.accent : tc.bgCard, color: monthlyMode === tab.key ? "#fff" : tc.textSecondary,
             }}>{tab.label}</button>
           ))}
         </div>
@@ -1661,40 +1674,40 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
         }
 
         return (
-        <div key={af.key} style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", marginBottom: 20, overflowX: "auto" }}>
+        <div key={af.key} style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, marginBottom: 20, overflowX: "auto" }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: af.color, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ width: 10, height: 10, borderRadius: "50%", background: af.color, display: "inline-block" }} />
             {af.label}
-            <span style={{ fontSize: 13, color: "#999", fontWeight: 400, marginLeft: 8 }}>月合計: {getMonthGrandTotal(af.key)}</span>
+            <span style={{ fontSize: 13, color: tc.textMuted, fontWeight: 400, marginLeft: 8 }}>月合計: {getMonthGrandTotal(af.key)}</span>
           </h3>
           <table style={{ borderCollapse: "collapse", fontSize: 12, width: "max-content", minWidth: "100%" }}>
             <thead>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, minWidth: 70 }}>担当</th>
-                <th style={{ ...headerCellStyle, background: "#fff3cd", minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSortTarget}>
+                <th style={{ ...headerCellStyle, background: hdrYellow, minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSortTarget}>
                   {isDaily ? "日目標" : "目標"} {sortIconC(currentSortTarget)}
                 </th>
                 {!isDaily && (
-                  <th style={{ ...headerCellStyle, background: "#d4edda", minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSortRate}>
+                  <th style={{ ...headerCellStyle, background: hdrGreen, minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSortRate}>
                     達成率 {sortIconC(currentSortRate)}
                   </th>
                 )}
-                <th style={{ ...headerCellStyle, background: "#e8f4fd", minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSortMonth}>
+                <th style={{ ...headerCellStyle, background: hdrBlue, minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSortMonth}>
                   月計 {sortIconC(currentSortMonth)}
                 </th>
                 {days.map(day => (
-                  <th key={day.d} style={{ ...headerCellStyle, color: day.isRed ? "#e63946" : "#333", minWidth: 36 }} title={day.holiday || ""}>
+                  <th key={day.d} style={{ ...headerCellStyle, color: day.isRed ? "#e63946" : tc.text, minWidth: 36 }} title={day.holiday || ""}>
                     {day.d}
                   </th>
                 ))}
               </tr>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, fontSize: 10, padding: "2px 6px" }}></th>
-                <th style={{ ...headerCellStyle, background: "#fff3cd", fontSize: 10, padding: "2px 6px" }}>{isDaily ? "/日" : "件"}</th>
-                {!isDaily && <th style={{ ...headerCellStyle, background: "#d4edda", fontSize: 10, padding: "2px 6px" }}>%</th>}
-                <th style={{ ...headerCellStyle, background: "#e8f4fd", fontSize: 10, padding: "2px 6px" }}></th>
+                <th style={{ ...headerCellStyle, background: hdrYellow, fontSize: 10, padding: "2px 6px" }}>{isDaily ? "/日" : "件"}</th>
+                {!isDaily && <th style={{ ...headerCellStyle, background: hdrGreen, fontSize: 10, padding: "2px 6px" }}>%</th>}
+                <th style={{ ...headerCellStyle, background: hdrBlue, fontSize: 10, padding: "2px 6px" }}></th>
                 {days.map(day => (
-                  <th key={`dow-${day.d}`} style={{ ...headerCellStyle, fontSize: 10, padding: "2px 6px", color: day.isRed ? "#e63946" : "#999" }}>
+                  <th key={`dow-${day.d}`} style={{ ...headerCellStyle, fontSize: 10, padding: "2px 6px", color: day.isRed ? "#e63946" : tc.textMuted }}>
                     {day.holiday ? "祝" : day.dowLabel}
                   </th>
                 ))}
@@ -1704,7 +1717,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
               {sortedStaff.map((staff, idx) => {
                 const monthTotal = getStaffMonthTotal(staff, af.key);
                 const target = getCountTarget(staff, af.key);
-                const rowBg = idx % 2 === 1 ? "#f8f9fb" : "#fff";
+                const rowBg = idx % 2 === 1 ? rowOdd : rowEven;
                 const isEditingTarget = editingCell?.staff === staff && editingCell?.field === af.key && editingCell?.type === "countTarget";
                 // 月目標の達成率
                 const monthRate = (!isDaily && target > 0) ? Math.round((monthTotal / target) * 1000) / 10 : 0;
@@ -1712,7 +1725,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                   <tr key={staff} style={{ background: rowBg }}>
                     <td style={{ ...staffCellStyle, background: rowBg }}>{staff}</td>
                     {/* 目標（クリックで編集） */}
-                    <td style={{ ...cellStyle, background: idx % 2 === 1 ? "#fef9e7" : "#fffdf0", cursor: "pointer", minWidth: 50, padding: 0 }}
+                    <td style={{ ...cellStyle, background: isDark ? (idx % 2 === 1 ? "#2d2600" : "#332d00") : (idx % 2 === 1 ? "#fef9e7" : "#fffdf0"), cursor: "pointer", minWidth: 50, padding: 0 }}
                       onClick={() => { if (!isEditingTarget) { setEditingCell({ staff, field: af.key, type: "countTarget" }); setEditingCellValue(target ? String(target) : ""); } }}>
                       {isEditingTarget ? (
                         <input type="text" inputMode="numeric" autoFocus value={editingCellValue}
@@ -1722,7 +1735,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                           style={{ width: "100%", border: "2px solid #f39c12", borderRadius: 4, padding: "3px 6px", fontSize: 12, textAlign: "right", outline: "none", background: "#fffef5", boxSizing: "border-box" }}
                         />
                       ) : (
-                        <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 600, color: target > 0 ? "#856404" : "#ccc" }}>
+                        <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 600, color: target > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled }}>
                           {target > 0 ? target : "—"}
                         </span>
                       )}
@@ -1734,7 +1747,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                       </td>
                     )}
                     {/* 月計 */}
-                    <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : "#999", background: idx % 2 === 1 ? "#e1eef8" : "#e8f4fd" }}>{monthTotal}</td>
+                    <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : tc.textMuted, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd") }}>{monthTotal}</td>
                     {/* 日付セル */}
                     {days.map(day => {
                       const val = getStaffDayValue(staff, day.key, af.key);
@@ -1841,7 +1854,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
         }
 
         return (
-        <div key={af.key} style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", marginBottom: 20, overflowX: "auto" }}>
+        <div key={af.key} style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, marginBottom: 20, overflowX: "auto" }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: af.color, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <span style={{ width: 10, height: 10, borderRadius: "50%", background: af.color, display: "inline-block" }} />
             {af.tableLabel}
@@ -1851,7 +1864,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
               const totalProgress = Math.round((totalCarry + totalMonth) * 10) / 10;
               return (
                 <>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#1e40af", marginLeft: 8 }}>進捗: {totalProgress > 0 ? fmtAmount(totalProgress) : "0"}万円</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: isDark ? "#93c5fd" : "#1e40af", marginLeft: 8 }}>進捗: {totalProgress > 0 ? fmtAmount(totalProgress) : "0"}万円</span>
                   <span style={{ fontSize: 13, fontWeight: 600, color: af.color }}>今月新規: {totalMonth > 0 ? fmtAmount(totalMonth) : "0"}万円</span>
                 </>
               );
@@ -1861,36 +1874,36 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
             <thead>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, minWidth: 70 }}>担当</th>
-                <th style={{ ...headerCellStyle, background: "#fff3cd", minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortBudget}>
+                <th style={{ ...headerCellStyle, background: hdrYellow, minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortBudget}>
                   予算 {sortIcon(currentSortBudget)}
                 </th>
-                <th style={{ ...headerCellStyle, background: "#dbeafe", minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortProgress}>
+                <th style={{ ...headerCellStyle, background: hdrBlueAlt, minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortProgress}>
                   進捗 {sortIcon(currentSortProgress)}
                 </th>
-                <th style={{ ...headerCellStyle, background: "#d4edda", minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortRate}>
+                <th style={{ ...headerCellStyle, background: hdrGreen, minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortRate}>
                   達成率 {sortIcon(currentSortRate)}
                 </th>
-                <th style={{ ...headerCellStyle, background: "#e2e3e5", minWidth: 90, cursor: "pointer", userSelect: "none" }} onClick={toggleSortCarryover}>
+                <th style={{ ...headerCellStyle, background: hdrGray, minWidth: 90, cursor: "pointer", userSelect: "none" }} onClick={toggleSortCarryover}>
                   {carryoverLabel} {sortIcon(currentSortCarryover)}
                 </th>
-                <th style={{ ...headerCellStyle, background: "#e8f4fd", minWidth: 80, cursor: "pointer", userSelect: "none" }} onClick={toggleSortMonth}>
+                <th style={{ ...headerCellStyle, background: hdrBlue, minWidth: 80, cursor: "pointer", userSelect: "none" }} onClick={toggleSortMonth}>
                   {monthlyAmountLabel} {sortIcon(currentSortMonth)}
                 </th>
                 {days.map(day => (
-                  <th key={day.d} style={{ ...headerCellStyle, color: day.isRed ? "#e63946" : "#333", minWidth: 46 }} title={day.holiday || ""}>
+                  <th key={day.d} style={{ ...headerCellStyle, color: day.isRed ? "#e63946" : tc.text, minWidth: 46 }} title={day.holiday || ""}>
                     {day.d}
                   </th>
                 ))}
               </tr>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, fontSize: 10, padding: "2px 6px" }}></th>
-                <th style={{ ...headerCellStyle, background: "#fff3cd", fontSize: 10, padding: "2px 6px" }}>万円</th>
-                <th style={{ ...headerCellStyle, background: "#dbeafe", fontSize: 10, padding: "2px 6px" }}>万円</th>
-                <th style={{ ...headerCellStyle, background: "#d4edda", fontSize: 10, padding: "2px 6px" }}>%</th>
-                <th style={{ ...headerCellStyle, background: "#e2e3e5", fontSize: 10, padding: "2px 6px" }}>万円</th>
-                <th style={{ ...headerCellStyle, background: "#e8f4fd", fontSize: 10, padding: "2px 6px" }}>万円</th>
+                <th style={{ ...headerCellStyle, background: hdrYellow, fontSize: 10, padding: "2px 6px" }}>万円</th>
+                <th style={{ ...headerCellStyle, background: hdrBlueAlt, fontSize: 10, padding: "2px 6px" }}>万円</th>
+                <th style={{ ...headerCellStyle, background: hdrGreen, fontSize: 10, padding: "2px 6px" }}>%</th>
+                <th style={{ ...headerCellStyle, background: hdrGray, fontSize: 10, padding: "2px 6px" }}>万円</th>
+                <th style={{ ...headerCellStyle, background: hdrBlue, fontSize: 10, padding: "2px 6px" }}>万円</th>
                 {days.map(day => (
-                  <th key={`dow-${day.d}`} style={{ ...headerCellStyle, fontSize: 10, padding: "2px 6px", color: day.isRed ? "#e63946" : "#999" }}>
+                  <th key={`dow-${day.d}`} style={{ ...headerCellStyle, fontSize: 10, padding: "2px 6px", color: day.isRed ? "#e63946" : tc.textMuted }}>
                     {day.holiday ? "祝" : day.dowLabel}
                   </th>
                 ))}
@@ -1903,14 +1916,14 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                 const carryover = getStaffCarryover(staff, af.key);
                 const progress = Math.round((carryover + monthTotal) * 10) / 10;
                 const achievementRate = budget > 0 ? Math.round((progress / budget) * 1000) / 10 : 0;
-                const rowBg = idx % 2 === 1 ? "#f8f9fb" : "#fff";
+                const rowBg = idx % 2 === 1 ? rowOdd : rowEven;
                 const isEditingBudget = editingCell?.staff === staff && editingCell?.field === af.key && editingCell?.type === "budget";
                 const isEditingCarryover = editingCell?.staff === staff && editingCell?.field === af.key && editingCell?.type === "carryover";
                 return (
                   <tr key={staff} style={{ background: rowBg }}>
                     <td style={{ ...staffCellStyle, background: rowBg }}>{staff}</td>
                     {/* 予算（クリックで編集） */}
-                    <td style={{ ...cellStyle, background: idx % 2 === 1 ? "#fef9e7" : "#fffdf0", cursor: "pointer", minWidth: 70, padding: 0 }}
+                    <td style={{ ...cellStyle, background: isDark ? (idx % 2 === 1 ? "#2d2600" : "#332d00") : (idx % 2 === 1 ? "#fef9e7" : "#fffdf0"), cursor: "pointer", minWidth: 70, padding: 0 }}
                       onClick={() => { if (!isEditingBudget) { setEditingCell({ staff, field: af.key, type: "budget" }); setEditingCellValue(budget ? String(budget) : ""); } }}>
                       {isEditingBudget ? (
                         <input
@@ -1924,13 +1937,13 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                           style={{ width: "100%", border: "2px solid #f39c12", borderRadius: 4, padding: "3px 6px", fontSize: 12, textAlign: "right", outline: "none", background: "#fffef5", boxSizing: "border-box" }}
                         />
                       ) : (
-                        <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 600, color: budget > 0 ? "#856404" : "#ccc" }}>
+                        <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 600, color: budget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled }}>
                           {fmtAmount(budget)}
                         </span>
                       )}
                     </td>
                     {/* 進捗（前月繰越 + 月計） */}
-                    <td style={{ ...cellStyle, fontWeight: 700, color: progress > 0 ? "#1e40af" : "#ccc", background: idx % 2 === 1 ? "#eff6ff" : "#f0f7ff" }}>
+                    <td style={{ ...cellStyle, fontWeight: 700, color: progress > 0 ? (isDark ? "#93c5fd" : "#1e40af") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a2540" : "#1e2d4a") : (idx % 2 === 1 ? "#eff6ff" : "#f0f7ff") }}>
                       {fmtAmount(progress)}
                     </td>
                     {/* 達成率 */}
@@ -1938,7 +1951,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                       {budget > 0 ? `${achievementRate.toFixed(1)}%` : "—"}
                     </td>
                     {/* 前月繰越（クリックで編集） */}
-                    <td style={{ ...cellStyle, background: idx % 2 === 1 ? "#eff0f2" : "#f5f6f8", cursor: "pointer", minWidth: 70, padding: 0 }}
+                    <td style={{ ...cellStyle, background: isDark ? (idx % 2 === 1 ? "#2d3748" : "#374151") : (idx % 2 === 1 ? "#eff0f2" : "#f5f6f8"), cursor: "pointer", minWidth: 70, padding: 0 }}
                       onClick={() => { if (!isEditingCarryover) { setEditingCell({ staff, field: af.key, type: "carryover" }); setEditingCellValue(carryover ? String(carryover) : ""); } }}>
                       {isEditingCarryover ? (
                         <input
@@ -1952,18 +1965,18 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                           style={{ width: "100%", border: "2px solid #6c757d", borderRadius: 4, padding: "3px 6px", fontSize: 12, textAlign: "right", outline: "none", background: "#f8f9fa", boxSizing: "border-box" }}
                         />
                       ) : (
-                        <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 600, color: carryover > 0 ? "#555" : "#ccc" }}>
+                        <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 600, color: carryover > 0 ? tc.textSecondary : tc.textDisabled }}>
                           {fmtAmount(carryover)}
                         </span>
                       )}
                     </td>
                     {/* 月計 */}
-                    <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : "#999", background: idx % 2 === 1 ? "#e1eef8" : "#e8f4fd" }}>{fmtAmount(monthTotal)}</td>
+                    <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : tc.textMuted, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd") }}>{fmtAmount(monthTotal)}</td>
                     {days.map(day => {
                       const val = getStaffDayValue(staff, day.key, af.key);
                       const rounded = Math.round(val * 10) / 10;
                       return (
-                        <td key={day.d} style={{ ...cellStyle, color: rounded > 0 ? af.color : "#ddd", fontWeight: rounded > 0 ? 700 : 400, background: day.isRed ? "#fef8f8" : undefined }}>
+                        <td key={day.d} style={{ ...cellStyle, color: rounded > 0 ? af.color : tc.textDisabled, fontWeight: rounded > 0 ? 700 : 400, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined }}>
                           {rounded > 0 ? fmtAmount(rounded) : "-"}
                         </td>
                       );
@@ -1972,12 +1985,12 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                 );
               })}
               {/* 合計行 */}
-              <tr style={{ background: "#f8f9fa" }}>
-                <td style={{ ...staffCellStyle, fontWeight: 700, background: "#f0f2f5" }}>合計</td>
-                <td style={{ ...cellStyle, fontWeight: 700, color: "#856404", background: "#fff3cd" }}>
+              <tr style={{ background: tc.bgSection }}>
+                <td style={{ ...staffCellStyle, fontWeight: 700, background: tc.bgSection }}>合計</td>
+                <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#fbbf24" : "#856404", background: hdrYellow }}>
                   {fmtAmount(Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffBudget(s, af.key), 0) * 10) / 10)}
                 </td>
-                <td style={{ ...cellStyle, fontWeight: 700, color: "#1e40af", background: "#dbeafe" }}>
+                <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#93c5fd" : "#1e40af", background: hdrBlueAlt }}>
                   {(() => {
                     const totalCarry = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffCarryover(s, af.key), 0) * 10) / 10;
                     const totalMonth = Math.round(getMonthGrandTotal(af.key) * 10) / 10;
@@ -1985,7 +1998,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                     return fmtAmount(totalProgress);
                   })()}
                 </td>
-                <td style={{ ...cellStyle, fontWeight: 700, background: "#d4edda" }}>
+                <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen }}>
                   {(() => {
                     const totalBudget = STAFF_LIST.reduce((sum, s) => sum + getStaffBudget(s, af.key), 0);
                     const totalCarry = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffCarryover(s, af.key), 0) * 10) / 10;
@@ -1995,10 +2008,10 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                     return totalBudget > 0 ? <span style={{ color: getAchievementColor(totalRate) }}>{totalRate.toFixed(1)}%</span> : "—";
                   })()}
                 </td>
-                <td style={{ ...cellStyle, fontWeight: 700, color: tc.textSecondary, background: "#e2e3e5" }}>
+                <td style={{ ...cellStyle, fontWeight: 700, color: tc.textSecondary, background: hdrGray }}>
                   {fmtAmount(Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffCarryover(s, af.key), 0) * 10) / 10)}
                 </td>
-                <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: "#d6eaf8", fontSize: 14 }}>{fmtAmount(Math.round(getMonthGrandTotal(af.key) * 10) / 10)}</td>
+                <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, fontSize: 14 }}>{fmtAmount(Math.round(getMonthGrandTotal(af.key) * 10) / 10)}</td>
                 {days.map(day => {
                   const dayTotal = Math.round(getDayTotal(day.key, af.key) * 10) / 10;
                   return (
@@ -2050,41 +2063,41 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
         return (
         <div style={{ maxWidth: 900 }}>
           {/* 入力欄（上） */}
-          <div style={{ background: "#fff", borderRadius: 14, padding: "20px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", marginBottom: 20 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1a1a2e", margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#0077b6", display: "inline-block" }} />
+          <div style={{ background: tc.bgCard, borderRadius: 14, padding: "20px", boxShadow: tc.shadow, marginBottom: 20 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: tc.textPrimary, margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: tc.accentText, display: "inline-block" }} />
               新規追加
             </h3>
             <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "#666" }}>担当</label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: tc.textSecondary }}>担当</label>
                 <select value={miscInput.staff} onChange={(e) => setMiscInput(prev => ({ ...prev, staff: e.target.value }))}
-                  style={{ padding: "8px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 13, background: "#fff", minWidth: 100 }}>
+                  style={{ padding: "8px 12px", border: "1px solid " + tc.inputBorder, borderRadius: 8, fontSize: 13, background: tc.bgInput, color: tc.text, minWidth: 100 }}>
                   <option value="">選択</option>
                   {STAFF_LIST.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 200 }}>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "#666" }}>内容（20文字まで）</label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: tc.textSecondary }}>内容（20文字まで）</label>
                 <input type="text" value={miscInput.content} maxLength={20}
                   onChange={(e) => setMiscInput(prev => ({ ...prev, content: e.target.value }))}
                   placeholder="内容を入力..."
-                  style={{ padding: "8px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 13 }} />
+                  style={{ padding: "8px 12px", border: "1px solid " + tc.inputBorder, borderRadius: 8, fontSize: 13, background: tc.bgInput, color: tc.text }} />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "#666" }}>締切</label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: tc.textSecondary }}>締切</label>
                 <input type="date" value={miscInput.deadline}
                   onChange={(e) => setMiscInput(prev => ({ ...prev, deadline: e.target.value }))}
-                  style={{ padding: "8px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 13, background: "#fff" }} />
+                  style={{ padding: "8px 12px", border: "1px solid " + tc.inputBorder, borderRadius: 8, fontSize: 13, background: tc.bgInput, color: tc.text }} />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "#666" }}>進捗</label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: tc.textSecondary }}>進捗</label>
                 <div style={{ display: "flex", gap: 4 }}>
                   {statusOptions.map(opt => (
                     <button key={opt.key} onClick={() => setMiscInput(prev => ({ ...prev, status: opt.key }))}
                       style={{
-                        padding: opt.key === "done" ? "6px 10px" : "6px 8px", border: miscInput.status === opt.key ? "2px solid #0077b6" : "1px solid #ddd",
-                        borderRadius: 8, background: miscInput.status === opt.key ? "#e8f4fd" : "#fff", cursor: "pointer",
+                        padding: opt.key === "done" ? "6px 10px" : "6px 8px", border: miscInput.status === opt.key ? "2px solid " + tc.accentText : "1px solid " + tc.inputBorder,
+                        borderRadius: 8, background: miscInput.status === opt.key ? tc.accentLight : tc.bgCard, cursor: "pointer",
                         fontSize: opt.key === "done" ? 12 : 18, fontWeight: opt.key === "done" ? 700 : 400,
                         color: opt.key === "done" ? "#2980b9" : undefined, lineHeight: 1,
                       }} title={opt.label}>
