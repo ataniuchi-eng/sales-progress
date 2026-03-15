@@ -1057,16 +1057,17 @@ function SummaryCard({ title, data, rate, isTotal, standby }: {
   title: string; data: { target: number; progress: number; forecast: number };
   rate: number; isTotal?: boolean; standby?: number;
 }) {
-  const bg = isTotal ? "linear-gradient(135deg, #1a1a2e, #16213e)" : "#fff";
-  const color = isTotal ? "#fff" : "#333";
-  const labelColor = isTotal ? "rgba(255,255,255,0.7)" : "#999";
+  const { t: tc } = useTheme();
+  const bg = isTotal ? "linear-gradient(135deg, #0c4a6e, #0284c7)" : tc.bgCard;
+  const color = isTotal ? "#fff" : tc.text;
+  const labelColor = isTotal ? "rgba(255,255,255,0.7)" : tc.textMuted;
   const barFill = isTotal ? "#4cc9f0" : rate >= 100 ? "#2ecc71" : rate >= 70 ? "#f39c12" : "#e63946";
-  const trackColor = isTotal ? "rgba(255,255,255,0.15)" : "#f0f2f5";
+  const trackColor = isTotal ? "rgba(255,255,255,0.15)" : tc.border;
   return (
-    <div style={{ background: bg, borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", color }}>
+    <div style={{ background: bg, borderRadius: 14, padding: "20px 16px", boxShadow: tc.shadow, color }}>
       <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, paddingBottom: 6, borderBottom: `1px solid ${trackColor}` }}>{title}</div>
-      <Row label="目標" value={formatYen(data.target)} labelColor={labelColor} valueColor={isTotal ? "#fff" : "#1a1a2e"} />
-      <Row label="進捗" value={formatYen(data.progress)} labelColor={labelColor} valueColor={isTotal ? "#4cc9f0" : "#0077b6"} />
+      <Row label="目標" value={formatYen(data.target)} labelColor={labelColor} valueColor={isTotal ? "#fff" : tc.textPrimary} />
+      <Row label="進捗" value={formatYen(data.progress)} labelColor={labelColor} valueColor={isTotal ? "#4cc9f0" : tc.accentText} />
       <Row label="見込" value={formatYen(data.forecast)} labelColor={labelColor} valueColor={isTotal ? "#a8e6cf" : "#2ecc71"} />
       {standby !== undefined && <Row label="待機" value={`${standby}名`} labelColor={labelColor} valueColor={isTotal ? "#ffd6a5" : "#f39c12"} />}
       <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${trackColor}`, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
@@ -2190,6 +2191,7 @@ function TrendIcon({ current, prev }: { current: number; prev: number }) {
 }
 
 function ActivityRankCard({ title, data, prevData, field, color, unit }: { title: string; data: StaffActivity[]; prevData?: StaffActivity[]; field: keyof StaffActivity; color: string; unit?: string }) {
+  const { t: tc } = useTheme();
   const [showAll, setShowAll] = useState(false);
   const sorted = [...data].filter(s => s.staff && (s[field] as number) > 0).sort((a, b) => (b[field] as number) - (a[field] as number));
   const top3 = sorted.slice(0, 3);
@@ -2199,21 +2201,21 @@ function ActivityRankCard({ title, data, prevData, field, color, unit }: { title
   const medals = ["🥇", "🥈", "🥉"];
   const fmtVal = (v: number) => unit ? `${Math.round(v * 10) / 10}${unit}` : String(v);
   return (
-    <div style={{ background: "#fff", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", borderTop: `3px solid ${color}` }}>
+    <div style={{ background: tc.bgCard, borderRadius: 14, padding: "20px 16px", boxShadow: tc.shadow, borderTop: `3px solid ${color}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{title}</h3>
+        <h3 style={{ fontSize: 15, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{title}</h3>
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           {prevData && <TrendIcon current={total} prev={prevTotal} />}
           <span style={{ fontSize: 22, fontWeight: 800, color, lineHeight: 1 }}>{unit ? `${totalDisplay}${unit}` : totalDisplay}</span>
         </div>
       </div>
-      {sorted.length === 0 ? <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>未入力</p> : (
+      {sorted.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>未入力</p> : (
         <>
           {top3.map((s, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f0f2f5" }}>
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${tc.border}` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 16 }}>{medals[i]}</span>
-                <span style={{ fontSize: 14, fontWeight: 600, color: "#1a1a2e" }}>{s.staff}</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: tc.textPrimary }}>{s.staff}</span>
               </div>
               <span style={{ fontSize: 16, fontWeight: 700, color }}>{fmtVal(s[field] as number)}</span>
             </div>
@@ -2243,6 +2245,7 @@ function ActivityRankCard({ title, data, prevData, field, color, unit }: { title
 function AmountRankCard({ title, data, prevData, amountField, companyField, affiliationField, positionField, color }: {
   title: string; data: StaffActivity[]; prevData?: StaffActivity[]; amountField: keyof StaffActivity; companyField: keyof StaffActivity; affiliationField: keyof StaffActivity; positionField: keyof StaffActivity; color: string;
 }) {
+  const { t: tc } = useTheme();
   const [showAll, setShowAll] = useState(false);
   const sorted = [...data].filter(s => s.staff && (s[amountField] as number) > 0).sort((a, b) => (b[amountField] as number) - (a[amountField] as number));
   const top3 = sorted.slice(0, 3);
@@ -2256,28 +2259,28 @@ function AmountRankCard({ title, data, prevData, amountField, companyField, affi
     const position = (s[positionField] as string) || "";
     const details = [company, affiliation, position].filter(Boolean).join(" / ");
     return (
-      <div key={i} style={{ padding: "8px 0", borderBottom: "1px solid #f0f2f5" }}>
+      <div key={i} style={{ padding: "8px 0", borderBottom: `1px solid ${tc.border}` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {isSub ? <span style={{ fontSize: 12, color: "#999", width: 20, textAlign: "center" }}>{i + 1}</span> : <span style={{ fontSize: 16 }}>{medals[i]}</span>}
-            <span style={{ fontSize: isSub ? 13 : 14, fontWeight: 600, color: isSub ? "#555" : "#1a1a2e" }}>{s.staff}</span>
+            {isSub ? <span style={{ fontSize: 12, color: tc.textMuted, width: 20, textAlign: "center" }}>{i + 1}</span> : <span style={{ fontSize: 16 }}>{medals[i]}</span>}
+            <span style={{ fontSize: isSub ? 13 : 14, fontWeight: 600, color: isSub ? tc.textSecondary : tc.textPrimary }}>{s.staff}</span>
           </div>
           <span style={{ fontSize: isSub ? 14 : 16, fontWeight: 700, color }}>{fmtVal(s[amountField] as number)}</span>
         </div>
-        {details && <div style={{ fontSize: 11, color: "#888", marginTop: 2, paddingLeft: isSub ? 28 : 28 }}>{details}</div>}
+        {details && <div style={{ fontSize: 11, color: tc.textMuted, marginTop: 2, paddingLeft: isSub ? 28 : 28 }}>{details}</div>}
       </div>
     );
   };
   return (
-    <div style={{ background: "#fff", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", borderTop: `3px solid ${color}` }}>
+    <div style={{ background: tc.bgCard, borderRadius: 14, padding: "20px 16px", boxShadow: tc.shadow, borderTop: `3px solid ${color}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{title}</h3>
+        <h3 style={{ fontSize: 15, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{title}</h3>
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           {prevData && <TrendIcon current={total} prev={prevTotal} />}
           <span style={{ fontSize: 22, fontWeight: 800, color, lineHeight: 1 }}>{total}万円</span>
         </div>
       </div>
-      {sorted.length === 0 ? <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>未入力</p> : (
+      {sorted.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>未入力</p> : (
         <>
           {top3.map((s, i) => renderEntry(s, i))}
           {sorted.length > 3 && (
