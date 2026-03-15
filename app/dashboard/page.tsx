@@ -1458,6 +1458,21 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
     return STAFF_LIST.reduce((sum, staff) => sum + getStaffMonthTotal(staff, field), 0);
   };
 
+  // 3桁カンマ区切り（小数点以下あり対応）
+  const fmtAmount = (v: number): string => {
+    if (v === 0) return "—";
+    const parts = v.toString().split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return parts.join(".");
+  };
+
+  // 前月繰越のヘッダーラベル（選択月の翌月1日時点粗利）
+  const carryoverLabel = (() => {
+    const [y, m] = monthlyYM.split("-").map(Number);
+    const nextMonth = m === 12 ? 1 : m + 1;
+    return `${nextMonth}/1時点粗利`;
+  })();
+
   const cellStyle: React.CSSProperties = { padding: "4px 6px", textAlign: "center", fontSize: 12, borderRight: "1px solid #e0e0e0", borderBottom: "1px solid #e0e0e0", whiteSpace: "nowrap" };
   const headerCellStyle: React.CSSProperties = { ...cellStyle, fontWeight: 700, background: "#f8f9fa", position: "sticky", top: 0, zIndex: 2 };
   const staffCellStyle: React.CSSProperties = { ...cellStyle, fontWeight: 600, textAlign: "left", position: "sticky", left: 0, background: "#fff", zIndex: 1, minWidth: 70 };
@@ -1516,41 +1531,41 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
       )}
 
       {monthlyMode === "amount" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }} className="focus-grid">
-          {/* 達成率ランキング */}
-          {(() => {
-            const ranked = STAFF_LIST
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }} className="focus-grid">
+          {ACTIVITY_AMOUNT_FIELDS.map(af => {
+            const medals = ["🥇", "🥈", "🥉"];
+            // 達成率ランキング
+            const rateRanked = STAFF_LIST
               .map(staff => {
-                const budgetRA = getStaffBudget(staff, "amountRA");
-                const budgetCA = getStaffBudget(staff, "amountCA");
-                const totalBudget = budgetRA + budgetCA;
-                const carryRA = getStaffCarryover(staff, "amountRA");
-                const carryCA = getStaffCarryover(staff, "amountCA");
-                const monthRA = Math.round(getStaffMonthTotal(staff, "amountRA") * 10) / 10;
-                const monthCA = Math.round(getStaffMonthTotal(staff, "amountCA") * 10) / 10;
-                const totalProgress = carryRA + monthRA + carryCA + monthCA;
-                const rate = totalBudget > 0 ? Math.round((totalProgress / totalBudget) * 1000) / 10 : 0;
-                return { staff, rate, totalBudget };
+                const budget = getStaffBudget(staff, af.key);
+                const carry = getStaffCarryover(staff, af.key);
+                const month = Math.round(getStaffMonthTotal(staff, af.key) * 10) / 10;
+                const progress = carry + month;
+                const rate = budget > 0 ? Math.round((progress / budget) * 1000) / 10 : 0;
+                return { staff, rate, budget };
               })
-              .filter(s => s.totalBudget > 0)
+              .filter(s => s.budget > 0)
               .sort((a, b) => b.rate - a.rate)
               .slice(0, 5);
-            const medals = ["🥇", "🥈", "🥉"];
-            return (
-              <div style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
+            const allBudget = STAFF_LIST.reduce((sum, s) => sum + getStaffBudget(s, af.key), 0);
+            const allProgress = STAFF_LIST.reduce((sum, s) => sum + getStaffCarryover(s, af.key) + getStaffMonthTotal(s, af.key), 0);
+            const allRate = allBudget > 0 ? Math.round((allProgress / allBudget) * 1000) / 10 : 0;
+            // 金額ランキング
+            const amountRanked = STAFF_LIST
+              .map(staff => ({ staff, total: Math.round(getStaffMonthTotal(staff, af.key) * 10) / 10 }))
+              .filter(s => s.total > 0)
+              .sort((a, b) => b.total - a.total)
+              .slice(0, 5);
+            const grandTotal = Math.round(getMonthGrandTotal(af.key) * 10) / 10;
+            return (<>
+              {/* 達成率カード */}
+              <div key={af.key + "_rate"} style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>達成率</h3>
-                  {(() => {
-                    const allBudget = STAFF_LIST.reduce((sum, s) => sum + getStaffBudget(s, "amountRA") + getStaffBudget(s, "amountCA"), 0);
-                    const allProgress = STAFF_LIST.reduce((sum, s) => {
-                      return sum + getStaffCarryover(s, "amountRA") + getStaffMonthTotal(s, "amountRA") + getStaffCarryover(s, "amountCA") + getStaffMonthTotal(s, "amountCA");
-                    }, 0);
-                    const allRate = allBudget > 0 ? Math.round((allProgress / allBudget) * 1000) / 10 : 0;
-                    return <span style={{ fontSize: 18, fontWeight: 700, color: allBudget > 0 ? getAchievementColor(allRate) : "#ccc" }}>{allBudget > 0 ? `${allRate.toFixed(1)}%` : "—"}</span>;
-                  })()}
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{af.key === "amountRA" ? "RA達成率" : "CA達成率"}</h3>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: allBudget > 0 ? getAchievementColor(allRate) : "#ccc" }}>{allBudget > 0 ? `${allRate.toFixed(1)}%` : "—"}</span>
                 </div>
-                {ranked.length === 0 ? <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>データなし</p> : (
-                  ranked.map((r, i) => (
+                {rateRanked.length === 0 ? <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>データなし</p> : (
+                  rateRanked.map((r, i) => (
                     <div key={r.staff} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid #f0f2f5" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         {i < 3 ? <span style={{ fontSize: 16 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: "#999", fontWeight: 700, width: 20, textAlign: "center" }}>{i + 1}</span>}
@@ -1561,36 +1576,25 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                   ))
                 )}
               </div>
-            );
-          })()}
-          {/* 今月RA受注・今月CA受注ランキング */}
-          {ACTIVITY_AMOUNT_FIELDS.map(af => {
-            const ranked = STAFF_LIST
-              .map(staff => ({ staff, total: Math.round(getStaffMonthTotal(staff, af.key) * 10) / 10 }))
-              .filter(s => s.total > 0)
-              .sort((a, b) => b.total - a.total)
-              .slice(0, 5);
-            const grandTotal = Math.round(getMonthGrandTotal(af.key) * 10) / 10;
-            const medals = ["🥇", "🥈", "🥉"];
-            return (
-              <div key={af.key} style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
+              {/* 金額カード */}
+              <div key={af.key + "_amount"} style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{af.rankLabel}</h3>
-                  <span style={{ fontSize: 18, fontWeight: 700, color: af.color }}>{grandTotal}万円</span>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: af.color }}>{grandTotal > 0 ? fmtAmount(grandTotal) : "0"}万円</span>
                 </div>
-                {ranked.length === 0 ? <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>データなし</p> : (
-                  ranked.map((r, i) => (
+                {amountRanked.length === 0 ? <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>データなし</p> : (
+                  amountRanked.map((r, i) => (
                     <div key={r.staff} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid #f0f2f5" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         {i < 3 ? <span style={{ fontSize: 16 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: "#999", fontWeight: 700, width: 20, textAlign: "center" }}>{i + 1}</span>}
                         <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>{r.staff}</span>
                       </div>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: af.color }}>{r.total}万円</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: af.color }}>{r.total > 0 ? fmtAmount(r.total) : "0"}万円</span>
                     </div>
                   ))
                 )}
               </div>
-            );
+            </>);
           })}
         </div>
       )}
@@ -1827,8 +1831,8 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
               const totalProgress = Math.round((totalCarry + totalMonth) * 10) / 10;
               return (
                 <>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#1e40af", marginLeft: 8 }}>進捗: {totalProgress}万円</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: af.color }}>今月新規: {totalMonth}万円</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#1e40af", marginLeft: 8 }}>進捗: {totalProgress > 0 ? fmtAmount(totalProgress) : "0"}万円</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: af.color }}>今月新規: {totalMonth > 0 ? fmtAmount(totalMonth) : "0"}万円</span>
                 </>
               );
             })()}
@@ -1846,8 +1850,8 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                 <th style={{ ...headerCellStyle, background: "#d4edda", minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortRate}>
                   達成率 {sortIcon(currentSortRate)}
                 </th>
-                <th style={{ ...headerCellStyle, background: "#e2e3e5", minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortCarryover}>
-                  前月繰越 {sortIcon(currentSortCarryover)}
+                <th style={{ ...headerCellStyle, background: "#e2e3e5", minWidth: 90, cursor: "pointer", userSelect: "none" }} onClick={toggleSortCarryover}>
+                  {carryoverLabel} {sortIcon(currentSortCarryover)}
                 </th>
                 <th style={{ ...headerCellStyle, background: "#e8f4fd", minWidth: 60, cursor: "pointer", userSelect: "none" }} onClick={toggleSortMonth}>
                   月計 {sortIcon(currentSortMonth)}
@@ -1901,13 +1905,13 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                         />
                       ) : (
                         <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 600, color: budget > 0 ? "#856404" : "#ccc" }}>
-                          {budget > 0 ? budget : "—"}
+                          {fmtAmount(budget)}
                         </span>
                       )}
                     </td>
                     {/* 進捗（前月繰越 + 月計） */}
                     <td style={{ ...cellStyle, fontWeight: 700, color: progress > 0 ? "#1e40af" : "#ccc", background: idx % 2 === 1 ? "#eff6ff" : "#f0f7ff" }}>
-                      {progress > 0 ? progress : "—"}
+                      {fmtAmount(progress)}
                     </td>
                     {/* 達成率 */}
                     <td style={{ ...cellStyle, fontWeight: 700, color: budget > 0 ? getAchievementColor(achievementRate) : "#ccc", background: budget > 0 ? getAchievementBg(achievementRate) : undefined }}>
@@ -1929,18 +1933,18 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                         />
                       ) : (
                         <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 600, color: carryover > 0 ? "#555" : "#ccc" }}>
-                          {carryover > 0 ? carryover : "—"}
+                          {fmtAmount(carryover)}
                         </span>
                       )}
                     </td>
                     {/* 月計 */}
-                    <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : "#999", background: idx % 2 === 1 ? "#e1eef8" : "#e8f4fd" }}>{monthTotal || "—"}</td>
+                    <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : "#999", background: idx % 2 === 1 ? "#e1eef8" : "#e8f4fd" }}>{fmtAmount(monthTotal)}</td>
                     {days.map(day => {
                       const val = getStaffDayValue(staff, day.key, af.key);
                       const rounded = Math.round(val * 10) / 10;
                       return (
                         <td key={day.d} style={{ ...cellStyle, color: rounded > 0 ? af.color : "#ddd", fontWeight: rounded > 0 ? 700 : 400, background: day.isRed ? "#fef8f8" : undefined }}>
-                          {rounded || "-"}
+                          {rounded > 0 ? fmtAmount(rounded) : "-"}
                         </td>
                       );
                     })}
@@ -1951,14 +1955,14 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
               <tr style={{ background: "#f8f9fa" }}>
                 <td style={{ ...staffCellStyle, fontWeight: 700, background: "#f0f2f5" }}>合計</td>
                 <td style={{ ...cellStyle, fontWeight: 700, color: "#856404", background: "#fff3cd" }}>
-                  {Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffBudget(s, af.key), 0) * 10) / 10 || "—"}
+                  {fmtAmount(Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffBudget(s, af.key), 0) * 10) / 10)}
                 </td>
                 <td style={{ ...cellStyle, fontWeight: 700, color: "#1e40af", background: "#dbeafe" }}>
                   {(() => {
                     const totalCarry = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffCarryover(s, af.key), 0) * 10) / 10;
                     const totalMonth = Math.round(getMonthGrandTotal(af.key) * 10) / 10;
                     const totalProgress = Math.round((totalCarry + totalMonth) * 10) / 10;
-                    return totalProgress > 0 ? totalProgress : "—";
+                    return fmtAmount(totalProgress);
                   })()}
                 </td>
                 <td style={{ ...cellStyle, fontWeight: 700, background: "#d4edda" }}>
@@ -1972,14 +1976,14 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                   })()}
                 </td>
                 <td style={{ ...cellStyle, fontWeight: 700, color: "#555", background: "#e2e3e5" }}>
-                  {Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffCarryover(s, af.key), 0) * 10) / 10 || "—"}
+                  {fmtAmount(Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffCarryover(s, af.key), 0) * 10) / 10)}
                 </td>
-                <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: "#d6eaf8", fontSize: 14 }}>{Math.round(getMonthGrandTotal(af.key) * 10) / 10 || "—"}</td>
+                <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: "#d6eaf8", fontSize: 14 }}>{fmtAmount(Math.round(getMonthGrandTotal(af.key) * 10) / 10)}</td>
                 {days.map(day => {
                   const dayTotal = Math.round(getDayTotal(day.key, af.key) * 10) / 10;
                   return (
                     <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? "#1a1a2e" : "#ddd", background: day.isRed ? "#fef2f2" : "#f8f9fa" }}>
-                      {dayTotal || "-"}
+                      {dayTotal > 0 ? fmtAmount(dayTotal) : "-"}
                     </td>
                   );
                 })}
