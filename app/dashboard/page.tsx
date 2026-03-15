@@ -1466,11 +1466,13 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
     return parts.join(".");
   };
 
-  // 前月繰越のヘッダーラベル（選択月の翌月1日時点粗利）
-  const carryoverLabel = (() => {
-    const [y, m] = monthlyYM.split("-").map(Number);
-    const nextMonth = m === 12 ? 1 : m + 1;
-    return `${nextMonth}/1時点粗利`;
+  // 繰越粗利ヘッダーラベル
+  const carryoverLabel = "繰越粗利";
+
+  // 月計ヘッダーラベル（金額タブ用：X月営業粗利）
+  const monthlyAmountLabel = (() => {
+    const [, m] = monthlyYM.split("-").map(Number);
+    return `${m}月営業粗利`;
   })();
 
   const cellStyle: React.CSSProperties = { padding: "4px 6px", textAlign: "center", fontSize: 12, borderRight: "1px solid #e0e0e0", borderBottom: "1px solid #e0e0e0", whiteSpace: "nowrap" };
@@ -1853,8 +1855,8 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                 <th style={{ ...headerCellStyle, background: "#e2e3e5", minWidth: 90, cursor: "pointer", userSelect: "none" }} onClick={toggleSortCarryover}>
                   {carryoverLabel} {sortIcon(currentSortCarryover)}
                 </th>
-                <th style={{ ...headerCellStyle, background: "#e8f4fd", minWidth: 60, cursor: "pointer", userSelect: "none" }} onClick={toggleSortMonth}>
-                  月計 {sortIcon(currentSortMonth)}
+                <th style={{ ...headerCellStyle, background: "#e8f4fd", minWidth: 80, cursor: "pointer", userSelect: "none" }} onClick={toggleSortMonth}>
+                  {monthlyAmountLabel} {sortIcon(currentSortMonth)}
                 </th>
                 {days.map(day => (
                   <th key={day.d} style={{ ...headerCellStyle, color: day.isRed ? "#e63946" : "#333", minWidth: 46 }} title={day.holiday || ""}>
