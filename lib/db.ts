@@ -5,12 +5,18 @@ export async function ensureTable() {
   await sql`
     CREATE TABLE IF NOT EXISTS sales_data (
       id SERIAL PRIMARY KEY,
-      date_key VARCHAR(10) UNIQUE NOT NULL,
+      date_key VARCHAR(255) UNIQUE NOT NULL,
       data JSONB NOT NULL,
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW()
     )
   `;
+  // 既存テーブルのdate_keyカラムがVARCHAR(10)の場合に拡張
+  try {
+    await sql`ALTER TABLE sales_data ALTER COLUMN date_key TYPE VARCHAR(255)`;
+  } catch (e) {
+    // 既にVARCHAR(255)の場合は無視
+  }
 }
 
 // 全データ取得
