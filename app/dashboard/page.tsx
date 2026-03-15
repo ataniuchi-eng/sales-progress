@@ -599,7 +599,7 @@ export default function DashboardPage() {
         </div>
 
         {activeTab === "monthly" && (
-          <MonthlyActivityView allData={allData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} />
+          <MonthlyActivityView allData={allData} setAllData={setAllData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} />
         )}
 
         {activeTab === "main" && <div className="layout-flex" style={{ display: "flex", gap: 24, maxWidth: 1400, margin: "0 auto" }}>
@@ -704,7 +704,7 @@ export default function DashboardPage() {
             {/* 前日営業活動成績（件数5カード + 金額2カード） */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingBottom: 8, borderBottom: "3px solid #e67e22" }}>
               <div style={{ width: 6, height: 24, borderRadius: 3, background: "#e67e22" }} />
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>前営業日ー営業結果</h3>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>前営業日結果</h3>
             </div>
             <h4 style={{ fontSize: 13, fontWeight: 600, color: "#0077b6", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#0077b6", display: "inline-block" }} />件数
@@ -1219,12 +1219,88 @@ function RADisplay({ ra }: { ra: RAData }) {
 }
 
 // ===== 月別営業活動成績コンポーネント =====
-function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { allData: AllData; monthlyYM: string; setMonthlyYM: (v: string) => void; isMobile: boolean }) {
+function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isMobile }: { allData: AllData; setAllData: React.Dispatch<React.SetStateAction<AllData>>; monthlyYM: string; setMonthlyYM: (v: string) => void; isMobile: boolean }) {
   const [monthlyMode, setMonthlyMode] = useState<"count" | "amount">("count");
   const [sortState, setSortState] = useState<Record<string, "asc" | "desc" | "none">>({});
+  const [budgets, setBudgets] = useState<Record<string, Record<string, number>>>({});
+  const [editingBudget, setEditingBudget] = useState<{ staff: string; field: string } | null>(null);
+  const [editingBudgetValue, setEditingBudgetValue] = useState("");
   const [ymYear, ymMonth] = monthlyYM.split("-").map(Number);
   const daysInMonth = new Date(ymYear, ymMonth, 0).getDate();
   const DOW = ["日", "月", "火", "水", "木", "金", "土"];
+
+  // 予算データをロード
+  useEffect(() => {
+    const loadBudgets = async () => {
+      try {
+        const res = await fetch("/api/data");
+        if (!res.ok) return;
+        const data = await res.json();
+        const budgetData: Record<string, Record<string, number>> = {};
+        for (const key of Object.keys(data)) {
+          if (key.startsWith("budget-")) {
+            budgetData[key] = data[key];
+          }
+        }
+        setBudgets(budgetData);
+      } catch {}
+    };
+    loadBudgets();
+  }, []);
+
+  // 予算を保存
+  const saveBudget = async (field: string, staff: string, value: number) => {
+    const budgetKey = `budget-${field}-${monthlyYM}`;
+    const current = budgets[budgetKey] || {};
+    const updated = { ...current, [staff]: value };
+    setBudgets(prev => ({ ...prev, [budgetKey]: updated }));
+    try {
+      await fetch("/api/data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dateKey: budgetKey, data: updated }),
+      });
+    } catch {}
+  };
+
+  // 予算取得
+  const getStaffBudget = (staff: string, field: string): number => {
+    const budgetKey = `budget-${field}-${monthlyYM}`;
+    return budgets[budgetKey]?.[staff] || 0;
+  };
+
+  // 前月繰越を計算（前月の月計合計）
+  const getPrevMonthCarryover = (staff: string, field: keyof StaffActivity): number => {
+    let prevY = ymYear, prevM = ymMonth - 1;
+    if (prevM < 1) { prevM = 12; prevY--; }
+    const prevDaysInMonth = new Date(prevY, prevM, 0).getDate();
+    let total = 0;
+    for (let d = 1; d <= prevDaysInMonth; d++) {
+      const key = `${prevY}-${("0" + prevM).slice(-2)}-${("0" + d).slice(-2)}`;
+      const dayData = allData[key];
+      if (dayData && Array.isArray(dayData.staffActivities)) {
+        const entry = dayData.staffActivities.find(s => s.staff === staff);
+        if (entry) total += ((entry[field] as number) || 0);
+      }
+    }
+    return Math.round(total * 10) / 10;
+  };
+
+  // 達成率の色
+  const getAchievementColor = (rate: number): string => {
+    if (rate <= 50) return "#e74c3c";      // 赤
+    if (rate <= 80) return "#f39c12";      // 黄色
+    if (rate <= 90) return "#27ae60";      // 緑
+    return "#2980b9";                       // 青
+  };
+
+  // 達成率の背景色
+  const getAchievementBg = (rate: number): string => {
+    if (rate <= 50) return "#fdecea";
+    if (rate <= 80) return "#fef9e7";
+    if (rate <= 90) return "#eafaf1";
+    return "#ebf5fb";
+  };
 
   // 年月セレクトの選択肢を生成（2026-03 〜 2028-03）
   const ymOptions: string[] = [];
@@ -1270,7 +1346,6 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
   const cellStyle: React.CSSProperties = { padding: "4px 6px", textAlign: "center", fontSize: 12, borderRight: "1px solid #e0e0e0", borderBottom: "1px solid #e0e0e0", whiteSpace: "nowrap" };
   const headerCellStyle: React.CSSProperties = { ...cellStyle, fontWeight: 700, background: "#f8f9fa", position: "sticky", top: 0, zIndex: 2 };
   const staffCellStyle: React.CSSProperties = { ...cellStyle, fontWeight: 600, textAlign: "left", position: "sticky", left: 0, background: "#fff", zIndex: 1, minWidth: 70 };
-  const fieldHeaderStyle: React.CSSProperties = { ...cellStyle, fontWeight: 600, textAlign: "left", position: "sticky", left: 0, background: "#f0f2f5", zIndex: 3, minWidth: 70 };
 
   return (
     <div style={{ maxWidth: 1400, margin: "0 auto" }}>
@@ -1358,7 +1433,7 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
         </div>
       )}
 
-      {/* 各指標ごとにテーブル */}
+      {/* 各指標ごとにテーブル（件数） */}
       {monthlyMode === "count" && ACTIVITY_FIELDS.map(af => {
         const currentSort = sortState[af.key] || "none";
         const toggleSort = () => {
@@ -1437,17 +1512,41 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
         );
       })}
 
-      {/* 金額テーブル */}
+      {/* 金額テーブル（新仕様：担当→予算→達成率→前月繰越→月計→日付） */}
       {monthlyMode === "amount" && ACTIVITY_AMOUNT_FIELDS.map(af => {
-        const currentSort = sortState[af.key] || "none";
-        const toggleSort = () => {
-          setSortState(prev => ({ ...prev, [af.key]: currentSort === "none" ? "desc" : currentSort === "desc" ? "asc" : "none" }));
+        const sortKeyMonth = af.key + "_month";
+        const sortKeyRate = af.key + "_rate";
+        const currentSortMonth = sortState[sortKeyMonth] || "none";
+        const currentSortRate = sortState[sortKeyRate] || "none";
+        const toggleSortMonth = () => {
+          setSortState(prev => ({ ...prev, [sortKeyMonth]: currentSortMonth === "none" ? "desc" : currentSortMonth === "desc" ? "asc" : "none", [sortKeyRate]: "none" }));
         };
-        const sortedStaff = currentSort === "none" ? STAFF_LIST : [...STAFF_LIST].sort((a, b) => {
-          const aTotal = getStaffMonthTotal(a, af.key);
-          const bTotal = getStaffMonthTotal(b, af.key);
-          return currentSort === "asc" ? aTotal - bTotal : bTotal - aTotal;
-        });
+        const toggleSortRate = () => {
+          setSortState(prev => ({ ...prev, [sortKeyRate]: currentSortRate === "none" ? "desc" : currentSortRate === "desc" ? "asc" : "none", [sortKeyMonth]: "none" }));
+        };
+
+        // ソート対象を決定
+        let sortedStaff = [...STAFF_LIST];
+        if (currentSortMonth !== "none") {
+          sortedStaff.sort((a, b) => {
+            const aTotal = getStaffMonthTotal(a, af.key);
+            const bTotal = getStaffMonthTotal(b, af.key);
+            return currentSortMonth === "asc" ? aTotal - bTotal : bTotal - aTotal;
+          });
+        } else if (currentSortRate !== "none") {
+          sortedStaff.sort((a, b) => {
+            const aBudget = getStaffBudget(a, af.key);
+            const bBudget = getStaffBudget(b, af.key);
+            const aCarry = getPrevMonthCarryover(a, af.key);
+            const bCarry = getPrevMonthCarryover(b, af.key);
+            const aMonth = Math.round(getStaffMonthTotal(a, af.key) * 10) / 10;
+            const bMonth = Math.round(getStaffMonthTotal(b, af.key) * 10) / 10;
+            const aRate = aBudget > 0 ? ((aCarry + aMonth) / aBudget) * 100 : 0;
+            const bRate = bBudget > 0 ? ((bCarry + bMonth) / bBudget) * 100 : 0;
+            return currentSortRate === "asc" ? aRate - bRate : bRate - aRate;
+          });
+        }
+
         return (
         <div key={af.key} style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", marginBottom: 20, overflowX: "auto" }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: af.color, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8 }}>
@@ -1459,8 +1558,13 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
             <thead>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, minWidth: 70 }}>担当</th>
-                <th style={{ ...headerCellStyle, background: "#e8f4fd", minWidth: 60, cursor: "pointer", userSelect: "none" }} onClick={toggleSort}>
-                  月計 {currentSort === "asc" ? "▲" : currentSort === "desc" ? "▼" : "⇅"}
+                <th style={{ ...headerCellStyle, background: "#fff3cd", minWidth: 70 }}>予算</th>
+                <th style={{ ...headerCellStyle, background: "#d4edda", minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortRate}>
+                  達成率 {currentSortRate === "asc" ? "▲" : currentSortRate === "desc" ? "▼" : "⇅"}
+                </th>
+                <th style={{ ...headerCellStyle, background: "#e2e3e5", minWidth: 70 }}>前月繰越</th>
+                <th style={{ ...headerCellStyle, background: "#e8f4fd", minWidth: 60, cursor: "pointer", userSelect: "none" }} onClick={toggleSortMonth}>
+                  月計 {currentSortMonth === "asc" ? "▲" : currentSortMonth === "desc" ? "▼" : "⇅"}
                 </th>
                 {days.map(day => (
                   <th key={day.d} style={{ ...headerCellStyle, color: day.isRed ? "#e63946" : "#333", minWidth: 46 }} title={day.holiday || ""}>
@@ -1470,7 +1574,10 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
               </tr>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, fontSize: 10, padding: "2px 6px" }}></th>
-                <th style={{ ...headerCellStyle, background: "#e8f4fd", fontSize: 10, padding: "2px 6px" }}></th>
+                <th style={{ ...headerCellStyle, background: "#fff3cd", fontSize: 10, padding: "2px 6px" }}>万円</th>
+                <th style={{ ...headerCellStyle, background: "#d4edda", fontSize: 10, padding: "2px 6px" }}>%</th>
+                <th style={{ ...headerCellStyle, background: "#e2e3e5", fontSize: 10, padding: "2px 6px" }}>万円</th>
+                <th style={{ ...headerCellStyle, background: "#e8f4fd", fontSize: 10, padding: "2px 6px" }}>万円</th>
                 {days.map(day => (
                   <th key={`dow-${day.d}`} style={{ ...headerCellStyle, fontSize: 10, padding: "2px 6px", color: day.isRed ? "#e63946" : "#999" }}>
                     {day.holiday ? "祝" : day.dowLabel}
@@ -1481,11 +1588,44 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
             <tbody>
               {sortedStaff.map((staff, idx) => {
                 const monthTotal = Math.round(getStaffMonthTotal(staff, af.key) * 10) / 10;
+                const budget = getStaffBudget(staff, af.key);
+                const carryover = getPrevMonthCarryover(staff, af.key);
+                const achievementRate = budget > 0 ? Math.round(((carryover + monthTotal) / budget) * 1000) / 10 : 0;
                 const rowBg = idx % 2 === 1 ? "#f8f9fb" : "#fff";
+                const isEditing = editingBudget?.staff === staff && editingBudget?.field === af.key;
                 return (
                   <tr key={staff} style={{ background: rowBg }}>
                     <td style={{ ...staffCellStyle, background: rowBg }}>{staff}</td>
-                    <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : "#999", background: idx % 2 === 1 ? "#e1eef8" : "#e8f4fd" }}>{monthTotal}</td>
+                    {/* 予算（クリックで編集） */}
+                    <td style={{ ...cellStyle, background: idx % 2 === 1 ? "#fef9e7" : "#fffdf0", cursor: "pointer", minWidth: 70, padding: 0 }}
+                      onClick={() => { if (!isEditing) { setEditingBudget({ staff, field: af.key }); setEditingBudgetValue(budget ? String(budget) : ""); } }}>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          autoFocus
+                          value={editingBudgetValue}
+                          onChange={(e) => { const v = e.target.value; if (/^\d{0,6}(\.\d{0,1})?$/.test(v) || v === "") setEditingBudgetValue(v); }}
+                          onBlur={() => { const val = parseFloat(editingBudgetValue) || 0; saveBudget(af.key, staff, Math.round(val * 10) / 10); setEditingBudget(null); }}
+                          onKeyDown={(e) => { if (e.key === "Enter") { const val = parseFloat(editingBudgetValue) || 0; saveBudget(af.key, staff, Math.round(val * 10) / 10); setEditingBudget(null); } if (e.key === "Escape") setEditingBudget(null); }}
+                          style={{ width: "100%", border: "2px solid #f39c12", borderRadius: 4, padding: "3px 6px", fontSize: 12, textAlign: "right", outline: "none", background: "#fffef5", boxSizing: "border-box" }}
+                        />
+                      ) : (
+                        <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 600, color: budget > 0 ? "#856404" : "#ccc" }}>
+                          {budget > 0 ? budget : "—"}
+                        </span>
+                      )}
+                    </td>
+                    {/* 達成率 */}
+                    <td style={{ ...cellStyle, fontWeight: 700, color: budget > 0 ? getAchievementColor(achievementRate) : "#ccc", background: budget > 0 ? getAchievementBg(achievementRate) : undefined }}>
+                      {budget > 0 ? `${achievementRate.toFixed(1)}%` : "—"}
+                    </td>
+                    {/* 前月繰越 */}
+                    <td style={{ ...cellStyle, fontWeight: 600, color: carryover > 0 ? "#555" : "#ccc", background: idx % 2 === 1 ? "#eff0f2" : "#f5f6f8" }}>
+                      {carryover > 0 ? carryover : "—"}
+                    </td>
+                    {/* 月計 */}
+                    <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : "#999", background: idx % 2 === 1 ? "#e1eef8" : "#e8f4fd" }}>{monthTotal || "—"}</td>
                     {days.map(day => {
                       const val = getStaffDayValue(staff, day.key, af.key);
                       const rounded = Math.round(val * 10) / 10;
@@ -1501,7 +1641,22 @@ function MonthlyActivityView({ allData, monthlyYM, setMonthlyYM, isMobile }: { a
               {/* 合計行 */}
               <tr style={{ background: "#f8f9fa" }}>
                 <td style={{ ...staffCellStyle, fontWeight: 700, background: "#f0f2f5" }}>合計</td>
-                <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: "#d6eaf8", fontSize: 14 }}>{Math.round(getMonthGrandTotal(af.key) * 10) / 10}</td>
+                <td style={{ ...cellStyle, fontWeight: 700, color: "#856404", background: "#fff3cd" }}>
+                  {Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffBudget(s, af.key), 0) * 10) / 10 || "—"}
+                </td>
+                <td style={{ ...cellStyle, fontWeight: 700, background: "#d4edda" }}>
+                  {(() => {
+                    const totalBudget = STAFF_LIST.reduce((sum, s) => sum + getStaffBudget(s, af.key), 0);
+                    const totalCarry = Math.round(STAFF_LIST.reduce((sum, s) => sum + getPrevMonthCarryover(s, af.key), 0) * 10) / 10;
+                    const totalMonth = Math.round(getMonthGrandTotal(af.key) * 10) / 10;
+                    const totalRate = totalBudget > 0 ? Math.round(((totalCarry + totalMonth) / totalBudget) * 1000) / 10 : 0;
+                    return totalBudget > 0 ? <span style={{ color: getAchievementColor(totalRate) }}>{totalRate.toFixed(1)}%</span> : "—";
+                  })()}
+                </td>
+                <td style={{ ...cellStyle, fontWeight: 700, color: "#555", background: "#e2e3e5" }}>
+                  {Math.round(STAFF_LIST.reduce((sum, s) => sum + getPrevMonthCarryover(s, af.key), 0) * 10) / 10 || "—"}
+                </td>
+                <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: "#d6eaf8", fontSize: 14 }}>{Math.round(getMonthGrandTotal(af.key) * 10) / 10 || "—"}</td>
                 {days.map(day => {
                   const dayTotal = Math.round(getDayTotal(day.key, af.key) * 10) / 10;
                   return (
