@@ -582,7 +582,11 @@ export default function DashboardPage() {
             </button>
             <img src="/logo.png" alt="Cell Promote" style={{ height: isMobile ? 28 : 36, objectFit: "contain" }} />
           </div>
-          <h1 style={{ fontSize: isMobile ? 22 : 32, color: "#1a1a2e", margin: 0, flex: 1, textAlign: "center" }}>{`${calMonth + 2 > 12 ? 1 : calMonth + 2}月稼働`}</h1>
+          <h1 style={{ fontSize: isMobile ? 22 : 32, color: "#1a1a2e", margin: 0, flex: 1, textAlign: "center" }}>{(() => {
+            const m = activeTab === "monthly" ? parseInt(monthlyYM.split("-")[1]) : calMonth + 1;
+            const next = m === 12 ? 1 : m + 1;
+            return `${next}月稼働`;
+          })()}</h1>
           <button onClick={handleLogout} style={{ padding: "8px 16px", background: "#fff", border: "1px solid #ddd", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#666", flexShrink: 0 }}>
             ログアウト
           </button>
@@ -1489,10 +1493,8 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
         <select value={monthlyYM} onChange={(e) => setMonthlyYM(e.target.value)} style={{ padding: "8px 16px", border: "1px solid #ddd", borderRadius: 8, fontSize: 15, fontWeight: 600, background: "#fff", cursor: "pointer" }}>
           {ymOptions.map(ym => {
-            const [y, m] = ym.split("-").map(Number);
-            const nextM = m === 12 ? 1 : m + 1;
-            const nextY = m === 12 ? y + 1 : y;
-            return <option key={ym} value={ym}>{nextY}年{nextM}月</option>;
+            const [y, m] = ym.split("-");
+            return <option key={ym} value={ym}>{y}年{parseInt(m)}月</option>;
           })}
         </select>
         <div style={{ display: "flex", gap: 0, borderRadius: 8, overflow: "hidden", border: "1px solid #ddd" }}>
