@@ -1482,8 +1482,8 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
         </div>
       )}
 
-      {/* 各指標ごとにテーブル（件数） */}
-      {monthlyMode === "count" && ACTIVITY_FIELDS.map(af => {
+      {/* 各指標ごとにテーブル（件数）— 面談設定数を先頭に */}
+      {monthlyMode === "count" && [...ACTIVITY_FIELDS].sort((a, b) => a.targetType === "daily" ? -1 : b.targetType === "daily" ? 1 : 0).map(af => {
         const isDaily = af.targetType === "daily";
         const sortKeyMonth = af.key + "_cMonth";
         const sortKeyTarget = af.key + "_cTarget";
@@ -1546,7 +1546,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                   月計 {sortIconC(currentSortMonth)}
                 </th>
                 {days.map(day => (
-                  <th key={day.d} style={{ ...headerCellStyle, color: day.isRed ? "#e63946" : "#333", minWidth: isDaily ? 56 : 36 }} title={day.holiday || ""}>
+                  <th key={day.d} style={{ ...headerCellStyle, color: day.isRed ? "#e63946" : "#333", minWidth: 36 }} title={day.holiday || ""}>
                     {day.d}
                   </th>
                 ))}
@@ -1602,33 +1602,14 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                     {days.map(day => {
                       const val = getStaffDayValue(staff, day.key, af.key);
                       if (isDaily) {
-                        // 日目標：値/目標 + 達成率色
-                        const dayTarget = getDailyTarget(staff, af.key, day.key);
+                        // 日目標：件数のみ表示、日目標があれば達成率色を適用
+                        const dayTarget = getDailyTarget(staff, af.key, day.key) || target;
                         const dayRate = dayTarget > 0 && val > 0 ? Math.round((val / dayTarget) * 1000) / 10 : 0;
-                        const isEditingDay = editingCell?.staff === staff && editingCell?.field === af.key && editingCell?.type === "dailyTarget" && editingCell?.dayKey === day.key;
                         const hasDayTarget = dayTarget > 0;
                         const cellBg = day.isRed ? "#fef8f8" : (hasDayTarget && val > 0 ? getAchievementBg(dayRate) : undefined);
                         return (
-                          <td key={day.d} style={{ ...cellStyle, background: cellBg, padding: 0, minWidth: 56, verticalAlign: "middle" }}>
-                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "2px 4px", gap: 0 }}>
-                              <span style={{ fontWeight: val > 0 ? 700 : 400, color: val > 0 ? (hasDayTarget ? getAchievementColor(dayRate) : af.color) : "#ddd", fontSize: 12 }}>
-                                {val || "-"}
-                              </span>
-                              <span style={{ fontSize: 9, color: "#999", cursor: "pointer", lineHeight: 1 }}
-                                onClick={(e) => { e.stopPropagation(); setEditingCell({ staff, field: af.key, type: "dailyTarget", dayKey: day.key }); setEditingCellValue(dayTarget ? String(dayTarget) : ""); }}>
-                                {isEditingDay ? (
-                                  <input type="text" inputMode="numeric" autoFocus value={editingCellValue}
-                                    onChange={(ev) => { const v = ev.target.value; if (/^\d{0,3}$/.test(v) || v === "") setEditingCellValue(v); }}
-                                    onBlur={() => { saveDailyTarget(af.key, staff, day.key, parseInt(editingCellValue) || 0); setEditingCell(null); }}
-                                    onKeyDown={(ev) => { if (ev.key === "Enter") { saveDailyTarget(af.key, staff, day.key, parseInt(editingCellValue) || 0); setEditingCell(null); } if (ev.key === "Escape") setEditingCell(null); }}
-                                    onClick={(ev) => ev.stopPropagation()}
-                                    style={{ width: 28, border: "1px solid #f39c12", borderRadius: 3, padding: "1px 2px", fontSize: 9, textAlign: "center", outline: "none", background: "#fffef5" }}
-                                  />
-                                ) : (
-                                  <span title="日目標をクリックで設定">/{dayTarget || "—"}</span>
-                                )}
-                              </span>
-                            </div>
+                          <td key={day.d} style={{ ...cellStyle, color: val > 0 ? (hasDayTarget ? getAchievementColor(dayRate) : af.color) : "#ddd", fontWeight: val > 0 ? 700 : 400, background: cellBg }}>
+                            {val || "-"}
                           </td>
                         );
                       } else {
