@@ -582,7 +582,7 @@ export default function DashboardPage() {
             </button>
             <img src="/logo.png" alt="Cell Promote" style={{ height: isMobile ? 28 : 36, objectFit: "contain" }} />
           </div>
-          <h1 style={{ fontSize: isMobile ? 22 : 32, color: "#1a1a2e", margin: 0, flex: 1, textAlign: "center" }}>{getTitle()}</h1>
+          <h1 style={{ fontSize: isMobile ? 22 : 32, color: "#1a1a2e", margin: 0, flex: 1, textAlign: "center" }}>{`${calMonth + 2 > 12 ? 1 : calMonth + 2}月稼働`}</h1>
           <button onClick={handleLogout} style={{ padding: "8px 16px", background: "#fff", border: "1px solid #ddd", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#666", flexShrink: 0 }}>
             ログアウト
           </button>
@@ -1228,8 +1228,8 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
   const [editingCell, setEditingCell] = useState<{ staff: string; field: string; type: "budget" | "carryover" | "countTarget" | "dailyTarget"; dayKey?: string } | null>(null);
   const [editingCellValue, setEditingCellValue] = useState("");
   // その他
-  const [miscItems, setMiscItems] = useState<{ staff: string; content: string; status: string; createdAt: string }[]>([]);
-  const [miscInput, setMiscInput] = useState<{ staff: string; content: string; status: string }>({ staff: "", content: "", status: "" });
+  const [miscItems, setMiscItems] = useState<{ staff: string; content: string; deadline: string; status: string; createdAt: string }[]>([]);
+  const [miscInput, setMiscInput] = useState<{ staff: string; content: string; deadline: string; status: string }>({ staff: "", content: "", deadline: "", status: "" });
   const [miscSortKey, setMiscSortKey] = useState<"staff" | "status">("staff");
   const [miscSortDir, setMiscSortDir] = useState<"asc" | "desc">("asc");
   const [ymYear, ymMonth] = monthlyYM.split("-").map(Number);
@@ -1272,7 +1272,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
         const data = await res.json();
         const miscKey = `misc-${monthlyYM}`;
         if (data[miscKey] && Array.isArray(data[miscKey].items)) {
-          setMiscItems(data[miscKey].items);
+          setMiscItems(data[miscKey].items.map((item: any) => ({ ...item, deadline: item.deadline || "" })));
         } else {
           setMiscItems([]);
         }
@@ -1282,7 +1282,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
   }, [monthlyYM]);
 
   // その他データを保存
-  const saveMiscItems = async (items: { staff: string; content: string; status: string; createdAt: string }[]) => {
+  const saveMiscItems = async (items: { staff: string; content: string; deadline: string; status: string; createdAt: string }[]) => {
     const miscKey = `misc-${monthlyYM}`;
     try {
       await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dateKey: miscKey, data: { items } }) });
@@ -1296,11 +1296,11 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
     const updated = [...miscItems, { ...miscInput, createdAt: now }];
     setMiscItems(updated);
     saveMiscItems(updated);
-    setMiscInput({ staff: "", content: "", status: "" });
+    setMiscInput({ staff: "", content: "", deadline: "", status: "" });
   };
 
   // その他アイテム更新（内容・進捗のみ、日時は変えない）
-  const updateMiscItem = (index: number, field: "content" | "status", value: string) => {
+  const updateMiscItem = (index: number, field: "content" | "deadline" | "status", value: string) => {
     const updated = [...miscItems];
     updated[index] = { ...updated[index], [field]: value };
     setMiscItems(updated);
@@ -1489,8 +1489,10 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
         <select value={monthlyYM} onChange={(e) => setMonthlyYM(e.target.value)} style={{ padding: "8px 16px", border: "1px solid #ddd", borderRadius: 8, fontSize: 15, fontWeight: 600, background: "#fff", cursor: "pointer" }}>
           {ymOptions.map(ym => {
-            const [y, m] = ym.split("-");
-            return <option key={ym} value={ym}>{y}年{parseInt(m)}月</option>;
+            const [y, m] = ym.split("-").map(Number);
+            const nextM = m === 12 ? 1 : m + 1;
+            const nextY = m === 12 ? y + 1 : y;
+            return <option key={ym} value={ym}>{nextY}年{nextM}月</option>;
           })}
         </select>
         <div style={{ display: "flex", gap: 0, borderRadius: 8, overflow: "hidden", border: "1px solid #ddd" }}>
@@ -2058,6 +2060,12 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                   style={{ padding: "8px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 13 }} />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "#666" }}>締切</label>
+                <input type="date" value={miscInput.deadline}
+                  onChange={(e) => setMiscInput(prev => ({ ...prev, deadline: e.target.value }))}
+                  style={{ padding: "8px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 13, background: "#fff" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <label style={{ fontSize: 11, fontWeight: 600, color: "#666" }}>進捗</label>
                 <div style={{ display: "flex", gap: 4 }}>
                   {statusOptions.map(opt => (
@@ -2103,6 +2111,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                       担当 {miscSortIcon("staff")}
                     </th>
                     <th style={{ padding: "8px 12px", textAlign: "left", borderBottom: "2px solid #e0e0e0", fontWeight: 700, color: "#1a1a2e" }}>内容</th>
+                    <th style={{ padding: "8px 12px", textAlign: "center", borderBottom: "2px solid #e0e0e0", fontWeight: 700, color: "#1a1a2e", width: 130 }}>締切</th>
                     <th style={{ padding: "8px 12px", textAlign: "center", borderBottom: "2px solid #e0e0e0", fontWeight: 700, color: "#1a1a2e", width: 120, cursor: "pointer", userSelect: "none" }}
                       onClick={() => toggleMiscSort("status")}>
                       進捗 {miscSortIcon("status")}
@@ -2121,6 +2130,11 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                           <input type="text" value={item.content} maxLength={20}
                             onChange={(e) => updateMiscItem(item.origIdx, "content", e.target.value)}
                             style={{ width: "100%", border: "1px solid #e0e0e0", borderRadius: 6, padding: "6px 10px", fontSize: 13, background: "#fafafa", boxSizing: "border-box" }} />
+                        </td>
+                        <td style={{ padding: "6px 8px", borderBottom: "1px solid #f0f2f5", textAlign: "center" }}>
+                          <input type="date" value={item.deadline || ""}
+                            onChange={(e) => updateMiscItem(item.origIdx, "deadline", e.target.value)}
+                            style={{ border: "1px solid #e0e0e0", borderRadius: 6, padding: "6px 8px", fontSize: 12, background: "#fafafa", width: "100%", boxSizing: "border-box" }} />
                         </td>
                         <td style={{ padding: "6px 8px", borderBottom: "1px solid #f0f2f5", textAlign: "center" }}>
                           <div style={{ display: "flex", gap: 3, justifyContent: "center" }}>
