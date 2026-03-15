@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a78bfa;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow1" x="-5%" y="-5%" width="110%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#6366f1" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Icon: Stylized "A" inside a rounded square -->
+  <rect x="4" y="10" width="60" height="60" rx="14" fill="url(#grad1)" filter="url(#shadow1)"/>
+
+  <!-- Stylized A mark -->
+  <path d="M34 22 L50 58 L44 58 L40.5 49 L27.5 49 L24 58 L18 58 Z M34 30 L29.5 45 L38.5 45 Z" fill="white" opacity="0.95"/>
+
+  <!-- Small dash accent inside icon -->
+  <rect x="28" y="53" width="12" height="2.5" rx="1.25" fill="white" opacity="0.6"/>
+
+  <!-- Text: "A Dash" -->
+  <text x="78" y="52" font-family="'Helvetica Neue', Arial, sans-serif" font-size="36" font-weight="700" fill="#1e1b4b" letter-spacing="-1">
+    A Dash
+  </text>
+
+  <!-- Accent dash line under text -->
+  <rect x="78" y="58" width="50" height="3" rx="1.5" fill="url(#grad2)"/>
+</svg>

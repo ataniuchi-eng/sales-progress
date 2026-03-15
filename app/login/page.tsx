@@ -40,7 +40,24 @@ export default function LoginPage() {
     <div style={styles.container}>
       <div style={styles.card}>
         <div style={styles.logoArea}>
-          <div style={styles.logo}>CP</div>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 80" width="200" height="48" style={{ marginBottom: 16 }}>
+            <defs>
+              <linearGradient id="la1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style={{ stopColor: "#0284c7", stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: "#0ea5e9", stopOpacity: 1 }} />
+              </linearGradient>
+              <linearGradient id="la2" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style={{ stopColor: "#0284c7", stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: "#38bdf8", stopOpacity: 1 }} />
+              </linearGradient>
+            </defs>
+            <rect x="4" y="10" width="60" height="60" rx="14" fill="url(#la1)" />
+            <circle cx="34" cy="42" r="20" fill="none" stroke="white" strokeWidth="3" strokeDasharray="94 32" strokeOpacity={0.9} transform="rotate(-90 34 42)" />
+            <line x1="34" y1="42" x2="45" y2="30" stroke="white" strokeWidth="2.5" strokeLinecap="round" opacity={0.95} />
+            <circle cx="34" cy="42" r="3" fill="white" opacity={0.9} />
+            <text x="78" y="52" fontFamily="'Helvetica Neue', Arial, sans-serif" fontSize="36" fontWeight="700" fill="#0c4a6e" letterSpacing="-1">A Dash</text>
+            <rect x="78" y="58" width="50" height="3" rx="1.5" fill="url(#la2)" />
+          </svg>
           <h1 style={styles.title}>営業ダッシュボード</h1>
           <p style={styles.subtitle}>Cell Promote Inc.</p>
         </div>
@@ -163,7 +180,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   button: {
     padding: "14px",
-    background: "linear-gradient(135deg, #1a1a2e, #16213e)",
+    background: "linear-gradient(135deg, #0c4a6e, #0284c7)",
     color: "#fff",
     border: "none",
     borderRadius: "10px",

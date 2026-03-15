@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTheme } from "../theme-provider";
+import { ADashLogo, ThemeToggle } from "../logo";
 
 // ===== 担当者リスト =====
 const STAFF_LIST = [
@@ -194,6 +196,7 @@ function getLatestDataForDate(allData: AllData, targetKey: string) {
 // ===== メインコンポーネント =====
 export default function DashboardPage() {
   const router = useRouter();
+  const { theme, t: tc } = useTheme();
   const [allData, setAllData] = useState<AllData>({});
   const [selectedDate, setSelectedDate] = useState(() => {
     const t = todayKey();
@@ -539,7 +542,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f0f2f5", fontFamily: "var(--font)" }}>
-        <p style={{ fontSize: 18, color: "#666" }}>読み込み中...</p>
+        <p style={{ fontSize: 18, color: tc.textSecondary }}>読み込み中...</p>
       </div>
     );
   }
@@ -564,7 +567,7 @@ export default function DashboardPage() {
           .card-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
-      <div style={{ fontFamily: "var(--font)", background: "#f0f2f5", color: "#333", minHeight: "100vh", padding: isMobile ? 12 : 24 }}>
+      <div style={{ fontFamily: "var(--font)", background: tc.bg, color: tc.text, minHeight: "100vh", padding: isMobile ? 12 : 24, transition: "background 0.3s, color 0.3s" }}>
         {/* ヘッダー */}
         <div style={{ display: "flex", alignItems: "center", maxWidth: 1400, margin: "0 auto 16px", position: "relative" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
@@ -572,7 +575,7 @@ export default function DashboardPage() {
               width: 40, height: 40, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
               borderRadius: 8, flexShrink: 0,
             }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a2e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={tc.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 {calendarOpen ? (
                   <><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="9" y1="3" x2="9" y2="21" /><line x1="14" y1="9" x2="19" y2="9" /><line x1="14" y1="15" x2="19" y2="15" /></>
                 ) : (
@@ -580,24 +583,27 @@ export default function DashboardPage() {
                 )}
               </svg>
             </button>
-            <img src="/logo.png" alt="Cell Promote" style={{ height: isMobile ? 28 : 36, objectFit: "contain" }} />
+            <ADashLogo height={isMobile ? 32 : 44} />
           </div>
-          <h1 style={{ fontSize: isMobile ? 22 : 32, color: "#1a1a2e", margin: 0, flex: 1, textAlign: "center" }}>{(() => {
+          <h1 style={{ fontSize: isMobile ? 22 : 32, color: tc.textHeading, margin: 0, flex: 1, textAlign: "center" }}>{(() => {
             const m = activeTab === "monthly" ? parseInt(monthlyYM.split("-")[1]) : calMonth + 1;
             const next = m === 12 ? 1 : m + 1;
             return `${next}月稼働`;
           })()}</h1>
-          <button onClick={handleLogout} style={{ padding: "8px 16px", background: "#fff", border: "1px solid #ddd", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#666", flexShrink: 0 }}>
-            ログアウト
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            <ThemeToggle />
+            <button onClick={handleLogout} style={{ padding: "8px 16px", background: tc.buttonBg, border: `1px solid ${tc.buttonBorder}`, borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, color: tc.buttonText, flexShrink: 0 }}>
+              ログアウト
+            </button>
+          </div>
         </div>
 
         {/* タブ切り替え */}
-        <div style={{ display: "flex", gap: 0, maxWidth: 1400, margin: "0 auto 16px", borderBottom: "2px solid #e0e0e0" }}>
+        <div style={{ display: "flex", gap: 0, maxWidth: 1400, margin: "0 auto 16px", borderBottom: "2px solid " + tc.tabBorder }}>
           {[{ key: "main" as const, label: "メイン" }, { key: "monthly" as const, label: "月別営業活動成績" }].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
-              padding: "10px 24px", fontSize: 14, fontWeight: 700, cursor: "pointer", border: "none", borderBottom: activeTab === tab.key ? "3px solid #0077b6" : "3px solid transparent",
-              background: "transparent", color: activeTab === tab.key ? "#0077b6" : "#999", marginBottom: -2,
+              padding: "10px 24px", fontSize: 14, fontWeight: 700, cursor: "pointer", border: "none", borderBottom: activeTab === tab.key ? "3px solid " + tc.tabActive : "3px solid transparent",
+              background: "transparent", color: activeTab === tab.key ? tc.tabActive : tc.tabInactive, marginBottom: -2,
             }}>{tab.label}</button>
           ))}
         </div>
@@ -610,10 +616,10 @@ export default function DashboardPage() {
           {/* サイドバー: カレンダー */}
           {calendarOpen && (
             <div className="sidebar" style={{ width: 300, flexShrink: 0 }}>
-              <div style={{ background: "#fff", borderRadius: 14, padding: 20, boxShadow: "0 2px 12px rgba(0,0,0,0.08)", position: isMobile ? "static" : "sticky", top: 24 }}>
+              <div style={{ background: tc.bgCard, borderRadius: 14, padding: 20, boxShadow: tc.shadow, position: isMobile ? "static" : "sticky", top: 24 }}>
                 {/* 天気 & 格言 */}
                 {weatherInfo && (
-                  <div style={{ fontSize: 11, color: "#555", marginBottom: 8, lineHeight: 1.6, background: "#f8f9fa", borderRadius: 8, padding: "6px 10px" }}>
+                  <div style={{ fontSize: 11, color: tc.textSecondary, marginBottom: 8, lineHeight: 1.6, background: tc.bgSection, borderRadius: 8, padding: "6px 10px" }}>
                     <div style={{ display: "flex", gap: 12, whiteSpace: "nowrap" }}>
                       <span><b>渋谷</b> {weatherInfo.shibuya}</span>
                       <span><b>新宿</b> {weatherInfo.shinjuku}</span>
@@ -626,7 +632,7 @@ export default function DashboardPage() {
                   </div>
                 )}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{calYear}年{calMonth + 1}月</h3>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{calYear}年{calMonth + 1}月</h3>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button onClick={() => changeMonth(-1)} style={calBtnStyle}>&#9664;</button>
                     <button onClick={() => { const t = todayKey(); const initDate = isBusinessDay(t) ? t : getNextBusinessDay(t); setCalYear(new Date().getFullYear()); setCalMonth(new Date().getMonth()); setSelectedDate(initDate); setSaveDate(initDate); setInputOpen(false); }} style={{ ...calBtnStyle, width: "auto", padding: "0 10px", fontSize: 12 }}>今月</button>
@@ -672,22 +678,22 @@ export default function DashboardPage() {
                   })}
                 </div>
                 <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid #eee", textAlign: "center" }}>
-                  <strong style={{ color: "#1a1a2e", fontSize: 16 }}>{formatDateJP(selectedDate)}</strong>
+                  <strong style={{ color: tc.textPrimary, fontSize: 16 }}>{formatDateJP(selectedDate)}</strong>
                 </div>
               </div>
 
               {/* 全体連絡欄 */}
-              <div style={{ background: "#fff", borderRadius: 14, padding: 20, boxShadow: "0 2px 12px rgba(0,0,0,0.08)", marginTop: 16 }}>
-                <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1a1a2e", margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ background: tc.bgCard, borderRadius: 14, padding: 20, boxShadow: tc.shadow, marginTop: 16 }}>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: tc.textPrimary, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8 }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0077b6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                   全体連絡
                 </h3>
                 {dAnnouncements.length === 0 ? (
-                  <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>連絡事項なし</p>
+                  <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>連絡事項なし</p>
                 ) : (
                   <ul style={{ margin: 0, paddingLeft: 20, listStyle: "disc" }}>
                     {dAnnouncements.map((a, i) => (
-                      <li key={i} style={{ fontSize: 13, color: "#333", marginBottom: 6, lineHeight: 1.5 }}>{a}</li>
+                      <li key={i} style={{ fontSize: 13, color: tc.textPrimary, marginBottom: 6, lineHeight: 1.5 }}>{a}</li>
                     ))}
                   </ul>
                 )}
@@ -708,7 +714,7 @@ export default function DashboardPage() {
             {/* 前日営業活動成績（件数5カード + 金額2カード） */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingBottom: 8, borderBottom: "3px solid #e67e22" }}>
               <div style={{ width: 6, height: 24, borderRadius: 3, background: "#e67e22" }} />
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>前営業日結果</h3>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>前営業日結果</h3>
             </div>
             <h4 style={{ fontSize: 13, fontWeight: 600, color: "#0077b6", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#0077b6", display: "inline-block" }} />件数
@@ -731,7 +737,7 @@ export default function DashboardPage() {
             {/* 注力セクション */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingBottom: 8, borderBottom: "3px solid #4cc9f0" }}>
               <div style={{ width: 6, height: 24, borderRadius: 3, background: "#4cc9f0" }} />
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>注力案件・人材</h3>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>注力案件・人材</h3>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: isMobile ? 16 : 24 }}>
               <FocusProjectsDisplay projects={dProjects} />
@@ -741,7 +747,7 @@ export default function DashboardPage() {
             {/* RA開拓セクション（3段目） */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingBottom: 8, borderBottom: "3px solid #2ecc71" }}>
               <div style={{ width: 6, height: 24, borderRadius: 3, background: "#2ecc71" }} />
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>RA開拓</h3>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>RA開拓</h3>
             </div>
             <div style={{ marginBottom: isMobile ? 16 : 24 }}>
               <RADisplay ra={dRA} />
@@ -759,10 +765,10 @@ export default function DashboardPage() {
 
             {/* 入力セクション */}
             {inputOpen && (
-              <div style={{ background: "#fff", borderRadius: 14, padding: isMobile ? 16 : 32, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
+              <div style={{ background: tc.bgCard, borderRadius: 14, padding: isMobile ? 16 : 32, boxShadow: tc.shadow }}>
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 24 }}>
-                  <label style={{ fontSize: 14, color: "#666" }}>保存日付：</label>
-                  <input type="date" value={saveDate} onChange={(e) => setSaveDate(e.target.value)} style={{ padding: "8px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 14 }} />
+                  <label style={{ fontSize: 14, color: tc.textSecondary }}>保存日付：</label>
+                  <input type="date" value={saveDate} onChange={(e) => setSaveDate(e.target.value)} style={{ padding: "8px 12px", border: "1px solid " + tc.inputBorder, borderRadius: 8, fontSize: 14 }} />
                   <button onClick={saveCurrentData} disabled={saving} style={{
                     padding: "10px 24px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
                     border: "none", borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1,
@@ -772,9 +778,9 @@ export default function DashboardPage() {
                 </div>
 
                 {/* 営業活動入力 */}
-                <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", marginBottom: 16 }}>営業活動</h2>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: tc.textPrimary, marginBottom: 16 }}>営業活動</h2>
 
-                <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                <h4 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#0077b6", display: "inline-block" }} />
                   件数セクター
                 </h4>
@@ -791,11 +797,11 @@ export default function DashboardPage() {
                 ))}
                 <button onClick={() => setStaffActivities([...staffActivities, { staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, amountRA: 0, amountCA: 0, companyRA: "", affiliationRA: "", positionRA: "", companyCA: "", affiliationCA: "", positionCA: "" }])} style={addBtnStyle}>＋ 担当を追加</button>
 
-                <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 4, marginTop: 20, display: "flex", alignItems: "center", gap: 8 }}>
+                <h4 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, marginBottom: 4, marginTop: 20, display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#e74c3c", display: "inline-block" }} />
-                  金額セクター<span style={{ fontSize: 11, fontWeight: 400, color: "#999" }}>※件数セクターでRA受注数またはCA受注数が1以上の担当者のみ表示されます</span>
+                  金額セクター<span style={{ fontSize: 11, fontWeight: 400, color: tc.textSecondary }}>※件数セクターでRA受注数またはCA受注数が1以上の担当者のみ表示されます</span>
                 </h4>
-                <p style={{ fontSize: 11, color: "#999", margin: "0 0 10px", paddingLeft: 16, lineHeight: 1.8 }}>入力単位：万円（整数4桁・小数1桁まで）<br />企業が複数の場合　例＞TIS・ニューソン</p>
+                <p style={{ fontSize: 11, color: tc.textSecondary, margin: "0 0 10px", paddingLeft: 16, lineHeight: 1.8 }}>入力単位：万円（整数4桁・小数1桁まで）<br />企業が複数の場合　例＞TIS・ニューソン</p>
                 {/* RA受注：件数降順 */}
                 {(() => {
                   const raEntries = staffActivities.map((s, i) => ({ s, i })).filter(({ s }) => (s.ordersRA || 0) > 0).sort((a, b) => (b.s.ordersRA || 0) - (a.s.ordersRA || 0));
@@ -804,7 +810,7 @@ export default function DashboardPage() {
                       <div style={{ fontSize: 13, fontWeight: 700, color: "#e74c3c", marginBottom: 8 }}>RA受注</div>
                       {raEntries.map(({ s, i }) => (
                         <div key={`ra-${i}`} style={{ marginBottom: 8, padding: "10px 12px", background: "#fef8f8", borderRadius: 8, borderLeft: "3px solid #e74c3c" }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e", marginBottom: 6 }}>{s.staff}（{s.ordersRA}件）</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: tc.textPrimary, marginBottom: 6 }}>{s.staff}（{s.ordersRA}件）</div>
                           <div className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: isMobile ? "wrap" : "nowrap" }}>
                             <FieldWrap label="金額（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(s.amountRA)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; a[i] = { ...a[i], amountRA: parseAmount(v) }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
                             <FieldWrap label="企業名" grow><input type="text" value={s.companyRA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], companyRA: e.target.value }; setStaffActivities(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
@@ -824,7 +830,7 @@ export default function DashboardPage() {
                       <div style={{ fontSize: 13, fontWeight: 700, color: "#9b59b6", marginBottom: 8 }}>CA受注</div>
                       {caEntries.map(({ s, i }) => (
                         <div key={`ca-${i}`} style={{ marginBottom: 8, padding: "10px 12px", background: "#f9f5fc", borderRadius: 8, borderLeft: "3px solid #9b59b6" }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e", marginBottom: 6 }}>{s.staff}（{s.ordersCA}件）</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: tc.textPrimary, marginBottom: 6 }}>{s.staff}（{s.ordersCA}件）</div>
                           <div className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: isMobile ? "wrap" : "nowrap" }}>
                             <FieldWrap label="金額（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(s.amountCA)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; a[i] = { ...a[i], amountCA: parseAmount(v) }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
                             <FieldWrap label="企業名" grow><input type="text" value={s.companyCA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], companyCA: e.target.value }; setStaffActivities(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
@@ -838,13 +844,13 @@ export default function DashboardPage() {
                 })()}
 
                 {/* 売上数値セクション */}
-                <div style={{ marginTop: 24, borderTop: "3px solid #1a1a2e" }}>
+                <div style={{ marginTop: 24, borderTop: "3px solid " + tc.textPrimary }}>
                   <div onClick={() => setSectionSalesOpen(!sectionSalesOpen)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "linear-gradient(135deg, #1a1a2e, #16213e)", borderRadius: sectionSalesOpen ? "0" : "0 0 10px 10px", cursor: "pointer", userSelect: "none" as const }}>
                     <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>売上数値</h2>
                     <span style={{ fontSize: 18, color: "#fff", transform: sectionSalesOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
                   </div>
                   {sectionSalesOpen && (
-                    <div style={{ padding: "16px", background: "#f8f9fa", borderRadius: "0 0 10px 10px", border: "1px solid #e0e0e0", borderTop: "none" }}>
+                    <div style={{ padding: "16px", background: tc.bgSection, borderRadius: "0 0 10px 10px", border: "1px solid " + tc.border, borderTop: "none" }}>
                       <div className="input-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
                         <InputGroup title="プロパー" fields={[
                           { label: "目標", value: inp.properTarget, key: "properTarget" },
@@ -875,9 +881,9 @@ export default function DashboardPage() {
                     <span style={{ fontSize: 18, color: "#fff", transform: sectionFocusOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
                   </div>
                   {sectionFocusOpen && (
-                    <div style={{ padding: "16px", background: "#f8f9fa", borderRadius: "0 0 10px 10px", border: "1px solid #e0e0e0", borderTop: "none" }}>
+                    <div style={{ padding: "16px", background: tc.bgSection, borderRadius: "0 0 10px 10px", border: "1px solid " + tc.border, borderTop: "none" }}>
 
-                  <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 10 }}>注力案件</h4>
+                  <h4 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, marginBottom: 10 }}>注力案件</h4>
                   {focusProjects.map((p, i) => (
                     <div key={i} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "10px 12px", background: "#f8f9fa", borderRadius: 8, flexWrap: isMobile ? "wrap" : "nowrap" }}>
                       <FieldWrap label="企業名" grow><input type="text" value={p.company} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], company: e.target.value }; setFocusProjects(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
@@ -892,7 +898,7 @@ export default function DashboardPage() {
                   ))}
                   <button onClick={() => setFocusProjects([...focusProjects, { company: "", title: "", price: 0, contract: "派遣", staff: "", position: "", location: "" }])} style={addBtnStyle}>＋ 案件を追加</button>
 
-                  <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 10, marginTop: 24 }}>注力人材</h4>
+                  <h4 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, marginBottom: 10, marginTop: 24 }}>注力人材</h4>
                   {focusPeople.map((p, i) => (
                     <div key={i} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "10px 12px", background: "#f8f9fa", borderRadius: 8, flexWrap: isMobile ? "wrap" : "nowrap" }}>
                       <FieldWrap label="氏名" grow><input type="text" value={p.name} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], name: e.target.value }; setFocusPeople(a); }} placeholder="氏名" style={focusInputStyle} /></FieldWrap>
@@ -911,30 +917,30 @@ export default function DashboardPage() {
                 </div>
 
                 {/* RA開拓セクション */}
-                <div style={{ marginTop: 24, borderTop: "3px solid #1a1a2e" }}>
+                <div style={{ marginTop: 24, borderTop: "3px solid " + tc.textPrimary }}>
                   <div onClick={() => setSectionRAOpen(!sectionRAOpen)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "linear-gradient(135deg, #1a1a2e, #16213e)", borderRadius: sectionRAOpen ? "0" : "0 0 10px 10px", cursor: "pointer", userSelect: "none" as const }}>
                     <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>RA開拓</h2>
                     <span style={{ fontSize: 18, color: "#fff", transform: sectionRAOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
                   </div>
                   {sectionRAOpen && (
-                    <div style={{ padding: "16px", background: "#f8f9fa", borderRadius: "0 0 10px 10px", border: "1px solid #e0e0e0", borderTop: "none" }}>
+                    <div style={{ padding: "16px", background: tc.bgSection, borderRadius: "0 0 10px 10px", border: "1px solid " + tc.border, borderTop: "none" }}>
 
                   <div className="input-3col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
                     <div>
-                      <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 10 }}>案件獲得</h4>
+                      <h4 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, marginBottom: 10 }}>案件獲得</h4>
                       <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
                         <div style={{ flex: 1 }}>
-                          <label style={{ display: "block", fontSize: 12, color: "#666", marginBottom: 3 }}>企業数目標</label>
+                          <label style={{ display: "block", fontSize: 12, color: tc.textSecondary, marginBottom: 3 }}>企業数目標</label>
                           <input type="text" inputMode="numeric" value={raInp.acquisitionTarget} onChange={(e) => handleRaNumInput("acquisitionTarget", e.target.value)} placeholder="0"
-                            style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 15, textAlign: "right", outline: "none", boxSizing: "border-box" }} />
+                            style={{ width: "100%", padding: "8px 12px", border: "1px solid " + tc.inputBorder, borderRadius: 8, fontSize: 15, textAlign: "right", outline: "none", boxSizing: "border-box" }} />
                         </div>
                         <div style={{ flex: 1 }}>
-                          <label style={{ display: "block", fontSize: 12, color: "#666", marginBottom: 3 }}>進捗</label>
+                          <label style={{ display: "block", fontSize: 12, color: tc.textSecondary, marginBottom: 3 }}>進捗</label>
                           <input type="text" inputMode="numeric" value={raInp.acquisitionProgress} onChange={(e) => handleRaNumInput("acquisitionProgress", e.target.value)} placeholder="0"
-                            style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 15, textAlign: "right", outline: "none", boxSizing: "border-box" }} />
+                            style={{ width: "100%", padding: "8px 12px", border: "1px solid " + tc.inputBorder, borderRadius: 8, fontSize: 15, textAlign: "right", outline: "none", boxSizing: "border-box" }} />
                         </div>
                       </div>
-                      <label style={{ display: "block", fontSize: 12, color: "#666", marginBottom: 6 }}>案件獲得企業名</label>
+                      <label style={{ display: "block", fontSize: 12, color: tc.textSecondary, marginBottom: 6 }}>案件獲得企業名</label>
                       {raAcqCompanies.map((c, i) => (
                         <div key={i} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "8px 10px", background: "#f8f9fa", borderRadius: 8 }}>
                           <FieldWrap label="企業名" grow><input type="text" value={c.name} onChange={(e) => { const a = [...raAcqCompanies]; a[i] = { ...a[i], name: e.target.value }; setRaAcqCompanies(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
@@ -945,20 +951,20 @@ export default function DashboardPage() {
                       <button onClick={() => setRaAcqCompanies([...raAcqCompanies, { name: "", staff: "" }])} style={addBtnStyle}>＋ 企業を追加</button>
                     </div>
                     <div>
-                      <h4 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 10 }}>参画決定</h4>
+                      <h4 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, marginBottom: 10 }}>参画決定</h4>
                       <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
                         <div style={{ flex: 1 }}>
-                          <label style={{ display: "block", fontSize: 12, color: "#666", marginBottom: 3 }}>企業目標</label>
+                          <label style={{ display: "block", fontSize: 12, color: tc.textSecondary, marginBottom: 3 }}>企業目標</label>
                           <input type="text" inputMode="numeric" value={raInp.joinTarget} onChange={(e) => handleRaNumInput("joinTarget", e.target.value)} placeholder="0"
-                            style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 15, textAlign: "right", outline: "none", boxSizing: "border-box" }} />
+                            style={{ width: "100%", padding: "8px 12px", border: "1px solid " + tc.inputBorder, borderRadius: 8, fontSize: 15, textAlign: "right", outline: "none", boxSizing: "border-box" }} />
                         </div>
                         <div style={{ flex: 1 }}>
-                          <label style={{ display: "block", fontSize: 12, color: "#666", marginBottom: 3 }}>進捗</label>
+                          <label style={{ display: "block", fontSize: 12, color: tc.textSecondary, marginBottom: 3 }}>進捗</label>
                           <input type="text" inputMode="numeric" value={raInp.joinProgress} onChange={(e) => handleRaNumInput("joinProgress", e.target.value)} placeholder="0"
-                            style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 15, textAlign: "right", outline: "none", boxSizing: "border-box" }} />
+                            style={{ width: "100%", padding: "8px 12px", border: "1px solid " + tc.inputBorder, borderRadius: 8, fontSize: 15, textAlign: "right", outline: "none", boxSizing: "border-box" }} />
                         </div>
                       </div>
-                      <label style={{ display: "block", fontSize: 12, color: "#666", marginBottom: 6 }}>参画決定企業名</label>
+                      <label style={{ display: "block", fontSize: 12, color: tc.textSecondary, marginBottom: 6 }}>参画決定企業名</label>
                       {raJoinCompanies.map((c, i) => (
                         <div key={i} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "8px 10px", background: "#f8f9fa", borderRadius: 8 }}>
                           <FieldWrap label="企業名" grow><input type="text" value={c.name} onChange={(e) => { const a = [...raJoinCompanies]; a[i] = { ...a[i], name: e.target.value }; setRaJoinCompanies(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
@@ -984,10 +990,10 @@ export default function DashboardPage() {
                     <span style={{ fontSize: 18, color: "#fff", transform: sectionAnnouncementOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
                   </div>
                   {sectionAnnouncementOpen && (
-                    <div style={{ padding: "16px", background: "#f8f9fa", borderRadius: "0 0 10px 10px", border: "1px solid #e0e0e0", borderTop: "none" }}>
+                    <div style={{ padding: "16px", background: tc.bgSection, borderRadius: "0 0 10px 10px", border: "1px solid " + tc.border, borderTop: "none" }}>
                   {announcements.map((a, i) => (
                     <div key={i} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-                      <span style={{ fontSize: 13, color: "#999", flexShrink: 0 }}>・</span>
+                      <span style={{ fontSize: 13, color: tc.textSecondary, flexShrink: 0 }}>・</span>
                       <input type="text" value={a} onChange={(e) => { const arr = [...announcements]; arr[i] = e.target.value; setAnnouncements(arr); }} placeholder="連絡事項を入力" style={{ ...focusInputStyle, flex: 1 }} />
                       <button onClick={() => setAnnouncements(announcements.filter((_, j) => j !== i))} style={removeBtnStyle}>×</button>
                     </div>
@@ -1014,7 +1020,7 @@ export default function DashboardPage() {
 
         {/* Toast */}
         {toast && (
-          <div style={{ position: "fixed", bottom: 24, right: 24, padding: "12px 24px", background: "#1a1a2e", color: "#fff", borderRadius: 10, fontSize: 14, fontWeight: 600, boxShadow: "0 4px 16px rgba(0,0,0,0.2)", zIndex: 1000 }}>
+          <div style={{ position: "fixed", bottom: 24, right: 24, padding: "12px 24px", background: tc.toastBg, color: tc.toastText, borderRadius: 10, fontSize: 14, fontWeight: 600, boxShadow: "0 4px 16px rgba(0,0,0,0.2)", zIndex: 1000 }}>
             {toast}
           </div>
         )}
@@ -1025,9 +1031,10 @@ export default function DashboardPage() {
 
 // ===== FieldWrap =====
 function FieldWrap({ label, children, grow, w, className }: { label: string; children: React.ReactNode; grow?: boolean; w?: number; className?: string }) {
+  const { t: tc } = useTheme();
   return (
     <div className={className} style={{ flex: grow ? 1 : "none", width: w, minWidth: 0 }}>
-      <span style={{ fontSize: 10, color: "#999", display: "block" }}>{label}</span>
+      <span style={{ fontSize: 10, color: tc.textSecondary, display: "block" }}>{label}</span>
       {children}
     </div>
   );
@@ -1135,21 +1142,22 @@ function FocusProjectsDisplay({ projects }: { projects: FocusProject[] }) {
 }
 
 function RADisplay({ ra }: { ra: RAData }) {
+  const { t: tc } = useTheme();
   const acqCompanies = Array.isArray(ra.acquisitionCompanies) ? ra.acquisitionCompanies.filter(c => c.name) : [];
   const joinCompanies = Array.isArray(ra.joinCompanies) ? ra.joinCompanies.filter(c => c.name) : [];
   const hasData = ra.acquisitionTarget || ra.acquisitionProgress || ra.joinTarget || ra.joinProgress || acqCompanies.length || joinCompanies.length;
   return (
-    <div style={{ background: "#fff", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", overflowX: "auto" }}>
-      {!hasData ? <p style={{ color: "#bbb", fontSize: 14 }}>未入力</p> : (
+    <div style={{ background: tc.bgCard, borderRadius: 14, padding: "20px 16px", boxShadow: tc.shadow, overflowX: "auto" }}>
+      {!hasData ? <p style={{ color: tc.textDisabled, fontSize: 14 }}>未入力</p> : (
         <div className="focus-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
           {/* 案件獲得 */}
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#0077b6", marginBottom: 10, paddingBottom: 6, borderBottom: "2px solid #e8f4fd" }}>案件獲得</div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 13 }}>
-              <span style={{ color: "#999" }}>企業数目標</span><span style={{ fontWeight: 700, color: "#1a1a2e" }}>{ra.acquisitionTarget}</span>
+              <span style={{ color: tc.textSecondary }}>企業数目標</span><span style={{ fontWeight: 700, color: tc.textPrimary }}>{ra.acquisitionTarget}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
-              <span style={{ color: "#999" }}>進捗</span><span style={{ fontWeight: 700, color: "#0077b6" }}>{ra.acquisitionProgress}</span>
+              <span style={{ color: tc.textSecondary }}>進捗</span><span style={{ fontWeight: 700, color: "#0077b6" }}>{ra.acquisitionProgress}</span>
             </div>
             {ra.acquisitionTarget > 0 && (() => {
               const acqRate = Math.min(Math.round((ra.acquisitionProgress / ra.acquisitionTarget) * 100), 100);
@@ -1157,7 +1165,7 @@ function RADisplay({ ra }: { ra: RAData }) {
               return (
                 <div style={{ marginBottom: 12 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 3 }}>
-                    <span style={{ color: "#999" }}>達成率</span><span style={{ fontWeight: 700, color: acqColor }}>{acqRate}%</span>
+                    <span style={{ color: tc.textSecondary }}>達成率</span><span style={{ fontWeight: 700, color: acqColor }}>{acqRate}%</span>
                   </div>
                   <div style={{ height: 8, borderRadius: 4, background: "#f0f2f5", overflow: "hidden" }}>
                     <div style={{ width: `${acqRate}%`, height: "100%", borderRadius: 4, background: `linear-gradient(90deg, ${acqColor}, ${acqColor}dd)`, transition: "width 0.5s" }} />
@@ -1172,8 +1180,8 @@ function RADisplay({ ra }: { ra: RAData }) {
                 </tr></thead>
                 <tbody>{acqCompanies.map((c, i) => (
                   <tr key={i} style={{ borderBottom: "1px solid #f8f9fa" }}>
-                    <td style={{ padding: "6px 0", fontWeight: 600, color: "#1a1a2e" }}>{c.name}</td>
-                    <td style={{ padding: "6px 0", color: "#555", fontWeight: 600 }}>{c.staff || "-"}</td>
+                    <td style={{ padding: "6px 0", fontWeight: 600, color: tc.textPrimary }}>{c.name}</td>
+                    <td style={{ padding: "6px 0", color: tc.textSecondary, fontWeight: 600 }}>{c.staff || "-"}</td>
                   </tr>
                 ))}</tbody>
               </table>
@@ -1183,10 +1191,10 @@ function RADisplay({ ra }: { ra: RAData }) {
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#2ecc71", marginBottom: 10, paddingBottom: 6, borderBottom: "2px solid #e8f5e9" }}>参画決定</div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 13 }}>
-              <span style={{ color: "#999" }}>企業目標</span><span style={{ fontWeight: 700, color: "#1a1a2e" }}>{ra.joinTarget}</span>
+              <span style={{ color: tc.textSecondary }}>企業目標</span><span style={{ fontWeight: 700, color: tc.textPrimary }}>{ra.joinTarget}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
-              <span style={{ color: "#999" }}>進捗</span><span style={{ fontWeight: 700, color: "#2ecc71" }}>{ra.joinProgress}</span>
+              <span style={{ color: tc.textSecondary }}>進捗</span><span style={{ fontWeight: 700, color: "#2ecc71" }}>{ra.joinProgress}</span>
             </div>
             {ra.joinTarget > 0 && (() => {
               const joinRate = Math.min(Math.round((ra.joinProgress / ra.joinTarget) * 100), 100);
@@ -1194,7 +1202,7 @@ function RADisplay({ ra }: { ra: RAData }) {
               return (
                 <div style={{ marginBottom: 12 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 3 }}>
-                    <span style={{ color: "#999" }}>達成率</span><span style={{ fontWeight: 700, color: joinColor }}>{joinRate}%</span>
+                    <span style={{ color: tc.textSecondary }}>達成率</span><span style={{ fontWeight: 700, color: joinColor }}>{joinRate}%</span>
                   </div>
                   <div style={{ height: 8, borderRadius: 4, background: "#f0f2f5", overflow: "hidden" }}>
                     <div style={{ width: `${joinRate}%`, height: "100%", borderRadius: 4, background: `linear-gradient(90deg, ${joinColor}, ${joinColor}dd)`, transition: "width 0.5s" }} />
@@ -1209,8 +1217,8 @@ function RADisplay({ ra }: { ra: RAData }) {
                 </tr></thead>
                 <tbody>{joinCompanies.map((c, i) => (
                   <tr key={i} style={{ borderBottom: "1px solid #f8f9fa" }}>
-                    <td style={{ padding: "6px 0", fontWeight: 600, color: "#1a1a2e" }}>{c.name}</td>
-                    <td style={{ padding: "6px 0", color: "#555", fontWeight: 600 }}>{c.staff || "-"}</td>
+                    <td style={{ padding: "6px 0", fontWeight: 600, color: tc.textPrimary }}>{c.name}</td>
+                    <td style={{ padding: "6px 0", color: tc.textSecondary, fontWeight: 600 }}>{c.staff || "-"}</td>
                   </tr>
                 ))}</tbody>
               </table>
@@ -1224,6 +1232,7 @@ function RADisplay({ ra }: { ra: RAData }) {
 
 // ===== 月別営業活動成績コンポーネント =====
 function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isMobile }: { allData: AllData; setAllData: React.Dispatch<React.SetStateAction<AllData>>; monthlyYM: string; setMonthlyYM: (v: string) => void; isMobile: boolean }) {
+  const { t: tc } = useTheme();
   const [monthlyMode, setMonthlyMode] = useState<"count" | "amount" | "other">("amount");
   const [sortState, setSortState] = useState<Record<string, "asc" | "desc" | "none">>({});
   const [budgets, setBudgets] = useState<Record<string, Record<string, number>>>({});
@@ -1483,25 +1492,25 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
     return `${m}月営業粗利`;
   })();
 
-  const cellStyle: React.CSSProperties = { padding: "4px 6px", textAlign: "center", fontSize: 12, borderRight: "1px solid #e0e0e0", borderBottom: "1px solid #e0e0e0", whiteSpace: "nowrap" };
-  const headerCellStyle: React.CSSProperties = { ...cellStyle, fontWeight: 700, background: "#f8f9fa", position: "sticky", top: 0, zIndex: 2 };
-  const staffCellStyle: React.CSSProperties = { ...cellStyle, fontWeight: 600, textAlign: "left", position: "sticky", left: 0, background: "#fff", zIndex: 1, minWidth: 70 };
+  const cellStyle: React.CSSProperties = { padding: "4px 6px", textAlign: "center", fontSize: 12, borderRight: "1px solid " + tc.border, borderBottom: "1px solid " + tc.border, whiteSpace: "nowrap" };
+  const headerCellStyle: React.CSSProperties = { ...cellStyle, fontWeight: 700, background: tc.bgSection, position: "sticky", top: 0, zIndex: 2 };
+  const staffCellStyle: React.CSSProperties = { ...cellStyle, fontWeight: 600, textAlign: "left", position: "sticky", left: 0, background: tc.bgCard, zIndex: 1, minWidth: 70 };
 
   return (
     <div style={{ maxWidth: 1400, margin: "0 auto" }}>
       {/* 年月セレクト + 件数/金額 切替 */}
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
-        <select value={monthlyYM} onChange={(e) => setMonthlyYM(e.target.value)} style={{ padding: "8px 16px", border: "1px solid #ddd", borderRadius: 8, fontSize: 15, fontWeight: 600, background: "#fff", cursor: "pointer" }}>
+        <select value={monthlyYM} onChange={(e) => setMonthlyYM(e.target.value)} style={{ padding: "8px 16px", border: "1px solid " + tc.inputBorder, borderRadius: 8, fontSize: 15, fontWeight: 600, background: tc.bgCard, cursor: "pointer" }}>
           {ymOptions.map(ym => {
             const [y, m] = ym.split("-");
             return <option key={ym} value={ym}>{y}年{parseInt(m)}月</option>;
           })}
         </select>
-        <div style={{ display: "flex", gap: 0, borderRadius: 8, overflow: "hidden", border: "1px solid #ddd" }}>
+        <div style={{ display: "flex", gap: 0, borderRadius: 8, overflow: "hidden", border: "1px solid " + tc.inputBorder }}>
           {[{ key: "amount" as const, label: "金額" }, { key: "count" as const, label: "件数" }, { key: "other" as const, label: "その他" }].map(tab => (
             <button key={tab.key} onClick={() => setMonthlyMode(tab.key)} style={{
               padding: "8px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer", border: "none",
-              background: monthlyMode === tab.key ? "#1a1a2e" : "#fff", color: monthlyMode === tab.key ? "#fff" : "#666",
+              background: monthlyMode === tab.key ? "#1a1a2e" : tc.bgCard, color: monthlyMode === tab.key ? "#fff" : tc.textSecondary,
             }}>{tab.label}</button>
           ))}
         </div>
@@ -1518,17 +1527,17 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
               .slice(0, 5);
             const medals = ["🥇", "🥈", "🥉"];
             return (
-              <div key={af.key} style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
+              <div key={af.key} style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{af.label}</h3>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{af.label}</h3>
                   <span style={{ fontSize: 18, fontWeight: 700, color: af.color }}>{getMonthGrandTotal(af.key)}</span>
                 </div>
-                {ranked.length === 0 ? <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>データなし</p> : (
+                {ranked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
                   ranked.map((r, i) => (
                     <div key={r.staff} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid #f0f2f5" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {i < 3 ? <span style={{ fontSize: 16 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: "#999", fontWeight: 700, width: 20, textAlign: "center" }}>{i + 1}</span>}
-                        <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>{r.staff}</span>
+                        {i < 3 ? <span style={{ fontSize: 16 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center" }}>{i + 1}</span>}
+                        <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary }}>{r.staff}</span>
                       </div>
                       <span style={{ fontSize: 15, fontWeight: 700, color: af.color }}>{r.total}</span>
                     </div>
@@ -1569,17 +1578,17 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
             const grandTotal = Math.round(getMonthGrandTotal(af.key) * 10) / 10;
             return (<>
               {/* 達成率カード */}
-              <div key={af.key + "_rate"} style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
+              <div key={af.key + "_rate"} style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{af.key === "amountRA" ? "RA達成率" : "CA達成率"}</h3>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{af.key === "amountRA" ? "RA達成率" : "CA達成率"}</h3>
                   <span style={{ fontSize: 18, fontWeight: 700, color: allBudget > 0 ? getAchievementColor(allRate) : "#ccc" }}>{allBudget > 0 ? `${allRate.toFixed(1)}%` : "—"}</span>
                 </div>
-                {rateRanked.length === 0 ? <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>データなし</p> : (
+                {rateRanked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
                   rateRanked.map((r, i) => (
                     <div key={r.staff} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid #f0f2f5" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {i < 3 ? <span style={{ fontSize: 16 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: "#999", fontWeight: 700, width: 20, textAlign: "center" }}>{i + 1}</span>}
-                        <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>{r.staff}</span>
+                        {i < 3 ? <span style={{ fontSize: 16 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center" }}>{i + 1}</span>}
+                        <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary }}>{r.staff}</span>
                       </div>
                       <span style={{ fontSize: 15, fontWeight: 700, color: getAchievementColor(r.rate) }}>{r.rate.toFixed(1)}%</span>
                     </div>
@@ -1587,17 +1596,17 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                 )}
               </div>
               {/* 金額カード */}
-              <div key={af.key + "_amount"} style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
+              <div key={af.key + "_amount"} style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>{af.rankLabel}</h3>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{af.rankLabel}</h3>
                   <span style={{ fontSize: 18, fontWeight: 700, color: af.color }}>{grandTotal > 0 ? fmtAmount(grandTotal) : "0"}万円</span>
                 </div>
-                {amountRanked.length === 0 ? <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>データなし</p> : (
+                {amountRanked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
                   amountRanked.map((r, i) => (
                     <div key={r.staff} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid #f0f2f5" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {i < 3 ? <span style={{ fontSize: 16 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: "#999", fontWeight: 700, width: 20, textAlign: "center" }}>{i + 1}</span>}
-                        <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>{r.staff}</span>
+                        {i < 3 ? <span style={{ fontSize: 16 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center" }}>{i + 1}</span>}
+                        <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary }}>{r.staff}</span>
                       </div>
                       <span style={{ fontSize: 15, fontWeight: 700, color: af.color }}>{r.total > 0 ? fmtAmount(r.total) : "0"}万円</span>
                     </div>
@@ -1985,7 +1994,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                     return totalBudget > 0 ? <span style={{ color: getAchievementColor(totalRate) }}>{totalRate.toFixed(1)}%</span> : "—";
                   })()}
                 </td>
-                <td style={{ ...cellStyle, fontWeight: 700, color: "#555", background: "#e2e3e5" }}>
+                <td style={{ ...cellStyle, fontWeight: 700, color: tc.textSecondary, background: "#e2e3e5" }}>
                   {fmtAmount(Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffCarryover(s, af.key), 0) * 10) / 10)}
                 </td>
                 <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: "#d6eaf8", fontSize: 14 }}>{fmtAmount(Math.round(getMonthGrandTotal(af.key) * 10) / 10)}</td>
@@ -2217,8 +2226,8 @@ function ActivityRankCard({ title, data, prevData, field, color, unit }: { title
               {showAll && sorted.slice(3).map((s, i) => (
                 <div key={i + 3} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid #f8f9fa" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 12, color: "#999", width: 20, textAlign: "center" }}>{i + 4}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "#555" }}>{s.staff}</span>
+                    <span style={{ fontSize: 12, color: tc.textSecondary, width: 20, textAlign: "center" }}>{i + 4}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: tc.textSecondary }}>{s.staff}</span>
                   </div>
                   <span style={{ fontSize: 14, fontWeight: 700, color }}>{fmtVal(s[field] as number)}</span>
                 </div>
