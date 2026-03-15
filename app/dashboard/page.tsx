@@ -1516,7 +1516,54 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
       )}
 
       {monthlyMode === "amount" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: 24 }} className="focus-grid">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }} className="focus-grid">
+          {/* 達成率ランキング */}
+          {(() => {
+            const ranked = STAFF_LIST
+              .map(staff => {
+                const budgetRA = getStaffBudget(staff, "amountRA");
+                const budgetCA = getStaffBudget(staff, "amountCA");
+                const totalBudget = budgetRA + budgetCA;
+                const carryRA = getStaffCarryover(staff, "amountRA");
+                const carryCA = getStaffCarryover(staff, "amountCA");
+                const monthRA = Math.round(getStaffMonthTotal(staff, "amountRA") * 10) / 10;
+                const monthCA = Math.round(getStaffMonthTotal(staff, "amountCA") * 10) / 10;
+                const totalProgress = carryRA + monthRA + carryCA + monthCA;
+                const rate = totalBudget > 0 ? Math.round((totalProgress / totalBudget) * 1000) / 10 : 0;
+                return { staff, rate, totalBudget };
+              })
+              .filter(s => s.totalBudget > 0)
+              .sort((a, b) => b.rate - a.rate)
+              .slice(0, 5);
+            const medals = ["🥇", "🥈", "🥉"];
+            return (
+              <div style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>達成率</h3>
+                  {(() => {
+                    const allBudget = STAFF_LIST.reduce((sum, s) => sum + getStaffBudget(s, "amountRA") + getStaffBudget(s, "amountCA"), 0);
+                    const allProgress = STAFF_LIST.reduce((sum, s) => {
+                      return sum + getStaffCarryover(s, "amountRA") + getStaffMonthTotal(s, "amountRA") + getStaffCarryover(s, "amountCA") + getStaffMonthTotal(s, "amountCA");
+                    }, 0);
+                    const allRate = allBudget > 0 ? Math.round((allProgress / allBudget) * 1000) / 10 : 0;
+                    return <span style={{ fontSize: 18, fontWeight: 700, color: allBudget > 0 ? getAchievementColor(allRate) : "#ccc" }}>{allBudget > 0 ? `${allRate.toFixed(1)}%` : "—"}</span>;
+                  })()}
+                </div>
+                {ranked.length === 0 ? <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>データなし</p> : (
+                  ranked.map((r, i) => (
+                    <div key={r.staff} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid #f0f2f5" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {i < 3 ? <span style={{ fontSize: 16 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: "#999", fontWeight: 700, width: 20, textAlign: "center" }}>{i + 1}</span>}
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>{r.staff}</span>
+                      </div>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: getAchievementColor(r.rate) }}>{r.rate.toFixed(1)}%</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            );
+          })()}
+          {/* 今月RA受注・今月CA受注ランキング */}
           {ACTIVITY_AMOUNT_FIELDS.map(af => {
             const ranked = STAFF_LIST
               .map(staff => ({ staff, total: Math.round(getStaffMonthTotal(staff, af.key) * 10) / 10 }))
