@@ -175,83 +175,45 @@ export default function DashboardPage() {
     setTimeout(() => setToast(""), 2500);
   }, []);
 
-  // データが実質空かどうか判定（金額系がすべて0、人材・案件が空）
+  // データが実質空かどうか判定（全セクション: 売上数値・注力・RA開拓・全体連絡）
   const isDataEmpty = useCallback((d: DayData): boolean => {
     const p = d.proper || { target: 0, progress: 0, forecast: 0 };
     const b = d.bp || { target: 0, progress: 0, forecast: 0 };
     const f = d.fl || { target: 0, progress: 0, forecast: 0 };
+    const c = d.co || { target: 0, forecast: 0 };
     const numbersEmpty = p.target === 0 && p.progress === 0 && p.forecast === 0
       && b.target === 0 && b.progress === 0 && b.forecast === 0
-      && f.target === 0 && f.progress === 0 && f.forecast === 0;
+      && f.target === 0 && f.progress === 0 && f.forecast === 0
+      && (c.target || 0) === 0 && (c.forecast || 0) === 0;
     const peopleEmpty = !d.focusPeople || d.focusPeople.length === 0;
     const projectsEmpty = !d.focusProjects || d.focusProjects.length === 0;
-    return numbersEmpty && peopleEmpty && projectsEmpty;
+    const ra = d.ra;
+    const raEmpty = !ra || (
+      (ra.acquisitionTarget || 0) === 0 && (ra.acquisitionProgress || 0) === 0
+      && (ra.joinTarget || 0) === 0 && (ra.joinProgress || 0) === 0
+      && (!ra.acquisitionCompanies || ra.acquisitionCompanies.length === 0)
+      && (!ra.joinCompanies || ra.joinCompanies.length === 0)
+    );
+    const announcementsEmpty = !d.announcements || d.announcements.length === 0 || d.announcements.every(a => !a || !a.trim());
+    return numbersEmpty && peopleEmpty && projectsEmpty && raEmpty && announcementsEmpty;
   }, []);
 
-  // 前営業日データを自動継承してDBに保存する関数（マージ方式）
-  const inheritDataForDate = useCallback(async (targetKey: string, currentAllData: AllData) => {
-    // 前営業日のデータを取得（土日祝を飛ばす）
-    const prevBizDay = getPrevBusinessDay(targetKey);
-    let prevData: DayData | null = null;
-    // 前営業日から遡って最新の実データを探す
-    const keys = Object.keys(currentAllData).sort().reverse();
-    for (const k of keys) {
-      if (k <= prevBizDay && isBusinessDay(k) && !isDataEmpty(currentAllData[k])) {
-        prevData = currentAllData[k];
-        break;
-      }
-    }
-    if (!prevData) return; // 前営業日データがない場合はスキップ
-
-    const existing = currentAllData[targetKey];
-    // 既にデータがあり、金額等が入力済みなら継承不要
-    if (existing && !isDataEmpty(existing)) return;
-
-    // マージ：前営業日データをベースに、当日の既存データ（RA等）を上書き
-    const merged: DayData = JSON.parse(JSON.stringify(prevData));
-    // 営業活動は日次入力のため一切継承しない（常に空）
-    merged.staffActivities = [];
-    if (existing) {
-      // 当日に既に入っているデータを優先マージ
-      if (existing.announcements?.length) merged.announcements = existing.announcements;
-      if (existing.ra) {
-        const r = existing.ra;
-        if (r.acquisitionTarget || r.acquisitionProgress || r.acquisitionCompanies?.length || r.joinTarget || r.joinProgress || r.joinCompanies?.length) {
-          merged.ra = existing.ra;
-        }
-      }
-    }
-    try {
-      const res = await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dateKey: targetKey, data: merged }) });
-      if (res.ok) {
-        setAllData((prev) => ({ ...prev, [targetKey]: merged }));
-      }
-    } catch { /* 失敗してもサイレント */ }
-  }, [isDataEmpty]);
-
-  // データロード
+  // データロード（自動継承によるDB書き込みは行わない。表示はgetLatestDataForDateで処理）
   useEffect(() => {
     fetch("/api/data")
       .then((r) => { if (r.status === 401) { router.push("/login"); return null; } return r.json(); })
       .then((data) => {
         if (data) {
           setAllData(data);
-          // ロード完了後、今日のデータがなければ前日から自動継承
-          const today = todayKey();
-          if (!data[today]) {
-            inheritDataForDate(today, data);
-          }
         }
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [router, inheritDataForDate]);
+  }, [router]);
 
-  // 日付選択時に前日データを自動継承
-  useEffect(() => {
-    if (loading || !selectedDate || Object.keys(allData).length === 0) return;
-    inheritDataForDate(selectedDate, allData);
-  }, [selectedDate, loading]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 注: 日付選択時の自動継承は廃止。表示はgetLatestDataForDateのフォールバックで処理。
+  // 入力時はopenInputのフォールバックで前営業日データを表示する。
+  // DB書き込みは明示的な保存操作時のみ行う。
 
   // 表示用データ
   const result = getLatestDataForDate(allData, selectedDate);
