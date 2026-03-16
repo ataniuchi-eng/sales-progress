@@ -590,6 +590,9 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
         const toggleSortCarryover = makeToggleC(sortKeyCarryover, currentSortCarryover);
         const sortIconC = (s: string) => s === "asc" ? "▲" : s === "desc" ? "▼" : "⇅";
 
+        const isCACount = af.key === "ordersCA";
+        const caCountSubs = ["プロパー", "BP", "フリーランス", "協業"];
+
         // ソート
         let sortedStaff = [...STAFF_LIST];
         if (currentSortMonth !== "none") {
@@ -631,9 +634,6 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
             return currentSortCarryover === "asc" ? aC - bC : bC - aC;
           });
         }
-
-        const isCACount = af.key === "ordersCA";
-        const caCountSubs = ["プロパー", "BP", "フリーランス", "協業"];
 
         return (
         <div key={af.key} style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, marginBottom: 20, overflowX: "auto" }}>
