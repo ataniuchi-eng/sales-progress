@@ -2917,7 +2917,11 @@ function AmountRankCard({ title, data, prevData, entryType, color }: {
         </div>
         {entries.map((e, ei) => {
           const details = [e.company, e.affiliation, e.position].filter(Boolean).join(" / ");
-          return details ? <div key={ei} style={{ fontSize: 11, color: tc.textMuted, marginTop: 2, paddingLeft: 28 }}>{entries.length > 1 ? `${ei + 1}件目: ` : ""}{details}{e.amount > 0 ? ` (${fmtVal(e.amount)})` : ""}</div> : null;
+          const revLabel = entryType === "ra" ? "売上" : "仕入";
+          const revVal = e.revenue || 0;
+          const amtVal = e.amount || 0;
+          const priceStr = revVal > 0 && amtVal > 0 ? ` (${revLabel}${fmtVal(revVal)}／粗利${fmtVal(amtVal)})` : revVal > 0 ? ` (${revLabel}${fmtVal(revVal)})` : amtVal > 0 ? ` (粗利${fmtVal(amtVal)})` : "";
+          return details || priceStr ? <div key={ei} style={{ fontSize: 11, color: tc.textMuted, marginTop: 2, paddingLeft: 28 }}>{entries.length > 1 ? `${ei + 1}件目: ` : ""}{details}{priceStr}</div> : null;
         })}
       </div>
     );
