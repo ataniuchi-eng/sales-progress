@@ -257,11 +257,35 @@ export default function DashboardPage() {
   const result = getLatestDataForDate(allData, selectedDate);
   const displayData = result ? result.data : emptyData();
 
-  // CA粗利を所属別に月間集計（進捗として使用）
+  // CA粗利の前月繰越データをロード
+  const [caCarryovers, setCaCarryovers] = useState<Record<string, Record<string, number>>>({});
+  useEffect(() => {
+    const loadCarryovers = async () => {
+      try {
+        const res = await fetch("/api/data");
+        if (!res.ok) return;
+        const data = await res.json();
+        const co: Record<string, Record<string, number>> = {};
+        for (const key of Object.keys(data)) {
+          if (key.startsWith("carryover-")) co[key] = data[key];
+        }
+        setCaCarryovers(co);
+      } catch {}
+    };
+    loadCarryovers();
+  }, []);
+
+  // CA粗利を所属別に月間集計（前月繰越＋月間新規 = 月別タブの合計と同じ）
   const calcCAProgressByAffiliation = useCallback((affiliation: string): number => {
-    const [y, m] = selectedDate.split("-").map(Number);
+    const ym = selectedDate.substring(0, 7); // "YYYY-MM"
+    const [y, m] = ym.split("-").map(Number);
     const daysInMonth = new Date(y, m, 0).getDate();
-    let sum = 0;
+    // 前月繰越: 全スタッフ分を合計
+    const carryKey = `carryover-amountCA_${affiliation}-${ym}`;
+    const carryData = caCarryovers[carryKey] || {};
+    const carryTotal = STAFF_LIST.reduce((sum, staff) => sum + (carryData[staff] || 0), 0);
+    // 月間新規: CA受注の粗利を所属別にSUM
+    let monthTotal = 0;
     for (let d = 1; d <= daysInMonth; d++) {
       const dk = `${y}-${("0" + m).slice(-2)}-${("0" + d).slice(-2)}`;
       const dayData = allData[dk];
@@ -269,12 +293,12 @@ export default function DashboardPage() {
       dayData.staffActivities.forEach((s: any) => {
         const entries = s.caEntries || [];
         entries.forEach((e: any) => {
-          if (e.affiliation === affiliation) sum += (e.amount || 0);
+          if (e.affiliation === affiliation) monthTotal += (e.amount || 0);
         });
       });
     }
-    return Math.round(sum * 10) / 10;
-  }, [allData, selectedDate]);
+    return Math.round((carryTotal + monthTotal) * 10) / 10;
+  }, [allData, selectedDate, caCarryovers]);
 
   const properProgressMan = calcCAProgressByAffiliation("プロパー");
   const bpProgressMan = calcCAProgressByAffiliation("BP");
