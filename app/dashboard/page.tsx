@@ -198,22 +198,58 @@ export default function DashboardPage() {
     return numbersEmpty && peopleEmpty && projectsEmpty && raEmpty && announcementsEmpty;
   }, []);
 
-  // データロード（自動継承によるDB書き込みは行わない。表示はgetLatestDataForDateで処理）
+  // 初回ロード時のみ当日データを前営業日から継承（1回だけ実行）
+  const inheritOnce = useCallback(async (targetKey: string, currentAllData: AllData) => {
+    const existing = currentAllData[targetKey];
+    if (existing && !isDataEmpty(existing)) return; // 既にデータがあれば何もしない
+    // 前営業日から遡って最新の実データを探す
+    const prevBizDay = getPrevBusinessDay(targetKey);
+    let prevData: DayData | null = null;
+    const keys = Object.keys(currentAllData).sort().reverse();
+    for (const k of keys) {
+      if (k <= prevBizDay && isBusinessDay(k) && !isDataEmpty(currentAllData[k])) {
+        prevData = currentAllData[k];
+        break;
+      }
+    }
+    if (!prevData) return;
+    const merged: DayData = JSON.parse(JSON.stringify(prevData));
+    merged.staffActivities = []; // 営業活動は日次入力のため継承しない
+    if (existing) {
+      if (existing.announcements?.length) merged.announcements = existing.announcements;
+      if (existing.ra) {
+        const r = existing.ra;
+        if (r.acquisitionTarget || r.acquisitionProgress || r.acquisitionCompanies?.length || r.joinTarget || r.joinProgress || r.joinCompanies?.length) {
+          merged.ra = existing.ra;
+        }
+      }
+    }
+    try {
+      const res = await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dateKey: targetKey, data: merged }) });
+      if (res.ok) {
+        setAllData((prev) => ({ ...prev, [targetKey]: merged }));
+      }
+    } catch { /* サイレント */ }
+  }, [isDataEmpty]);
+
+  // データロード（初回のみ当日データを前営業日から継承。日付変更時の自動継承は行わない）
   useEffect(() => {
     fetch("/api/data")
       .then((r) => { if (r.status === 401) { router.push("/login"); return null; } return r.json(); })
       .then((data) => {
         if (data) {
           setAllData(data);
+          // 初回ロード時のみ：当日データがなければ前営業日から継承してDBに保存
+          const today = todayKey();
+          if (!data[today] || isDataEmpty(data[today])) {
+            inheritOnce(today, data);
+          }
         }
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [router]);
-
-  // 注: 日付選択時の自動継承は廃止。表示はgetLatestDataForDateのフォールバックで処理。
-  // 入力時はopenInputのフォールバックで前営業日データを表示する。
-  // DB書き込みは明示的な保存操作時のみ行う。
+  }, [router, inheritOnce, isDataEmpty]);
+  // 注: 日付変更時の自動継承は廃止。日付切替はgetLatestDataForDate + openInputフォールバックで処理。
 
   // 表示用データ
   const result = getLatestDataForDate(allData, selectedDate);
