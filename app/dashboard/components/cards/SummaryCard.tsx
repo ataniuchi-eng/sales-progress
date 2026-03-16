@@ -5,8 +5,6 @@ import { formatYen } from "../../utils/numbers";
 import { DonutChart } from "../ui/DonutChart";
 import { Row } from "../ui/Row";
 
-const calcRate = (progress: number, target: number) => target > 0 ? Math.round((progress / target) * 100) : 0;
-
 export function SummaryCard({ title, data, rate, isTotal, standby }: {
   title: string; data: { target: number; progress: number; forecast: number };
   rate: number; isTotal?: boolean; standby?: number;
