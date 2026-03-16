@@ -854,7 +854,7 @@ export default function DashboardPage() {
                               <span style={{ fontSize: 11, color: "#e74c3c", fontWeight: 600, minWidth: 30, alignSelf: "center" }}>{j + 1}件目</span>
                               <FieldWrap label="金額（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(entry.amount)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], amount: parseAmount(v) }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
                               <FieldWrap label="企業名" grow><input type="text" value={entry.company || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], company: e.target.value }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
-                              <FieldWrap label="所属" className="fw-select" w={110}><select value={entry.affiliation || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option></select></FieldWrap>
+                              <FieldWrap label="所属" className="fw-select" w={110}><select value={entry.affiliation || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
                               <FieldWrap label="ポジション" className="fw-select" w={120}><select value={entry.position || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], position: e.target.value }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
                             </div>
                           ))}
@@ -877,7 +877,7 @@ export default function DashboardPage() {
                               <span style={{ fontSize: 11, color: "#9b59b6", fontWeight: 600, minWidth: 30, alignSelf: "center" }}>{j + 1}件目</span>
                               <FieldWrap label="金額（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(entry.amount)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], amount: parseAmount(v) }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
                               <FieldWrap label="企業名" grow><input type="text" value={entry.company || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], company: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
-                              <FieldWrap label="所属" className="fw-select" w={110}><select value={entry.affiliation || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option></select></FieldWrap>
+                              <FieldWrap label="所属" className="fw-select" w={110}><select value={entry.affiliation || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
                               <FieldWrap label="ポジション" className="fw-select" w={120}><select value={entry.position || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], position: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
                             </div>
                           ))}
@@ -946,7 +946,7 @@ export default function DashboardPage() {
                   {focusPeople.map((p, i) => (
                     <div key={i} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "10px 12px", background: "#f8f9fa", borderRadius: 8, flexWrap: isMobile ? "wrap" : "nowrap" }}>
                       <FieldWrap label="氏名" grow><input type="text" value={p.name} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], name: e.target.value }; setFocusPeople(a); }} placeholder="氏名" style={focusInputStyle} /></FieldWrap>
-                      <FieldWrap label="所属" className="fw-select" w={110}><select value={p.affiliation} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], affiliation: e.target.value }; setFocusPeople(a); }} style={focusSelectStyle}><option>プロパー</option><option>BP</option><option>フリーランス</option></select></FieldWrap>
+                      <FieldWrap label="所属" className="fw-select" w={110}><select value={p.affiliation} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], affiliation: e.target.value }; setFocusPeople(a); }} style={focusSelectStyle}><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
                       <FieldWrap label="ポジション" className="fw-select" w={120}><select value={p.position} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], position: e.target.value }; setFocusPeople(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(s => <option key={s}>{s}</option>)}</select></FieldWrap>
                       <FieldWrap label="担当" className="fw-select" w={110}><select value={p.staff} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], staff: e.target.value }; setFocusPeople(a); }} style={focusSelectStyle}><option value="">選択</option>{STAFF_LIST.map(s => <option key={s}>{s}</option>)}</select></FieldWrap>
                       <FieldWrap label="スキル" w={140}><input type="text" value={p.skill} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], skill: e.target.value.slice(0, 15) }; setFocusPeople(a); }} placeholder="スキル" maxLength={15} style={focusInputStyle} /></FieldWrap>
@@ -1667,7 +1667,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
           {ACTIVITY_AMOUNT_FIELDS.map(af => {
             const medals = ["🥇", "🥈", "🥉"];
             const isCAField = af.key === "amountCA";
-            const caSubs = ["プロパー", "BP", "フリーランス"];
+            const caSubs = ["プロパー", "BP", "フリーランス", "協業"];
             const getBudgetForField = (staff: string) => isCAField
               ? caSubs.reduce((sum, a) => sum + getStaffBudget(staff, `amountCA_${a}`), 0)
               : getStaffBudget(staff, af.key);
@@ -1786,7 +1786,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
         }
 
         const isCACount = af.key === "ordersCA";
-        const caCountSubs = ["プロパー", "BP", "フリーランス"];
+        const caCountSubs = ["プロパー", "BP", "フリーランス", "協業"];
 
         return (
         <div key={af.key} style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, marginBottom: 20, overflowX: "auto" }}>
@@ -1794,18 +1794,18 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
             <span style={{ width: 10, height: 10, borderRadius: "50%", background: af.color, display: "inline-block" }} />
             {af.label}
             <span style={{ fontSize: 13, color: tc.textMuted, fontWeight: 400, marginLeft: 8 }}>月合計: {getMonthGrandTotal(af.key)}</span>
-            {isCACount && (
-              <label style={{ fontSize: 12, fontWeight: 500, color: tc.textSecondary, display: "flex", alignItems: "center", gap: 4, marginLeft: "auto", cursor: "pointer" }}>
-                <input type="checkbox" checked={caCountTotalOnly} onChange={(e) => setCaCountTotalOnly(e.target.checked)} style={{ cursor: "pointer" }} />
-                計のみ表示
-              </label>
-            )}
           </h3>
+          {isCACount && (
+            <label style={{ fontSize: 12, fontWeight: 500, color: tc.textSecondary, display: "flex", alignItems: "center", gap: 4, cursor: "pointer", marginBottom: 8 }}>
+              <input type="checkbox" checked={caCountTotalOnly} onChange={(e) => setCaCountTotalOnly(e.target.checked)} style={{ cursor: "pointer" }} />
+              計のみ表示
+            </label>
+          )}
           <table style={{ borderCollapse: "collapse", fontSize: 12, width: "max-content", minWidth: "100%" }}>
             <thead>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, minWidth: 70 }}>担当</th>
-                {isCACount && !caCountTotalOnly && <th style={{ ...headerCellStyle, minWidth: 70 }}>区分</th>}
+                {isCACount && !caCountTotalOnly && <th style={{ ...headerCellStyle, minWidth: 70 }}>所属</th>}
                 <th style={{ ...headerCellStyle, background: hdrYellow, minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSortTarget}>
                   {isDaily ? "日目標" : "目標"} {sortIconC(currentSortTarget)}
                 </th>
@@ -1846,7 +1846,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                 const monthRate = (!isDaily && target > 0) ? Math.round((monthTotal / target) * 1000) / 10 : 0;
 
                 if (isCACount) {
-                  const subRowCount = caCountTotalOnly ? 1 : 4;
+                  const subRowCount = caCountTotalOnly ? 1 : 5;
                   const borderBottom = caCountTotalOnly ? undefined : "2px solid " + (isDark ? "#4a4a4a" : "#d0d0d0");
                   const dashBorder = "1px dashed " + (isDark ? "#555" : "#ddd");
                   const subColor = isDark ? "#c4b5fd" : "#7c3aed";
@@ -1862,14 +1862,14 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                             {totalTargetAll > 0 ? totalTargetAll : "\u2014"}
                           </span>
                         </td>
-                        <td style={{ ...cellStyle, fontWeight: 700, color: totalTargetAll > 0 ? getAchievementColor(totalRateAll) : "#ccc", background: totalTargetAll > 0 ? getAchievementBg(totalRateAll) : undefined }}>
+                        <td style={{ ...cellStyle, fontWeight: 700, color: totalTargetAll > 0 ? getAchievementColor(totalRateAll) : "#ccc", background: totalTargetAll > 0 ? getAchievementBg(totalRateAll) : undefined, textAlign: "right" }}>
                           {totalTargetAll > 0 ? `${totalRateAll.toFixed(1)}%` : "\u2014"}
                         </td>
-                        <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : tc.textMuted, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd") }}>{monthTotal}</td>
+                        <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : tc.textMuted, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd"), textAlign: "right" }}>{monthTotal}</td>
                         {days.map(day => {
                           const val = getStaffDayValue(staff, day.key, af.key);
                           return (
-                            <td key={day.d} style={{ ...cellStyle, color: val > 0 ? af.color : (isDark ? "#555" : "#ddd"), fontWeight: val > 0 ? 700 : 400, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined }}>
+                            <td key={day.d} style={{ ...cellStyle, color: val > 0 ? af.color : (isDark ? "#555" : "#ddd"), fontWeight: val > 0 ? 700 : 400, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined, textAlign: "right" }}>
                               {val || "-"}
                             </td>
                           );
@@ -1890,7 +1890,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                             {subIdx === 0 && (
                               <td rowSpan={subRowCount} style={{ ...staffCellStyle, background: rowBg, borderBottom, verticalAlign: "middle" }}>{staff}</td>
                             )}
-                            <td style={{ ...cellStyle, fontSize: 11, fontWeight: 600, color: subColor, background: rowBg, textAlign: "center", borderBottom: dashBorder }}>
+                            <td style={{ ...cellStyle, fontSize: 11, fontWeight: 600, color: subColor, background: rowBg, textAlign: "left", paddingLeft: 8, borderBottom: dashBorder }}>
                               {sub}
                             </td>
                             {/* 目標（編集可能） */}
@@ -1909,18 +1909,18 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                               )}
                             </td>
                             {/* 達成率 */}
-                            <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subTarget > 0 ? getAchievementColor(subRate) : "#ccc", background: subTarget > 0 ? getAchievementBg(subRate) : undefined, borderBottom: dashBorder }}>
+                            <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subTarget > 0 ? getAchievementColor(subRate) : "#ccc", background: subTarget > 0 ? getAchievementBg(subRate) : undefined, borderBottom: dashBorder, textAlign: "right" }}>
                               {subTarget > 0 ? `${subRate.toFixed(1)}%` : "—"}
                             </td>
                             {/* 月計 */}
-                            <td style={{ ...cellStyle, fontWeight: 600, color: subMonthTotal > 0 ? subColor : tc.textDisabled, fontSize: 11, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd"), borderBottom: dashBorder }}>
+                            <td style={{ ...cellStyle, fontWeight: 600, color: subMonthTotal > 0 ? subColor : tc.textDisabled, fontSize: 11, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd"), borderBottom: dashBorder, textAlign: "right" }}>
                               {subMonthTotal > 0 ? subMonthTotal : "-"}
                             </td>
                             {/* 日付セル */}
                             {days.map(day => {
                               const val = getStaffDayCACountByAffiliation(staff, day.key, sub);
                               return (
-                                <td key={day.d} style={{ ...cellStyle, color: val > 0 ? subColor : (isDark ? "#555" : "#ddd"), fontWeight: val > 0 ? 600 : 400, fontSize: 11, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined, borderBottom: dashBorder }}>
+                                <td key={day.d} style={{ ...cellStyle, color: val > 0 ? subColor : (isDark ? "#555" : "#ddd"), fontWeight: val > 0 ? 600 : 400, fontSize: 11, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined, borderBottom: dashBorder, textAlign: "right" }}>
                                   {val || "-"}
                                 </td>
                               );
@@ -1934,20 +1934,20 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                         const totalRate = totalTarget > 0 ? Math.round((monthTotal / totalTarget) * 1000) / 10 : 0;
                         return (
                           <tr key={`${staff}-total`} style={{ background: rowBg, borderBottom }}>
-                            <td style={{ ...cellStyle, fontSize: 11, fontWeight: 700, color: af.color, background: rowBg, textAlign: "center", borderBottom }}>計</td>
+                            <td style={{ ...cellStyle, fontSize: 11, fontWeight: 700, color: af.color, background: rowBg, textAlign: "left", paddingLeft: 8, borderBottom }}>計</td>
                             <td style={{ ...cellStyle, fontWeight: 700, background: isDark ? (idx % 2 === 1 ? "#2d2600" : "#332d00") : (idx % 2 === 1 ? "#fef9e7" : "#fffdf0"), borderBottom }}>
                               <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 700, color: totalTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled }}>
                                 {totalTarget > 0 ? totalTarget : "—"}
                               </span>
                             </td>
-                            <td style={{ ...cellStyle, fontWeight: 700, color: totalTarget > 0 ? getAchievementColor(totalRate) : "#ccc", background: totalTarget > 0 ? getAchievementBg(totalRate) : undefined, borderBottom }}>
+                            <td style={{ ...cellStyle, fontWeight: 700, color: totalTarget > 0 ? getAchievementColor(totalRate) : "#ccc", background: totalTarget > 0 ? getAchievementBg(totalRate) : undefined, borderBottom, textAlign: "right" }}>
                               {totalTarget > 0 ? `${totalRate.toFixed(1)}%` : "—"}
                             </td>
-                            <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : tc.textMuted, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd"), borderBottom }}>{monthTotal}</td>
+                            <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : tc.textMuted, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd"), borderBottom, textAlign: "right" }}>{monthTotal}</td>
                             {days.map(day => {
                               const val = getStaffDayValue(staff, day.key, af.key);
                               return (
-                                <td key={day.d} style={{ ...cellStyle, color: val > 0 ? af.color : (isDark ? "#555" : "#ddd"), fontWeight: val > 0 ? 700 : 400, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined, borderBottom }}>
+                                <td key={day.d} style={{ ...cellStyle, color: val > 0 ? af.color : (isDark ? "#555" : "#ddd"), fontWeight: val > 0 ? 700 : 400, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined, borderBottom, textAlign: "right" }}>
                                   {val || "-"}
                                 </td>
                               );
@@ -1980,12 +1980,12 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                     </td>
                     {/* 達成率（月目標のみ） */}
                     {!isDaily && (
-                      <td style={{ ...cellStyle, fontWeight: 700, color: target > 0 ? getAchievementColor(monthRate) : "#ccc", background: target > 0 ? getAchievementBg(monthRate) : undefined }}>
+                      <td style={{ ...cellStyle, fontWeight: 700, color: target > 0 ? getAchievementColor(monthRate) : "#ccc", background: target > 0 ? getAchievementBg(monthRate) : undefined, textAlign: "right" }}>
                         {target > 0 ? `${monthRate.toFixed(1)}%` : "—"}
                       </td>
                     )}
                     {/* 月計 */}
-                    <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : tc.textMuted, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd") }}>{monthTotal}</td>
+                    <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : tc.textMuted, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd"), textAlign: "right" }}>{monthTotal}</td>
                     {/* 日付セル */}
                     {days.map(day => {
                       const val = getStaffDayValue(staff, day.key, af.key);
@@ -1996,13 +1996,13 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                         const hasDayTarget = dayTarget > 0;
                         const cellBg = day.isRed ? "#fef8f8" : (hasDayTarget && val > 0 ? getAchievementBg(dayRate) : undefined);
                         return (
-                          <td key={day.d} style={{ ...cellStyle, color: val > 0 ? (hasDayTarget ? getAchievementColor(dayRate) : af.color) : "#ddd", fontWeight: val > 0 ? 700 : 400, background: cellBg }}>
+                          <td key={day.d} style={{ ...cellStyle, color: val > 0 ? (hasDayTarget ? getAchievementColor(dayRate) : af.color) : "#ddd", fontWeight: val > 0 ? 700 : 400, background: cellBg, textAlign: "right" }}>
                             {val || "-"}
                           </td>
                         );
                       } else {
                         return (
-                          <td key={day.d} style={{ ...cellStyle, color: val > 0 ? af.color : "#ddd", fontWeight: val > 0 ? 700 : 400, background: day.isRed ? "#fef8f8" : undefined }}>
+                          <td key={day.d} style={{ ...cellStyle, color: val > 0 ? af.color : "#ddd", fontWeight: val > 0 ? 700 : 400, background: day.isRed ? "#fef8f8" : undefined, textAlign: "right" }}>
                             {val || "-"}
                           </td>
                         );
@@ -2025,13 +2025,13 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                     return (
                       <tr style={{ background: tc.bgSection }}>
                         <td style={{ ...staffCellStyle, fontWeight: 700, background: tc.bgSection }}>合計</td>
-                        <td style={{ ...cellStyle, fontWeight: 700, color: gTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled, background: hdrYellow }}>{gTarget > 0 ? gTarget : "\u2014"}</td>
-                        <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen }}>{gTarget > 0 ? <span style={{ color: getAchievementColor(gRate) }}>{gRate.toFixed(1)}%</span> : "\u2014"}</td>
-                        <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, fontSize: 14 }}>{gMonth}</td>
+                        <td style={{ ...cellStyle, fontWeight: 700, color: gTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled, background: hdrYellow, textAlign: "right" }}>{gTarget > 0 ? gTarget : "\u2014"}</td>
+                        <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen, textAlign: "right" }}>{gTarget > 0 ? <span style={{ color: getAchievementColor(gRate) }}>{gRate.toFixed(1)}%</span> : "\u2014"}</td>
+                        <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, textAlign: "right" }}>{gMonth}</td>
                         {days.map(day => {
                           const dayTotal = getDayTotal(day.key, af.key);
                           return (
-                            <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? (isDark ? "#e2e8f0" : "#1a1a2e") : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection }}>
+                            <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? (isDark ? "#e2e8f0" : "#1a1a2e") : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection, textAlign: "right" }}>
                               {dayTotal || "-"}
                             </td>
                           );
@@ -2049,22 +2049,22 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                         return (
                           <tr key={`grand-${sub}`} style={{ background: tc.bgSection }}>
                             {subIdx === 0 && (
-                              <td rowSpan={4} style={{ ...staffCellStyle, fontWeight: 700, background: tc.bgSection, verticalAlign: "middle", borderBottom: totalBorderBottom }}>合計</td>
+                              <td rowSpan={5} style={{ ...staffCellStyle, fontWeight: 700, background: tc.bgSection, verticalAlign: "middle", borderBottom: totalBorderBottom }}>合計</td>
                             )}
-                            <td style={{ ...cellStyle, fontSize: 11, fontWeight: 600, color: subColor, background: tc.bgSection, textAlign: "center", borderBottom: dashBorder }}>{sub}</td>
-                            <td style={{ ...cellStyle, fontWeight: 600, color: subTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled, background: hdrYellow, fontSize: 11, borderBottom: dashBorder }}>
+                            <td style={{ ...cellStyle, fontSize: 11, fontWeight: 600, color: subColor, background: tc.bgSection, textAlign: "left", paddingLeft: 8, borderBottom: dashBorder }}>{sub}</td>
+                            <td style={{ ...cellStyle, fontWeight: 600, color: subTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled, background: hdrYellow, fontSize: 11, borderBottom: dashBorder, textAlign: "right" }}>
                               {subTarget > 0 ? subTarget : "—"}
                             </td>
-                            <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subTarget > 0 ? getAchievementColor(subRate) : "#ccc", background: subTarget > 0 ? getAchievementBg(subRate) : hdrGreen, borderBottom: dashBorder }}>
+                            <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subTarget > 0 ? getAchievementColor(subRate) : "#ccc", background: subTarget > 0 ? getAchievementBg(subRate) : hdrGreen, borderBottom: dashBorder, textAlign: "right" }}>
                               {subTarget > 0 ? `${subRate.toFixed(1)}%` : "—"}
                             </td>
-                            <td style={{ ...cellStyle, fontWeight: 600, color: subMonth > 0 ? subColor : tc.textDisabled, background: hdrBlue, fontSize: 11, borderBottom: dashBorder }}>
+                            <td style={{ ...cellStyle, fontWeight: 600, color: subMonth > 0 ? subColor : tc.textDisabled, background: hdrBlue, fontSize: 11, borderBottom: dashBorder, textAlign: "right" }}>
                               {subMonth > 0 ? subMonth : "-"}
                             </td>
                             {days.map(day => {
                               const dayVal = STAFF_LIST.reduce((sum, s) => sum + getStaffDayCACountByAffiliation(s, day.key, sub), 0);
                               return (
-                                <td key={day.d} style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: dayVal > 0 ? subColor : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection, borderBottom: dashBorder }}>
+                                <td key={day.d} style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: dayVal > 0 ? subColor : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection, borderBottom: dashBorder, textAlign: "right" }}>
                                   {dayVal || "-"}
                                 </td>
                               );
@@ -2079,18 +2079,18 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                         const grandRate = grandTarget > 0 ? Math.round((grandMonth / grandTarget) * 1000) / 10 : 0;
                         return (
                           <tr style={{ background: tc.bgSection, borderBottom: totalBorderBottom }}>
-                            <td style={{ ...cellStyle, fontSize: 11, fontWeight: 700, color: af.color, background: tc.bgSection, textAlign: "center", borderBottom: totalBorderBottom }}>計</td>
-                            <td style={{ ...cellStyle, fontWeight: 700, color: grandTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled, background: hdrYellow, borderBottom: totalBorderBottom }}>
+                            <td style={{ ...cellStyle, fontSize: 11, fontWeight: 700, color: af.color, background: tc.bgSection, textAlign: "left", paddingLeft: 8, borderBottom: totalBorderBottom }}>計</td>
+                            <td style={{ ...cellStyle, fontWeight: 700, color: grandTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled, background: hdrYellow, borderBottom: totalBorderBottom, textAlign: "right" }}>
                               {grandTarget > 0 ? grandTarget : "—"}
                             </td>
-                            <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen, borderBottom: totalBorderBottom }}>
+                            <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen, borderBottom: totalBorderBottom, textAlign: "right" }}>
                               {grandTarget > 0 ? <span style={{ color: getAchievementColor(grandRate) }}>{grandRate.toFixed(1)}%</span> : "—"}
                             </td>
-                            <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, fontSize: 14, borderBottom: totalBorderBottom }}>{grandMonth}</td>
+                            <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, borderBottom: totalBorderBottom, textAlign: "right" }}>{grandMonth}</td>
                             {days.map(day => {
                               const dayTotal = getDayTotal(day.key, af.key);
                               return (
-                                <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? (isDark ? "#e2e8f0" : "#1a1a2e") : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection, borderBottom: totalBorderBottom }}>
+                                <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? (isDark ? "#e2e8f0" : "#1a1a2e") : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection, borderBottom: totalBorderBottom, textAlign: "right" }}>
                                   {dayTotal || "-"}
                                 </td>
                               );
@@ -2108,19 +2108,19 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                   return (
                     <tr style={{ background: tc.bgSection }}>
                       <td style={{ ...staffCellStyle, fontWeight: 700, background: tc.bgSection }}>合計</td>
-                      <td style={{ ...cellStyle, fontWeight: 700, color: totalTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled, background: hdrYellow }}>
+                      <td style={{ ...cellStyle, fontWeight: 700, color: totalTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled, background: hdrYellow, textAlign: "right" }}>
                         {totalTarget > 0 ? totalTarget : "—"}
                       </td>
                       {!isDaily && (
-                        <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen }}>
+                        <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen, textAlign: "right" }}>
                           {totalTarget > 0 ? <span style={{ color: getAchievementColor(totalRate) }}>{totalRate.toFixed(1)}%</span> : "—"}
                         </td>
                       )}
-                      <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, fontSize: 14 }}>{totalMonth}</td>
+                      <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, textAlign: "right" }}>{totalMonth}</td>
                       {days.map(day => {
                         const dayTotal = getDayTotal(day.key, af.key);
                         return (
-                          <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? (isDark ? "#e2e8f0" : "#1a1a2e") : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection }}>
+                          <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? (isDark ? "#e2e8f0" : "#1a1a2e") : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection, textAlign: "right" }}>
                             {dayTotal || "-"}
                           </td>
                         );
@@ -2163,7 +2163,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
         // ソート対象を決定
         let sortedStaff = [...STAFF_LIST];
         const isCATable = af.key === "amountCA";
-        const caAffiliations = ["プロパー", "BP", "フリーランス"];
+        const caAffiliations = ["プロパー", "BP", "フリーランス", "協業"];
         const getTableBudget = (staff: string) => isCATable
           ? caAffiliations.reduce((sum, a) => sum + getStaffBudget(staff, `amountCA_${a}`), 0)
           : getStaffBudget(staff, af.key);
@@ -2214,18 +2214,18 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                 </>
               );
             })()}
-            {isCATable && (
-              <label style={{ fontSize: 12, fontWeight: 500, color: tc.textSecondary, display: "flex", alignItems: "center", gap: 4, marginLeft: "auto", cursor: "pointer" }}>
-                <input type="checkbox" checked={caAmountTotalOnly} onChange={(e) => setCaAmountTotalOnly(e.target.checked)} style={{ cursor: "pointer" }} />
-                計のみ表示
-              </label>
-            )}
           </h3>
+          {isCATable && (
+            <label style={{ fontSize: 12, fontWeight: 500, color: tc.textSecondary, display: "flex", alignItems: "center", gap: 4, cursor: "pointer", marginBottom: 8 }}>
+              <input type="checkbox" checked={caAmountTotalOnly} onChange={(e) => setCaAmountTotalOnly(e.target.checked)} style={{ cursor: "pointer" }} />
+              計のみ表示
+            </label>
+          )}
           <table style={{ borderCollapse: "collapse", fontSize: 12, width: "max-content", minWidth: "100%" }}>
             <thead>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, minWidth: 70 }}>担当</th>
-                {isCATable && !caAmountTotalOnly && <th style={{ ...headerCellStyle, minWidth: 70 }}>区分</th>}
+                {isCATable && !caAmountTotalOnly && <th style={{ ...headerCellStyle, minWidth: 70 }}>所属</th>}
                 <th style={{ ...headerCellStyle, background: hdrYellow, minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortBudget}>
                   予算 {sortIcon(currentSortBudget)}
                 </th>
@@ -2276,40 +2276,41 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                   { label: "プロパー", affiliation: "プロパー" },
                   { label: "BP", affiliation: "BP" },
                   { label: "フリーランス", affiliation: "フリーランス" },
+                  { label: "協業", affiliation: "協業" },
                 ] : [];
-                const subRowCount = isCATable ? 4 : 1;
+                const subRowCount = isCATable ? 5 : 1;
                 const borderBottom = isCATable ? "2px solid " + (isDark ? "#4a4a4a" : "#d0d0d0") : undefined;
                 return isCATable ? (
                   caAmountTotalOnly ? (
                     (() => {
-                      const totalBudget = Math.round((getStaffBudget(staff, "amountCA_プロパー") + getStaffBudget(staff, "amountCA_BP") + getStaffBudget(staff, "amountCA_フリーランス")) * 10) / 10;
-                      const totalCarryover = Math.round((getStaffCarryover(staff, "amountCA_プロパー") + getStaffCarryover(staff, "amountCA_BP") + getStaffCarryover(staff, "amountCA_フリーランス")) * 10) / 10;
+                      const totalBudget = Math.round((getStaffBudget(staff, "amountCA_プロパー") + getStaffBudget(staff, "amountCA_BP") + getStaffBudget(staff, "amountCA_フリーランス") + getStaffBudget(staff, "amountCA_協業")) * 10) / 10;
+                      const totalCarryover = Math.round((getStaffCarryover(staff, "amountCA_プロパー") + getStaffCarryover(staff, "amountCA_BP") + getStaffCarryover(staff, "amountCA_フリーランス") + getStaffCarryover(staff, "amountCA_協業")) * 10) / 10;
                       const totalMonth = Math.round(getStaffMonthAmountTotal(staff, "ca") * 10) / 10;
                       const totalProgress = Math.round((totalCarryover + totalMonth) * 10) / 10;
                       const totalRate = totalBudget > 0 ? Math.round((totalProgress / totalBudget) * 1000) / 10 : 0;
                       return (
                         <tr key={staff} style={{ background: rowBg }}>
                           <td style={{ ...staffCellStyle, background: rowBg }}>{staff}</td>
-                          <td style={{ ...cellStyle, fontWeight: 700, background: isDark ? (idx % 2 === 1 ? "#2d2600" : "#332d00") : (idx % 2 === 1 ? "#fef9e7" : "#fffdf0") }}>
+                          <td style={{ ...cellStyle, fontWeight: 700, background: isDark ? (idx % 2 === 1 ? "#2d2600" : "#332d00") : (idx % 2 === 1 ? "#fef9e7" : "#fffdf0"), textAlign: "right" }}>
                             <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 700, color: totalBudget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled }}>
                               {fmtAmount(totalBudget)}
                             </span>
                           </td>
-                          <td style={{ ...cellStyle, fontWeight: 700, color: totalProgress > 0 ? (isDark ? "#93c5fd" : "#1e40af") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a2540" : "#1e2d4a") : (idx % 2 === 1 ? "#eff6ff" : "#f0f7ff") }}>
+                          <td style={{ ...cellStyle, fontWeight: 700, color: totalProgress > 0 ? (isDark ? "#93c5fd" : "#1e40af") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a2540" : "#1e2d4a") : (idx % 2 === 1 ? "#eff6ff" : "#f0f7ff"), textAlign: "right" }}>
                             {fmtAmount(totalProgress)}
                           </td>
-                          <td style={{ ...cellStyle, fontWeight: 700, color: totalBudget > 0 ? getAchievementColor(totalRate) : "#ccc", background: totalBudget > 0 ? getAchievementBg(totalRate) : undefined }}>
+                          <td style={{ ...cellStyle, fontWeight: 700, color: totalBudget > 0 ? getAchievementColor(totalRate) : "#ccc", background: totalBudget > 0 ? getAchievementBg(totalRate) : undefined, textAlign: "right" }}>
                             {totalBudget > 0 ? `${totalRate.toFixed(1)}%` : "—"}
                           </td>
-                          <td style={{ ...cellStyle, fontWeight: 700, background: isDark ? (idx % 2 === 1 ? "#2d3748" : "#374151") : (idx % 2 === 1 ? "#eff0f2" : "#f5f6f8") }}>
+                          <td style={{ ...cellStyle, fontWeight: 700, background: isDark ? (idx % 2 === 1 ? "#2d3748" : "#374151") : (idx % 2 === 1 ? "#eff0f2" : "#f5f6f8"), textAlign: "right" }}>
                             <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 700, color: totalCarryover > 0 ? tc.textSecondary : tc.textDisabled }}>{fmtAmount(totalCarryover)}</span>
                           </td>
-                          <td style={{ ...cellStyle, fontWeight: 700, color: totalMonth > 0 ? af.color : tc.textMuted, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd") }}>{fmtAmount(totalMonth)}</td>
+                          <td style={{ ...cellStyle, fontWeight: 700, color: totalMonth > 0 ? af.color : tc.textMuted, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd"), textAlign: "right" }}>{fmtAmount(totalMonth)}</td>
                           {days.map(day => {
                             const val = getStaffDayAmountTotal(staff, day.key, "ca");
                             const rounded = Math.round(val * 10) / 10;
                             return (
-                              <td key={day.d} style={{ ...cellStyle, color: rounded > 0 ? af.color : tc.textDisabled, fontWeight: rounded > 0 ? 700 : 400, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined }}>
+                              <td key={day.d} style={{ ...cellStyle, color: rounded > 0 ? af.color : tc.textDisabled, fontWeight: rounded > 0 ? 700 : 400, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined, textAlign: "right" }}>
                                 {rounded > 0 ? fmtAmount(rounded) : "-"}
                               </td>
                             );
@@ -2329,10 +2330,10 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                           {subIdx === 0 && (
                             <td rowSpan={subRowCount} style={{ ...staffCellStyle, background: rowBg, borderBottom, verticalAlign: "middle" }}>{staff}</td>
                           )}
-                          <td style={{ ...cellStyle, fontSize: 11, fontWeight: 600, color: subColor, background: rowBg, textAlign: "center", borderBottom: dashBorder }}>
+                          <td style={{ ...cellStyle, fontSize: 11, fontWeight: 600, color: subColor, background: rowBg, textAlign: "left", paddingLeft: 8, borderBottom: dashBorder }}>
                             {sub.label}
                           </td>
-                          <td style={{ ...cellStyle, background: isDark ? (idx % 2 === 1 ? "#2d2600" : "#332d00") : (idx % 2 === 1 ? "#fef9e7" : "#fffdf0"), cursor: "pointer", minWidth: 70, padding: 0, borderBottom: dashBorder }}
+                          <td style={{ ...cellStyle, background: isDark ? (idx % 2 === 1 ? "#2d2600" : "#332d00") : (idx % 2 === 1 ? "#fef9e7" : "#fffdf0"), cursor: "pointer", minWidth: 70, padding: 0, borderBottom: dashBorder, textAlign: "right" }}
                             onClick={() => { if (!isEditingBudget) { setEditingCell({ staff, field: `amountCA_${sub.affiliation}`, type: "budget" }); setEditingCellValue(getStaffBudget(staff, `amountCA_${sub.affiliation}`) ? String(getStaffBudget(staff, `amountCA_${sub.affiliation}`)) : ""); } }}>
                             {editingCell?.staff === staff && editingCell?.field === `amountCA_${sub.affiliation}` && editingCell?.type === "budget" ? (
                               <input type="text" inputMode="decimal" autoFocus value={editingCellValue}
@@ -2353,16 +2354,16 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                             const subRate = subBudget > 0 ? Math.round((subProgress / subBudget) * 1000) / 10 : 0;
                             return (
                               <>
-                                <td style={{ ...cellStyle, fontWeight: 600, color: subProgress > 0 ? (isDark ? "#93c5fd" : "#1e40af") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a2540" : "#1e2d4a") : (idx % 2 === 1 ? "#eff6ff" : "#f0f7ff"), borderBottom: dashBorder, fontSize: 11 }}>
+                                <td style={{ ...cellStyle, fontWeight: 600, color: subProgress > 0 ? (isDark ? "#93c5fd" : "#1e40af") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a2540" : "#1e2d4a") : (idx % 2 === 1 ? "#eff6ff" : "#f0f7ff"), borderBottom: dashBorder, fontSize: 11, textAlign: "right" }}>
                                   {fmtAmount(subProgress)}
                                 </td>
-                                <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subBudget > 0 ? getAchievementColor(subRate) : "#ccc", background: subBudget > 0 ? getAchievementBg(subRate) : undefined, borderBottom: dashBorder }}>
+                                <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subBudget > 0 ? getAchievementColor(subRate) : "#ccc", background: subBudget > 0 ? getAchievementBg(subRate) : undefined, borderBottom: dashBorder, textAlign: "right" }}>
                                   {subBudget > 0 ? `${subRate.toFixed(1)}%` : "—"}
                                 </td>
                               </>
                             );
                           })()}
-                          <td style={{ ...cellStyle, background: isDark ? (idx % 2 === 1 ? "#2d3748" : "#374151") : (idx % 2 === 1 ? "#eff0f2" : "#f5f6f8"), cursor: "pointer", minWidth: 70, padding: 0, borderBottom: dashBorder }}
+                          <td style={{ ...cellStyle, background: isDark ? (idx % 2 === 1 ? "#2d3748" : "#374151") : (idx % 2 === 1 ? "#eff0f2" : "#f5f6f8"), cursor: "pointer", minWidth: 70, padding: 0, borderBottom: dashBorder, textAlign: "right" }}
                             onClick={() => { if (!isEditingCarryover) { setEditingCell({ staff, field: `amountCA_${sub.affiliation}`, type: "carryover" }); setEditingCellValue(getStaffCarryover(staff, `amountCA_${sub.affiliation}`) ? String(getStaffCarryover(staff, `amountCA_${sub.affiliation}`)) : ""); } }}>
                             {editingCell?.staff === staff && editingCell?.field === `amountCA_${sub.affiliation}` && editingCell?.type === "carryover" ? (
                               <input type="text" inputMode="decimal" autoFocus value={editingCellValue}
@@ -2374,14 +2375,14 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                               <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 600, color: getStaffCarryover(staff, `amountCA_${sub.affiliation}`) > 0 ? tc.textSecondary : tc.textDisabled }}>{fmtAmount(getStaffCarryover(staff, `amountCA_${sub.affiliation}`))}</span>
                             )}
                           </td>
-                          <td style={{ ...cellStyle, fontWeight: 600, color: subMonthTotal > 0 ? subColor : tc.textDisabled, fontSize: 11, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd"), borderBottom: dashBorder }}>
+                          <td style={{ ...cellStyle, fontWeight: 600, color: subMonthTotal > 0 ? subColor : tc.textDisabled, fontSize: 11, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd"), borderBottom: dashBorder, textAlign: "right" }}>
                             {fmtAmount(subMonthTotal)}
                           </td>
                           {days.map(day => {
                             const val = getStaffDayAmountByAffiliation(staff, day.key, "ca", sub.affiliation);
                             const rounded = Math.round(val * 10) / 10;
                             return (
-                              <td key={day.d} style={{ ...cellStyle, color: rounded > 0 ? subColor : tc.textDisabled, fontWeight: rounded > 0 ? 600 : 400, fontSize: 11, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined, borderBottom: dashBorder }}>
+                              <td key={day.d} style={{ ...cellStyle, color: rounded > 0 ? subColor : tc.textDisabled, fontWeight: rounded > 0 ? 600 : 400, fontSize: 11, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined, borderBottom: dashBorder, textAlign: "right" }}>
                                 {rounded > 0 ? fmtAmount(rounded) : "-"}
                               </td>
                             );
@@ -2391,36 +2392,36 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                     })}
                     {/* 計 sub-row */}
                     {(() => {
-                      const totalBudget = Math.round((getStaffBudget(staff, "amountCA_プロパー") + getStaffBudget(staff, "amountCA_BP") + getStaffBudget(staff, "amountCA_フリーランス")) * 10) / 10;
-                      const totalCarryover = Math.round((getStaffCarryover(staff, "amountCA_プロパー") + getStaffCarryover(staff, "amountCA_BP") + getStaffCarryover(staff, "amountCA_フリーランス")) * 10) / 10;
+                      const totalBudget = Math.round((getStaffBudget(staff, "amountCA_プロパー") + getStaffBudget(staff, "amountCA_BP") + getStaffBudget(staff, "amountCA_フリーランス") + getStaffBudget(staff, "amountCA_協業")) * 10) / 10;
+                      const totalCarryover = Math.round((getStaffCarryover(staff, "amountCA_プロパー") + getStaffCarryover(staff, "amountCA_BP") + getStaffCarryover(staff, "amountCA_フリーランス") + getStaffCarryover(staff, "amountCA_協業")) * 10) / 10;
                       const totalMonth = Math.round(getStaffMonthAmountTotal(staff, "ca") * 10) / 10;
                       const totalProgress = Math.round((totalCarryover + totalMonth) * 10) / 10;
                       const totalRate = totalBudget > 0 ? Math.round((totalProgress / totalBudget) * 1000) / 10 : 0;
                       return (
                     <tr key={`${staff}-total`} style={{ background: rowBg, borderBottom }}>
-                      <td style={{ ...cellStyle, fontSize: 11, fontWeight: 700, color: af.color, background: rowBg, textAlign: "center", borderBottom }}>
+                      <td style={{ ...cellStyle, fontSize: 11, fontWeight: 700, color: af.color, background: rowBg, textAlign: "left", paddingLeft: 8, borderBottom }}>
                         計
                       </td>
-                      <td style={{ ...cellStyle, fontWeight: 700, background: isDark ? (idx % 2 === 1 ? "#2d2600" : "#332d00") : (idx % 2 === 1 ? "#fef9e7" : "#fffdf0"), borderBottom }}>
+                      <td style={{ ...cellStyle, fontWeight: 700, background: isDark ? (idx % 2 === 1 ? "#2d2600" : "#332d00") : (idx % 2 === 1 ? "#fef9e7" : "#fffdf0"), borderBottom, textAlign: "right" }}>
                         <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 700, color: totalBudget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled }}>
                           {fmtAmount(totalBudget)}
                         </span>
                       </td>
-                      <td style={{ ...cellStyle, fontWeight: 700, color: totalProgress > 0 ? (isDark ? "#93c5fd" : "#1e40af") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a2540" : "#1e2d4a") : (idx % 2 === 1 ? "#eff6ff" : "#f0f7ff"), borderBottom }}>
+                      <td style={{ ...cellStyle, fontWeight: 700, color: totalProgress > 0 ? (isDark ? "#93c5fd" : "#1e40af") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a2540" : "#1e2d4a") : (idx % 2 === 1 ? "#eff6ff" : "#f0f7ff"), borderBottom, textAlign: "right" }}>
                         {fmtAmount(totalProgress)}
                       </td>
-                      <td style={{ ...cellStyle, fontWeight: 700, color: totalBudget > 0 ? getAchievementColor(totalRate) : "#ccc", background: totalBudget > 0 ? getAchievementBg(totalRate) : undefined, borderBottom }}>
+                      <td style={{ ...cellStyle, fontWeight: 700, color: totalBudget > 0 ? getAchievementColor(totalRate) : "#ccc", background: totalBudget > 0 ? getAchievementBg(totalRate) : undefined, borderBottom, textAlign: "right" }}>
                         {totalBudget > 0 ? `${totalRate.toFixed(1)}%` : "—"}
                       </td>
-                      <td style={{ ...cellStyle, fontWeight: 700, background: isDark ? (idx % 2 === 1 ? "#2d3748" : "#374151") : (idx % 2 === 1 ? "#eff0f2" : "#f5f6f8"), borderBottom }}>
+                      <td style={{ ...cellStyle, fontWeight: 700, background: isDark ? (idx % 2 === 1 ? "#2d3748" : "#374151") : (idx % 2 === 1 ? "#eff0f2" : "#f5f6f8"), borderBottom, textAlign: "right" }}>
                         <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 700, color: totalCarryover > 0 ? tc.textSecondary : tc.textDisabled }}>{fmtAmount(totalCarryover)}</span>
                       </td>
-                      <td style={{ ...cellStyle, fontWeight: 700, color: totalMonth > 0 ? af.color : tc.textMuted, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd"), borderBottom }}>{fmtAmount(totalMonth)}</td>
+                      <td style={{ ...cellStyle, fontWeight: 700, color: totalMonth > 0 ? af.color : tc.textMuted, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd"), borderBottom, textAlign: "right" }}>{fmtAmount(totalMonth)}</td>
                       {days.map(day => {
                         const val = getStaffDayAmountTotal(staff, day.key, "ca");
                         const rounded = Math.round(val * 10) / 10;
                         return (
-                          <td key={day.d} style={{ ...cellStyle, color: rounded > 0 ? af.color : tc.textDisabled, fontWeight: rounded > 0 ? 700 : 400, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined, borderBottom }}>
+                          <td key={day.d} style={{ ...cellStyle, color: rounded > 0 ? af.color : tc.textDisabled, fontWeight: rounded > 0 ? 700 : 400, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined, borderBottom, textAlign: "right" }}>
                             {rounded > 0 ? fmtAmount(rounded) : "-"}
                           </td>
                         );
@@ -2454,15 +2455,15 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                       )}
                     </td>
                     {/* 進捗（前月繰越 + 月計） */}
-                    <td style={{ ...cellStyle, fontWeight: 700, color: progress > 0 ? (isDark ? "#93c5fd" : "#1e40af") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a2540" : "#1e2d4a") : (idx % 2 === 1 ? "#eff6ff" : "#f0f7ff") }}>
+                    <td style={{ ...cellStyle, fontWeight: 700, color: progress > 0 ? (isDark ? "#93c5fd" : "#1e40af") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a2540" : "#1e2d4a") : (idx % 2 === 1 ? "#eff6ff" : "#f0f7ff"), textAlign: "right" }}>
                       {fmtAmount(progress)}
                     </td>
                     {/* 達成率 */}
-                    <td style={{ ...cellStyle, fontWeight: 700, color: budget > 0 ? getAchievementColor(achievementRate) : "#ccc", background: budget > 0 ? getAchievementBg(achievementRate) : undefined }}>
+                    <td style={{ ...cellStyle, fontWeight: 700, color: budget > 0 ? getAchievementColor(achievementRate) : "#ccc", background: budget > 0 ? getAchievementBg(achievementRate) : undefined, textAlign: "right" }}>
                       {budget > 0 ? `${achievementRate.toFixed(1)}%` : "—"}
                     </td>
                     {/* 前月繰越（クリックで編集） */}
-                    <td style={{ ...cellStyle, background: isDark ? (idx % 2 === 1 ? "#2d3748" : "#374151") : (idx % 2 === 1 ? "#eff0f2" : "#f5f6f8"), cursor: "pointer", minWidth: 70, padding: 0 }}
+                    <td style={{ ...cellStyle, background: isDark ? (idx % 2 === 1 ? "#2d3748" : "#374151") : (idx % 2 === 1 ? "#eff0f2" : "#f5f6f8"), cursor: "pointer", minWidth: 70, padding: 0, textAlign: "right" }}
                       onClick={() => { if (!isEditingCarryover) { setEditingCell({ staff, field: af.key, type: "carryover" }); setEditingCellValue(carryover ? String(carryover) : ""); } }}>
                       {isEditingCarryover ? (
                         <input
@@ -2482,12 +2483,12 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                       )}
                     </td>
                     {/* 月計 */}
-                    <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : tc.textMuted, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd") }}>{fmtAmount(monthTotal)}</td>
+                    <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : tc.textMuted, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd"), textAlign: "right" }}>{fmtAmount(monthTotal)}</td>
                     {days.map(day => {
                       const val = getStaffDayValue(staff, day.key, af.key);
                       const rounded = Math.round(val * 10) / 10;
                       return (
-                        <td key={day.d} style={{ ...cellStyle, color: rounded > 0 ? af.color : tc.textDisabled, fontWeight: rounded > 0 ? 700 : 400, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined }}>
+                        <td key={day.d} style={{ ...cellStyle, color: rounded > 0 ? af.color : tc.textDisabled, fontWeight: rounded > 0 ? 700 : 400, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined, textAlign: "right" }}>
                           {rounded > 0 ? fmtAmount(rounded) : "-"}
                         </td>
                       );
@@ -2497,7 +2498,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
               })}
               {/* 合計行 */}
               {(() => {
-                const caSubs = ["プロパー", "BP", "フリーランス"];
+                const caSubs = ["プロパー", "BP", "フリーランス", "協業"];
                 if (isCATable) {
                   // CA: 4行（プロパー/BP/フリーランス/計）
                   const totalBorderBottom = "2px solid " + (isDark ? "#4a4a4a" : "#d0d0d0");
@@ -2512,23 +2513,23 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                     return (
                       <tr style={{ background: tc.bgSection }}>
                         <td style={{ ...staffCellStyle, fontWeight: 700, background: tc.bgSection }}>合計</td>
-                        <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#fbbf24" : "#856404", background: hdrYellow }}>
+                        <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#fbbf24" : "#856404", background: hdrYellow, textAlign: "right" }}>
                           {fmtAmount(grandBudget)}
                         </td>
-                        <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#93c5fd" : "#1e40af", background: hdrBlueAlt }}>
+                        <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#93c5fd" : "#1e40af", background: hdrBlueAlt, textAlign: "right" }}>
                           {fmtAmount(grandProgress)}
                         </td>
-                        <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen }}>
+                        <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen, textAlign: "right" }}>
                           {grandBudget > 0 ? <span style={{ color: getAchievementColor(grandRate) }}>{grandRate.toFixed(1)}%</span> : "—"}
                         </td>
-                        <td style={{ ...cellStyle, fontWeight: 700, color: tc.textSecondary, background: hdrGray }}>
+                        <td style={{ ...cellStyle, fontWeight: 700, color: tc.textSecondary, background: hdrGray, textAlign: "right" }}>
                           {fmtAmount(grandCarry)}
                         </td>
-                        <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, fontSize: 14 }}>{fmtAmount(grandMonth)}</td>
+                        <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, textAlign: "right" }}>{fmtAmount(grandMonth)}</td>
                         {days.map(day => {
                           const dayTotal = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffDayAmountTotal(s, day.key, "ca"), 0) * 10) / 10;
                           return (
-                            <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? (isDark ? "#e2e8f0" : "#1a1a2e") : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection }}>
+                            <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? (isDark ? "#e2e8f0" : "#1a1a2e") : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection, textAlign: "right" }}>
                               {dayTotal > 0 ? fmtAmount(dayTotal) : "-"}
                             </td>
                           );
@@ -2547,30 +2548,30 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                         return (
                           <tr key={`grand-${sub}`} style={{ background: tc.bgSection }}>
                             {subIdx === 0 && (
-                              <td rowSpan={4} style={{ ...staffCellStyle, fontWeight: 700, background: tc.bgSection, verticalAlign: "middle", borderBottom: totalBorderBottom }}>合計</td>
+                              <td rowSpan={5} style={{ ...staffCellStyle, fontWeight: 700, background: tc.bgSection, verticalAlign: "middle", borderBottom: totalBorderBottom }}>合計</td>
                             )}
-                            <td style={{ ...cellStyle, fontSize: 11, fontWeight: 600, color: subColor, background: tc.bgSection, textAlign: "center", borderBottom: dashBorder }}>
+                            <td style={{ ...cellStyle, fontSize: 11, fontWeight: 600, color: subColor, background: tc.bgSection, textAlign: "left", paddingLeft: 8, borderBottom: dashBorder }}>
                               {sub}
                             </td>
-                            <td style={{ ...cellStyle, fontWeight: 600, color: subBudget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled, background: hdrYellow, fontSize: 11, borderBottom: dashBorder }}>
+                            <td style={{ ...cellStyle, fontWeight: 600, color: subBudget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled, background: hdrYellow, fontSize: 11, borderBottom: dashBorder, textAlign: "right" }}>
                               {fmtAmount(subBudget)}
                             </td>
-                            <td style={{ ...cellStyle, fontWeight: 600, color: subProgress > 0 ? (isDark ? "#93c5fd" : "#1e40af") : tc.textDisabled, background: hdrBlueAlt, fontSize: 11, borderBottom: dashBorder }}>
+                            <td style={{ ...cellStyle, fontWeight: 600, color: subProgress > 0 ? (isDark ? "#93c5fd" : "#1e40af") : tc.textDisabled, background: hdrBlueAlt, fontSize: 11, borderBottom: dashBorder, textAlign: "right" }}>
                               {fmtAmount(subProgress)}
                             </td>
-                            <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subBudget > 0 ? getAchievementColor(subRate) : "#ccc", background: subBudget > 0 ? getAchievementBg(subRate) : hdrGreen, borderBottom: dashBorder }}>
+                            <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subBudget > 0 ? getAchievementColor(subRate) : "#ccc", background: subBudget > 0 ? getAchievementBg(subRate) : hdrGreen, borderBottom: dashBorder, textAlign: "right" }}>
                               {subBudget > 0 ? `${subRate.toFixed(1)}%` : "—"}
                             </td>
-                            <td style={{ ...cellStyle, fontWeight: 600, color: subCarry > 0 ? tc.textSecondary : tc.textDisabled, background: hdrGray, fontSize: 11, borderBottom: dashBorder }}>
+                            <td style={{ ...cellStyle, fontWeight: 600, color: subCarry > 0 ? tc.textSecondary : tc.textDisabled, background: hdrGray, fontSize: 11, borderBottom: dashBorder, textAlign: "right" }}>
                               {fmtAmount(subCarry)}
                             </td>
-                            <td style={{ ...cellStyle, fontWeight: 600, color: subMonth > 0 ? subColor : tc.textDisabled, background: hdrBlue, fontSize: 11, borderBottom: dashBorder }}>
+                            <td style={{ ...cellStyle, fontWeight: 600, color: subMonth > 0 ? subColor : tc.textDisabled, background: hdrBlue, fontSize: 11, borderBottom: dashBorder, textAlign: "right" }}>
                               {fmtAmount(subMonth)}
                             </td>
                             {days.map(day => {
                               const dayVal = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffDayAmountByAffiliation(s, day.key, "ca", sub), 0) * 10) / 10;
                               return (
-                                <td key={day.d} style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: dayVal > 0 ? subColor : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection, borderBottom: dashBorder }}>
+                                <td key={day.d} style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: dayVal > 0 ? subColor : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection, borderBottom: dashBorder, textAlign: "right" }}>
                                   {dayVal > 0 ? fmtAmount(dayVal) : "-"}
                                 </td>
                               );
@@ -2587,26 +2588,26 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                         const grandRate = grandBudget > 0 ? Math.round((grandProgress / grandBudget) * 1000) / 10 : 0;
                         return (
                           <tr style={{ background: tc.bgSection, borderBottom: totalBorderBottom }}>
-                            <td style={{ ...cellStyle, fontSize: 11, fontWeight: 700, color: af.color, background: tc.bgSection, textAlign: "center", borderBottom: totalBorderBottom }}>
+                            <td style={{ ...cellStyle, fontSize: 11, fontWeight: 700, color: af.color, background: tc.bgSection, textAlign: "left", paddingLeft: 8, borderBottom: totalBorderBottom }}>
                               計
                             </td>
-                            <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#fbbf24" : "#856404", background: hdrYellow, borderBottom: totalBorderBottom }}>
+                            <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#fbbf24" : "#856404", background: hdrYellow, borderBottom: totalBorderBottom, textAlign: "right" }}>
                               {fmtAmount(grandBudget)}
                             </td>
-                            <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#93c5fd" : "#1e40af", background: hdrBlueAlt, borderBottom: totalBorderBottom }}>
+                            <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#93c5fd" : "#1e40af", background: hdrBlueAlt, borderBottom: totalBorderBottom, textAlign: "right" }}>
                               {fmtAmount(grandProgress)}
                             </td>
-                            <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen, borderBottom: totalBorderBottom }}>
+                            <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen, borderBottom: totalBorderBottom, textAlign: "right" }}>
                               {grandBudget > 0 ? <span style={{ color: getAchievementColor(grandRate) }}>{grandRate.toFixed(1)}%</span> : "—"}
                             </td>
-                            <td style={{ ...cellStyle, fontWeight: 700, color: tc.textSecondary, background: hdrGray, borderBottom: totalBorderBottom }}>
+                            <td style={{ ...cellStyle, fontWeight: 700, color: tc.textSecondary, background: hdrGray, borderBottom: totalBorderBottom, textAlign: "right" }}>
                               {fmtAmount(grandCarry)}
                             </td>
-                            <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, fontSize: 14, borderBottom: totalBorderBottom }}>{fmtAmount(grandMonth)}</td>
+                            <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, borderBottom: totalBorderBottom, textAlign: "right" }}>{fmtAmount(grandMonth)}</td>
                             {days.map(day => {
                               const dayTotal = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffDayAmountTotal(s, day.key, "ca"), 0) * 10) / 10;
                               return (
-                                <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? (isDark ? "#e2e8f0" : "#1a1a2e") : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection, borderBottom: totalBorderBottom }}>
+                                <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? (isDark ? "#e2e8f0" : "#1a1a2e") : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection, borderBottom: totalBorderBottom, textAlign: "right" }}>
                                   {dayTotal > 0 ? fmtAmount(dayTotal) : "-"}
                                 </td>
                               );
@@ -2626,23 +2627,23 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                   return (
                     <tr style={{ background: tc.bgSection }}>
                       <td style={{ ...staffCellStyle, fontWeight: 700, background: tc.bgSection }}>合計</td>
-                      <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#fbbf24" : "#856404", background: hdrYellow }}>
+                      <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#fbbf24" : "#856404", background: hdrYellow, textAlign: "right" }}>
                         {fmtAmount(grandBudget)}
                       </td>
-                      <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#93c5fd" : "#1e40af", background: hdrBlueAlt }}>
+                      <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#93c5fd" : "#1e40af", background: hdrBlueAlt, textAlign: "right" }}>
                         {fmtAmount(grandProgress)}
                       </td>
-                      <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen }}>
+                      <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen, textAlign: "right" }}>
                         {grandBudget > 0 ? <span style={{ color: getAchievementColor(grandRate) }}>{grandRate.toFixed(1)}%</span> : "—"}
                       </td>
-                      <td style={{ ...cellStyle, fontWeight: 700, color: tc.textSecondary, background: hdrGray }}>
+                      <td style={{ ...cellStyle, fontWeight: 700, color: tc.textSecondary, background: hdrGray, textAlign: "right" }}>
                         {fmtAmount(grandCarry)}
                       </td>
-                      <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, fontSize: 14 }}>{fmtAmount(grandMonth)}</td>
+                      <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, textAlign: "right" }}>{fmtAmount(grandMonth)}</td>
                       {days.map(day => {
                         const dayTotal = Math.round(getDayTotal(day.key, af.key) * 10) / 10;
                         return (
-                          <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? (isDark ? "#e2e8f0" : "#1a1a2e") : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection }}>
+                          <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? (isDark ? "#e2e8f0" : "#1a1a2e") : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection, textAlign: "right" }}>
                             {dayTotal > 0 ? fmtAmount(dayTotal) : "-"}
                           </td>
                         );
