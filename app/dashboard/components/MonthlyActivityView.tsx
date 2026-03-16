@@ -570,10 +570,14 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
         const sortKeyMonth = af.key + "_cMonth";
         const sortKeyTarget = af.key + "_cTarget";
         const sortKeyRate = af.key + "_cRate";
-        const allCountSortKeys = [sortKeyMonth, sortKeyTarget, sortKeyRate];
+        const sortKeyProgress = af.key + "_cProgress";
+        const sortKeyCarryover = af.key + "_cCarryover";
+        const allCountSortKeys = [sortKeyMonth, sortKeyTarget, sortKeyRate, sortKeyProgress, sortKeyCarryover];
         const currentSortMonth = sortState[sortKeyMonth] || "none";
         const currentSortTarget = sortState[sortKeyTarget] || "none";
         const currentSortRate = sortState[sortKeyRate] || "none";
+        const currentSortProgress = sortState[sortKeyProgress] || "none";
+        const currentSortCarryover = sortState[sortKeyCarryover] || "none";
         const makeToggleC = (key: string, current: string) => () => {
           const reset: Record<string, "none"> = {};
           allCountSortKeys.forEach(k => { reset[k] = "none"; });
@@ -582,6 +586,8 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
         const toggleSortMonth = makeToggleC(sortKeyMonth, currentSortMonth);
         const toggleSortTarget = makeToggleC(sortKeyTarget, currentSortTarget);
         const toggleSortRate = makeToggleC(sortKeyRate, currentSortRate);
+        const toggleSortProgress = makeToggleC(sortKeyProgress, currentSortProgress);
+        const toggleSortCarryover = makeToggleC(sortKeyCarryover, currentSortCarryover);
         const sortIconC = (s: string) => s === "asc" ? "▲" : s === "desc" ? "▼" : "⇅";
 
         // ソート
@@ -607,6 +613,22 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
             const aR = aT > 0 ? ((getStaffMonthTotal(a, af.key) + aCarry) / aT) * 100 : 0;
             const bR = bT > 0 ? ((getStaffMonthTotal(b, af.key) + bCarry) / bT) * 100 : 0;
             return currentSortRate === "asc" ? aR - bR : bR - aR;
+          });
+        } else if (currentSortProgress !== "none" && !isDaily && isCACount) {
+          const caSubs = ["プロパー", "BP", "フリーランス", "協業"];
+          sortedStaff.sort((a, b) => {
+            const aCarry = caSubs.reduce((s, sub) => s + getCountCarryover(a, `ordersCA_${sub}`), 0);
+            const bCarry = caSubs.reduce((s, sub) => s + getCountCarryover(b, `ordersCA_${sub}`), 0);
+            const aP = aCarry + getStaffMonthTotal(a, af.key);
+            const bP = bCarry + getStaffMonthTotal(b, af.key);
+            return currentSortProgress === "asc" ? aP - bP : bP - aP;
+          });
+        } else if (currentSortCarryover !== "none" && !isDaily && isCACount) {
+          const caSubs = ["プロパー", "BP", "フリーランス", "協業"];
+          sortedStaff.sort((a, b) => {
+            const aC = caSubs.reduce((s, sub) => s + getCountCarryover(a, `ordersCA_${sub}`), 0);
+            const bC = caSubs.reduce((s, sub) => s + getCountCarryover(b, `ordersCA_${sub}`), 0);
+            return currentSortCarryover === "asc" ? aC - bC : bC - aC;
           });
         }
 
@@ -634,13 +656,13 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                 <th style={{ ...headerCellStyle, background: hdrYellow, minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSortTarget}>
                   {isDaily ? "日目標" : "目標"} {sortIconC(currentSortTarget)}
                 </th>
-                {isCACount && !isDaily && <th style={{ ...headerCellStyle, background: isDark ? "#1a3a4a" : "#d1ecf1", minWidth: 50 }}>進捗</th>}
+                {isCACount && !isDaily && <th style={{ ...headerCellStyle, background: isDark ? "#1a3a4a" : "#d1ecf1", minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSortProgress}>進捗 {sortIconC(currentSortProgress)}</th>}
                 {!isDaily && (
                   <th style={{ ...headerCellStyle, background: hdrGreen, minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSortRate}>
                     達成率 {sortIconC(currentSortRate)}
                   </th>
                 )}
-                {isCACount && !isDaily && <th style={{ ...headerCellStyle, background: isDark ? "#2d1a3a" : "#e8d5f5", minWidth: 60 }}>{countCarryoverLabel}</th>}
+                {isCACount && !isDaily && <th style={{ ...headerCellStyle, background: isDark ? "#2d1a3a" : "#e8d5f5", minWidth: 60, cursor: "pointer", userSelect: "none" }} onClick={toggleSortCarryover}>{countCarryoverLabel} {sortIconC(currentSortCarryover)}</th>}
                 <th style={{ ...headerCellStyle, background: hdrBlue, minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSortMonth}>
                   月計 {sortIconC(currentSortMonth)}
                 </th>

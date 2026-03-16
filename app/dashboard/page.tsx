@@ -533,7 +533,8 @@ export default function DashboardPage() {
           {/* サイドバー: カレンダー */}
           {calendarOpen && (
             <div className="sidebar" style={{ width: 300, flexShrink: 0 }}>
-              <div style={{ background: tc.bgCard, borderRadius: 14, padding: 20, boxShadow: tc.shadow, position: isMobile ? "static" : "sticky", top: 24 }}>
+              <div style={{ position: isMobile ? "static" : "sticky", top: 24, maxHeight: isMobile ? "none" : "calc(100vh - 48px)", overflowY: isMobile ? "visible" : "auto" }}>
+              <div style={{ background: tc.bgCard, borderRadius: 14, padding: 20, boxShadow: tc.shadow }}>
                 {/* 会社ロゴ */}
                 <div style={{ textAlign: "center", marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${tc.border}` }}>
                   <img src="/logo.png" alt="Cell Promote" style={{ maxWidth: "80%", height: "auto", maxHeight: 40, objectFit: "contain" }} />
@@ -618,6 +619,7 @@ export default function DashboardPage() {
                     ))}
                   </ul>
                 )}
+              </div>
               </div>
             </div>
           )}
