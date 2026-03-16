@@ -2129,6 +2129,9 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                   );
                 }
               })()}
+            </tbody>
+          </table>
+        </div>
         );
       })}
 
