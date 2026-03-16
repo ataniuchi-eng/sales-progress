@@ -42,7 +42,7 @@ const ACTIVITY_FIELDS: { key: keyof StaffActivity; label: string; color: string;
   { key: "appointmentAcquisitions", label: "RA開拓アポ獲得", color: "#2ecc71", targetType: "monthly" },
 ];
 
-const ACTIVITY_AMOUNT_FIELDS: { key: keyof StaffActivity; label: string; rankLabel: string; tableLabel: string; color: string }[] = [
+const ACTIVITY_AMOUNT_FIELDS: { key: string; label: string; rankLabel: string; tableLabel: string; color: string }[] = [
   { key: "amountRA", label: "RA受注金額", rankLabel: "今月RA受注", tableLabel: "RA粗利", color: "#e74c3c" },
   { key: "amountCA", label: "CA受注金額", rankLabel: "今月CA受注", tableLabel: "CA粗利", color: "#9b59b6" },
 ];
@@ -744,8 +744,8 @@ export default function DashboardPage() {
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#e74c3c", display: "inline-block" }} />金額（万円）
             </h4>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: isMobile ? 16 : 24 }} className="focus-grid">
-              <AmountRankCard title="RA受注金額" data={dStaffActivities} prevData={prevPrevStaffActivities} amountField="amountRA" companyField="companyRA" affiliationField="affiliationRA" positionField="positionRA" color="#e74c3c" />
-              <AmountRankCard title="CA受注金額" data={dStaffActivities} prevData={prevPrevStaffActivities} amountField="amountCA" companyField="companyCA" affiliationField="affiliationCA" positionField="positionCA" color="#9b59b6" />
+              <AmountRankCard title="RA受注金額" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ra" color="#e74c3c" />
+              <AmountRankCard title="CA受注金額" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ca" color="#9b59b6" />
             </div>
 
             {/* 注力セクション */}
@@ -1514,15 +1514,15 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
     return ((entry as any)[field] as number) || 0;
   };
 
-  const getStaffMonthTotal = (staff: string, field: keyof StaffActivity): number => {
+  const getStaffMonthTotal = (staff: string, field: keyof StaffActivity | string): number => {
     return days.reduce((sum, day) => sum + getStaffDayValue(staff, day.key, field), 0);
   };
 
-  const getDayTotal = (dayKey: string, field: keyof StaffActivity): number => {
+  const getDayTotal = (dayKey: string, field: keyof StaffActivity | string): number => {
     return STAFF_LIST.reduce((sum, staff) => sum + getStaffDayValue(staff, dayKey, field), 0);
   };
 
-  const getMonthGrandTotal = (field: keyof StaffActivity): number => {
+  const getMonthGrandTotal = (field: keyof StaffActivity | string): number => {
     return STAFF_LIST.reduce((sum, staff) => sum + getStaffMonthTotal(staff, field), 0);
   };
 
@@ -2495,22 +2495,22 @@ function ActivityRankCard({ title, data, prevData, field, color, unit }: { title
   );
 }
 
-function AmountRankCard({ title, data, prevData, amountField, companyField, affiliationField, positionField, color }: {
-  title: string; data: StaffActivity[]; prevData?: StaffActivity[]; amountField: keyof StaffActivity; companyField: keyof StaffActivity; affiliationField: keyof StaffActivity; positionField: keyof StaffActivity; color: string;
+function AmountRankCard({ title, data, prevData, entryType, color }: {
+  title: string; data: StaffActivity[]; prevData?: StaffActivity[]; entryType: "ra" | "ca"; color: string;
 }) {
   const { t: tc } = useTheme();
   const [showAll, setShowAll] = useState(false);
-  const sorted = [...data].filter(s => s.staff && (s[amountField] as number) > 0).sort((a, b) => (b[amountField] as number) - (a[amountField] as number));
+  const getEntries = (s: StaffActivity) => entryType === "ra" ? (s.raEntries || []) : (s.caEntries || []);
+  const getTotal = (s: StaffActivity) => getEntries(s).reduce((sum, e) => sum + (e.amount || 0), 0);
+  const sorted = [...data].filter(s => s.staff && getTotal(s) > 0).sort((a, b) => getTotal(b) - getTotal(a));
   const top3 = sorted.slice(0, 3);
-  const total = Math.round(sorted.reduce((sum, s) => sum + (s[amountField] as number), 0) * 10) / 10;
-  const prevTotal = Math.round((prevData || []).reduce((sum, s) => sum + ((s[amountField] as number) || 0), 0) * 10) / 10;
+  const total = Math.round(sorted.reduce((sum, s) => sum + getTotal(s), 0) * 10) / 10;
+  const prevTotal = Math.round((prevData || []).reduce((sum, s) => sum + getTotal(s), 0) * 10) / 10;
   const medals = ["🥇", "🥈", "🥉"];
   const fmtVal = (v: number) => `${Math.round(v * 10) / 10}万円`;
   const renderEntry = (s: StaffActivity, i: number, isSub?: boolean) => {
-    const company = (s[companyField] as string) || "";
-    const affiliation = (s[affiliationField] as string) || "";
-    const position = (s[positionField] as string) || "";
-    const details = [company, affiliation, position].filter(Boolean).join(" / ");
+    const entries = getEntries(s);
+    const staffTotal = Math.round(getTotal(s) * 10) / 10;
     return (
       <div key={i} style={{ padding: "8px 0", borderBottom: `1px solid ${tc.border}` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -2518,9 +2518,12 @@ function AmountRankCard({ title, data, prevData, amountField, companyField, affi
             {isSub ? <span style={{ fontSize: 12, color: tc.textMuted, width: 20, textAlign: "center" }}>{i + 1}</span> : <span style={{ fontSize: 16 }}>{medals[i]}</span>}
             <span style={{ fontSize: isSub ? 13 : 14, fontWeight: 600, color: isSub ? tc.textSecondary : tc.textPrimary }}>{s.staff}</span>
           </div>
-          <span style={{ fontSize: isSub ? 14 : 16, fontWeight: 700, color }}>{fmtVal(s[amountField] as number)}</span>
+          <span style={{ fontSize: isSub ? 14 : 16, fontWeight: 700, color }}>{fmtVal(staffTotal)}</span>
         </div>
-        {details && <div style={{ fontSize: 11, color: tc.textMuted, marginTop: 2, paddingLeft: isSub ? 28 : 28 }}>{details}</div>}
+        {entries.map((e, ei) => {
+          const details = [e.company, e.affiliation, e.position].filter(Boolean).join(" / ");
+          return details ? <div key={ei} style={{ fontSize: 11, color: tc.textMuted, marginTop: 2, paddingLeft: 28 }}>{entries.length > 1 ? `${ei + 1}件目: ` : ""}{details}{e.amount > 0 ? ` (${fmtVal(e.amount)})` : ""}</div> : null;
+        })}
       </div>
     );
   };
