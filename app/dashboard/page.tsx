@@ -807,20 +807,20 @@ export default function DashboardPage() {
                     <div style={{ padding: "16px", background: tc.bgSection, borderRadius: "0 0 10px 10px", border: "1px solid " + tc.border, borderTop: "none" }}>
                       <div className="input-4col" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
                         <InputGroup title="プロパー" fields={[
-                          { label: "目標", value: inp.properTarget, key: "properTarget" },
+                          { label: "予算", value: inp.properTarget, key: "properTarget" },
                           { label: "見込", value: inp.properForecast, key: "properForecast" },
                           { label: "待機（人数）", value: inp.properStandby, key: "properStandby" },
                         ]} onChange={handleNumInput} />
                         <InputGroup title="BP" fields={[
-                          { label: "目標", value: inp.bpTarget, key: "bpTarget" },
+                          { label: "予算", value: inp.bpTarget, key: "bpTarget" },
                           { label: "見込", value: inp.bpForecast, key: "bpForecast" },
                         ]} onChange={handleNumInput} />
                         <InputGroup title="フリーランス" fields={[
-                          { label: "目標", value: inp.flTarget, key: "flTarget" },
+                          { label: "予算", value: inp.flTarget, key: "flTarget" },
                           { label: "見込", value: inp.flForecast, key: "flForecast" },
                         ]} onChange={handleNumInput} />
                         <InputGroup title="協業" fields={[
-                          { label: "目標", value: inp.coTarget, key: "coTarget" },
+                          { label: "予算", value: inp.coTarget, key: "coTarget" },
                           { label: "見込", value: inp.coForecast, key: "coForecast" },
                         ]} onChange={handleNumInput} />
                       </div>
