@@ -418,6 +418,41 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
         </div>
       )}
 
+      {/* 当月受注企業 売上・粗利（金額タブ） */}
+      {monthlyMode === "amount" && (() => {
+        const { byRevenue, byProfit } = getMonthlyCompanyAggregates();
+        const medals = ["🥇", "🥈", "🥉"];
+        const totalRevenue = Math.round(byRevenue.reduce((sum, c) => sum + c.revenue, 0) * 10) / 10;
+        const totalProfit = Math.round(byProfit.reduce((sum, c) => sum + c.profit, 0) * 10) / 10;
+        const renderCard = (title: string, ranked: { company: string; revenue: number; profit: number }[], total: number, color: string, valueKey: "revenue" | "profit") => (
+          <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, borderTop: `3px solid ${color}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{title}</h3>
+              <span style={{ fontSize: 18, fontWeight: 700, color }}>{total > 0 ? fmtAmount(total) : "0"}万円</span>
+            </div>
+            {ranked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
+              ranked.map((r, i) => (
+                <div key={r.company} style={{ padding: "8px 0", borderBottom: `1px solid ${tc.borderLight || "#f0f2f5"}` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
+                      {i < 3 ? <span style={{ fontSize: 16, flexShrink: 0 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center", flexShrink: 0 }}>{i + 1}</span>}
+                      <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.company}</span>
+                    </div>
+                    <span style={{ fontSize: 15, fontWeight: 700, color, flexShrink: 0, marginLeft: 8 }}>{fmtAmount(r[valueKey])}万円</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        );
+        return (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: 24 }} className="focus-grid">
+            {renderCard("当月受注企業売上", byRevenue, totalRevenue, "#e74c3c", "revenue")}
+            {renderCard("当月受注企業粗利", byProfit, totalProfit, "#2ecc71", "profit")}
+          </div>
+        );
+      })()}
+
       {monthlyMode === "amount" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }} className="focus-grid">
           {ACTIVITY_AMOUNT_FIELDS.map(af => {
@@ -499,41 +534,6 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
           })}
         </div>
       )}
-
-      {/* 当月決定企業 売上・粗利（金額タブ） */}
-      {monthlyMode === "amount" && (() => {
-        const { byRevenue, byProfit } = getMonthlyCompanyAggregates();
-        const medals = ["🥇", "🥈", "🥉"];
-        const totalRevenue = Math.round(byRevenue.reduce((sum, c) => sum + c.revenue, 0) * 10) / 10;
-        const totalProfit = Math.round(byProfit.reduce((sum, c) => sum + c.profit, 0) * 10) / 10;
-        const renderCard = (title: string, ranked: { company: string; revenue: number; profit: number }[], total: number, color: string, valueKey: "revenue" | "profit") => (
-          <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, borderTop: `3px solid ${color}` }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{title}</h3>
-              <span style={{ fontSize: 18, fontWeight: 700, color }}>{total > 0 ? fmtAmount(total) : "0"}万円</span>
-            </div>
-            {ranked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
-              ranked.map((r, i) => (
-                <div key={r.company} style={{ padding: "8px 0", borderBottom: `1px solid ${tc.borderLight || "#f0f2f5"}` }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
-                      {i < 3 ? <span style={{ fontSize: 16, flexShrink: 0 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center", flexShrink: 0 }}>{i + 1}</span>}
-                      <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.company}</span>
-                    </div>
-                    <span style={{ fontSize: 15, fontWeight: 700, color, flexShrink: 0, marginLeft: 8 }}>{fmtAmount(r[valueKey])}万円</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        );
-        return (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: 24 }} className="focus-grid">
-            {renderCard("当月決定企業売上", byRevenue, totalRevenue, "#e74c3c", "revenue")}
-            {renderCard("当月決定企業粗利", byProfit, totalProfit, "#2ecc71", "profit")}
-          </div>
-        );
-      })()}
 
       {/* 各指標ごとにテーブル（件数）— 面談設定数を先頭に */}
       {monthlyMode === "count" && [...ACTIVITY_FIELDS].sort((a, b) => a.targetType === "daily" ? -1 : b.targetType === "daily" ? 1 : 0).map(af => {
