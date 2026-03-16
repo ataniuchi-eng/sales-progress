@@ -141,7 +141,7 @@ export function CompanySelect({ value, onChange, companies, onAddCompany, style 
                   fontSize: 12,
                   cursor: "pointer",
                   borderRadius: 4,
-                  background: c === value ? (tc.accentBg || "#e8f0fe") : "transparent",
+                  background: c === value ? (tc.bgHover || "#e8f0fe") : "transparent",
                   fontWeight: c === value ? 600 : 400,
                   color: tc.text,
                   overflow: "hidden",
@@ -149,7 +149,7 @@ export function CompanySelect({ value, onChange, companies, onAddCompany, style 
                   whiteSpace: "nowrap",
                 }}
                 onMouseEnter={(e) => { (e.target as HTMLDivElement).style.background = tc.bgHover || "#f0f0f0"; }}
-                onMouseLeave={(e) => { (e.target as HTMLDivElement).style.background = c === value ? (tc.accentBg || "#e8f0fe") : "transparent"; }}
+                onMouseLeave={(e) => { (e.target as HTMLDivElement).style.background = c === value ? (tc.bgHover || "#e8f0fe") : "transparent"; }}
               >
                 {c}
               </div>
