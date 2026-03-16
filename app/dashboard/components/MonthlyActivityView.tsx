@@ -314,8 +314,8 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
     return parts.join(".");
   };
 
-  // 月間の企業別売上ランキング（RA受注のrevenueを企業ごとに集計）
-  const getMonthlyCompanyRevenue = (): { company: string; revenue: number; profit: number }[] => {
+  // 月間の企業別集計（RA受注のrevenue/amountを企業ごとに集計）
+  const getMonthlyCompanyAggregates = () => {
     const companyMap: Record<string, { revenue: number; profit: number }> = {};
     days.forEach(day => {
       const dayData = allData[day.key];
@@ -323,7 +323,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
       dayData.staffActivities.forEach((s: any) => {
         const entries = s.raEntries || [];
         entries.forEach((e: any) => {
-          if (e.company && (e.revenue || 0) > 0) {
+          if (e.company) {
             if (!companyMap[e.company]) companyMap[e.company] = { revenue: 0, profit: 0 };
             companyMap[e.company].revenue += (e.revenue || 0);
             companyMap[e.company].profit += (e.amount || 0);
@@ -331,10 +331,12 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
         });
       });
     });
-    return Object.entries(companyMap)
-      .map(([company, data]) => ({ company, revenue: Math.round(data.revenue * 10) / 10, profit: Math.round(data.profit * 10) / 10 }))
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 5);
+    const all = Object.entries(companyMap).map(([company, data]) => ({
+      company, revenue: Math.round(data.revenue * 10) / 10, profit: Math.round(data.profit * 10) / 10,
+    }));
+    const byRevenue = [...all].filter(c => c.revenue > 0).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+    const byProfit = [...all].filter(c => c.profit > 0).sort((a, b) => b.profit - a.profit).slice(0, 5);
+    return { byRevenue, byProfit };
   };
 
   // 繰越粗利ヘッダーラベル（X/1繰越粗利）
@@ -498,35 +500,37 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
         </div>
       )}
 
-      {/* 売上企業ベスト5（金額タブ） */}
+      {/* 当月決定企業 売上・粗利（金額タブ） */}
       {monthlyMode === "amount" && (() => {
-        const companyRanked = getMonthlyCompanyRevenue();
+        const { byRevenue, byProfit } = getMonthlyCompanyAggregates();
         const medals = ["🥇", "🥈", "🥉"];
-        const totalRevenue = Math.round(companyRanked.reduce((sum, c) => sum + c.revenue, 0) * 10) / 10;
-        return (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16, marginBottom: 24, maxWidth: 480 }} className="focus-grid">
-            <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, borderTop: "3px solid #e74c3c" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>売上企業ベスト5</h3>
-                <span style={{ fontSize: 18, fontWeight: 700, color: "#e74c3c" }}>{totalRevenue > 0 ? fmtAmount(totalRevenue) : "0"}万円</span>
-              </div>
-              {companyRanked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
-                companyRanked.map((r, i) => (
-                  <div key={r.company} style={{ padding: "8px 0", borderBottom: `1px solid ${tc.borderLight || "#f0f2f5"}` }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
-                        {i < 3 ? <span style={{ fontSize: 16, flexShrink: 0 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center", flexShrink: 0 }}>{i + 1}</span>}
-                        <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.company}</span>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexShrink: 0, marginLeft: 8 }}>
-                        <span style={{ fontSize: 15, fontWeight: 700, color: "#e74c3c" }}>{fmtAmount(r.revenue)}万円</span>
-                        <span style={{ fontSize: 11, color: tc.textMuted }}>（粗利：{fmtAmount(r.profit)}万円）</span>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
+        const totalRevenue = Math.round(byRevenue.reduce((sum, c) => sum + c.revenue, 0) * 10) / 10;
+        const totalProfit = Math.round(byProfit.reduce((sum, c) => sum + c.profit, 0) * 10) / 10;
+        const renderCard = (title: string, ranked: { company: string; revenue: number; profit: number }[], total: number, color: string, valueKey: "revenue" | "profit") => (
+          <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, borderTop: `3px solid ${color}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{title}</h3>
+              <span style={{ fontSize: 18, fontWeight: 700, color }}>{total > 0 ? fmtAmount(total) : "0"}万円</span>
             </div>
+            {ranked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
+              ranked.map((r, i) => (
+                <div key={r.company} style={{ padding: "8px 0", borderBottom: `1px solid ${tc.borderLight || "#f0f2f5"}` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
+                      {i < 3 ? <span style={{ fontSize: 16, flexShrink: 0 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center", flexShrink: 0 }}>{i + 1}</span>}
+                      <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.company}</span>
+                    </div>
+                    <span style={{ fontSize: 15, fontWeight: 700, color, flexShrink: 0, marginLeft: 8 }}>{fmtAmount(r[valueKey])}万円</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        );
+        return (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: 24 }} className="focus-grid">
+            {renderCard("当月決定企業売上", byRevenue, totalRevenue, "#e74c3c", "revenue")}
+            {renderCard("当月決定企業粗利", byProfit, totalProfit, "#2ecc71", "profit")}
           </div>
         );
       })()}
