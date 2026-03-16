@@ -280,11 +280,11 @@ export default function DashboardPage() {
   const bpProgressMan = calcCAProgressByAffiliation("BP");
   const flProgressMan = calcCAProgressByAffiliation("フリーランス");
   const coProgressMan = calcCAProgressByAffiliation("協業");
-  // 万円→円に変換（メインカード表示は円単位）
-  const properProgress = Math.round(properProgressMan * 10000);
-  const bpProgress = Math.round(bpProgressMan * 10000);
-  const flProgress = Math.round(flProgressMan * 10000);
-  const coProgress = Math.round(coProgressMan * 10000);
+  // 万円→円に変換（メインカード表示は円単位、小数以下切り捨て）
+  const properProgress = Math.floor(properProgressMan * 10000);
+  const bpProgress = Math.floor(bpProgressMan * 10000);
+  const flProgress = Math.floor(flProgressMan * 10000);
+  const coProgress = Math.floor(coProgressMan * 10000);
 
   const proper = { ...(displayData.proper || { target: 0, progress: 0, forecast: 0, standby: 0 }), progress: properProgress };
   const bp = { ...(displayData.bp || { target: 0, progress: 0, forecast: 0 }), progress: bpProgress };
