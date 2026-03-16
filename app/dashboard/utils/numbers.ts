@@ -38,6 +38,7 @@ export function emptyData(): DayData {
     proper: { target: 0, progress: 0, forecast: 0, standby: 0 },
     bp: { target: 0, progress: 0, forecast: 0 },
     fl: { target: 0, progress: 0, forecast: 0 },
+    co: { target: 0, progress: 0, forecast: 0 },
     focusPeople: [],
     focusProjects: [],
     announcements: [],

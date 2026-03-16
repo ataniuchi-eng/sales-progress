@@ -61,6 +61,7 @@ export interface DayData {
   proper: CategoryData;
   bp: CategoryData;
   fl: CategoryData;
+  co: CategoryData;
   focusPeople: FocusPerson[];
   focusProjects: FocusProject[];
   announcements: string[];

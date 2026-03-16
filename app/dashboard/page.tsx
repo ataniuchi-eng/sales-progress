@@ -51,9 +51,10 @@ export default function DashboardPage() {
   const [monthlyYM, setMonthlyYM] = useState(`${new Date().getFullYear()}-${("0" + (new Date().getMonth() + 1)).slice(-2)}`);
 
   const [inp, setInp] = useState({
-    properTarget: "", properProgress: "", properForecast: "", properStandby: "",
-    bpTarget: "", bpProgress: "", bpForecast: "",
-    flTarget: "", flProgress: "", flForecast: "",
+    properTarget: "", properForecast: "", properStandby: "",
+    bpTarget: "", bpForecast: "",
+    flTarget: "", flForecast: "",
+    coTarget: "", coForecast: "",
   });
   const [focusPeople, setFocusPeople] = useState<FocusPerson[]>([]);
   const [focusProjects, setFocusProjects] = useState<FocusProject[]>([]);
@@ -255,13 +256,39 @@ export default function DashboardPage() {
   // 表示用データ
   const result = getLatestDataForDate(allData, selectedDate);
   const displayData = result ? result.data : emptyData();
-  const proper = displayData.proper || { target: 0, progress: 0, forecast: 0, standby: 0 };
-  const bp = displayData.bp || { target: 0, progress: 0, forecast: 0 };
-  const fl = displayData.fl || { target: 0, progress: 0, forecast: 0 };
+
+  // CA粗利を所属別に月間集計（進捗として使用）
+  const calcCAProgressByAffiliation = useCallback((affiliation: string): number => {
+    const [y, m] = selectedDate.split("-").map(Number);
+    const daysInMonth = new Date(y, m, 0).getDate();
+    let sum = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dk = `${y}-${("0" + m).slice(-2)}-${("0" + d).slice(-2)}`;
+      const dayData = allData[dk];
+      if (!dayData || !Array.isArray(dayData.staffActivities)) continue;
+      dayData.staffActivities.forEach((s: any) => {
+        const entries = s.caEntries || [];
+        entries.forEach((e: any) => {
+          if (e.affiliation === affiliation) sum += (e.amount || 0);
+        });
+      });
+    }
+    return Math.round(sum * 10) / 10;
+  }, [allData, selectedDate]);
+
+  const properProgress = calcCAProgressByAffiliation("プロパー");
+  const bpProgress = calcCAProgressByAffiliation("BP");
+  const flProgress = calcCAProgressByAffiliation("フリーランス");
+  const coProgress = calcCAProgressByAffiliation("協業");
+
+  const proper = { ...(displayData.proper || { target: 0, progress: 0, forecast: 0, standby: 0 }), progress: properProgress };
+  const bp = { ...(displayData.bp || { target: 0, progress: 0, forecast: 0 }), progress: bpProgress };
+  const fl = { ...(displayData.fl || { target: 0, progress: 0, forecast: 0 }), progress: flProgress };
+  const co = { ...(displayData.co || { target: 0, progress: 0, forecast: 0 }), progress: coProgress };
   const total = {
-    target: proper.target + bp.target + fl.target,
-    progress: proper.progress + bp.progress + fl.progress,
-    forecast: proper.forecast + bp.forecast + fl.forecast,
+    target: proper.target + bp.target + fl.target + co.target,
+    progress: properProgress + bpProgress + flProgress + coProgress,
+    forecast: proper.forecast + bp.forecast + fl.forecast + co.forecast,
   };
   const dPeople = Array.isArray(displayData.focusPeople) ? displayData.focusPeople : [];
   const dProjects = Array.isArray(displayData.focusProjects) ? displayData.focusProjects : [];
@@ -293,10 +320,11 @@ export default function DashboardPage() {
     if (allData[selectedDate]) {
       const d = allData[selectedDate];
       setInp({
-        properTarget: formatNumStr(d.proper?.target || 0), properProgress: formatNumStr(d.proper?.progress || 0),
+        properTarget: formatNumStr(d.proper?.target || 0),
         properForecast: formatNumStr(d.proper?.forecast || 0), properStandby: formatNumStr(d.proper?.standby || 0),
-        bpTarget: formatNumStr(d.bp?.target || 0), bpProgress: formatNumStr(d.bp?.progress || 0), bpForecast: formatNumStr(d.bp?.forecast || 0),
-        flTarget: formatNumStr(d.fl?.target || 0), flProgress: formatNumStr(d.fl?.progress || 0), flForecast: formatNumStr(d.fl?.forecast || 0),
+        bpTarget: formatNumStr(d.bp?.target || 0), bpForecast: formatNumStr(d.bp?.forecast || 0),
+        flTarget: formatNumStr(d.fl?.target || 0), flForecast: formatNumStr(d.fl?.forecast || 0),
+        coTarget: formatNumStr(d.co?.target || 0), coForecast: formatNumStr(d.co?.forecast || 0),
       });
       setFocusPeople(d.focusPeople?.length ? d.focusPeople.map(p => ({ ...p, staff: p.staff || "", position: p.position || "", skill: p.skill || "" })) : [{ name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }]);
       setFocusProjects(d.focusProjects?.length ? d.focusProjects.map(p => ({ ...p, staff: p.staff || "", position: p.position || "", location: p.location || "" })) : [{ company: "", title: "", price: 0, contract: "派遣", staff: "", position: "", location: "" }]);
@@ -322,10 +350,11 @@ export default function DashboardPage() {
       if (fallback && !fallback.isExact) {
         const d = fallback.data;
         setInp({
-          properTarget: formatNumStr(d.proper?.target || 0), properProgress: formatNumStr(d.proper?.progress || 0),
+          properTarget: formatNumStr(d.proper?.target || 0),
           properForecast: formatNumStr(d.proper?.forecast || 0), properStandby: formatNumStr(d.proper?.standby || 0),
-          bpTarget: formatNumStr(d.bp?.target || 0), bpProgress: formatNumStr(d.bp?.progress || 0), bpForecast: formatNumStr(d.bp?.forecast || 0),
-          flTarget: formatNumStr(d.fl?.target || 0), flProgress: formatNumStr(d.fl?.progress || 0), flForecast: formatNumStr(d.fl?.forecast || 0),
+          bpTarget: formatNumStr(d.bp?.target || 0), bpForecast: formatNumStr(d.bp?.forecast || 0),
+          flTarget: formatNumStr(d.fl?.target || 0), flForecast: formatNumStr(d.fl?.forecast || 0),
+          coTarget: formatNumStr(d.co?.target || 0), coForecast: formatNumStr(d.co?.forecast || 0),
         });
         setFocusPeople(d.focusPeople?.length ? d.focusPeople.map(p => ({ ...p, staff: p.staff || "", position: p.position || "", skill: p.skill || "" })) : [{ name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }]);
         setFocusProjects(d.focusProjects?.length ? d.focusProjects.map(p => ({ ...p, staff: p.staff || "", position: p.position || "", location: p.location || "" })) : [{ company: "", title: "", price: 0, contract: "派遣", staff: "", position: "", location: "" }]);
@@ -337,7 +366,7 @@ export default function DashboardPage() {
         // 営業活動は日次入力のため常に空で開始
         setStaffActivities([{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }]);
       } else {
-        setInp({ properTarget: "", properProgress: "", properForecast: "", properStandby: "", bpTarget: "", bpProgress: "", bpForecast: "", flTarget: "", flProgress: "", flForecast: "" });
+        setInp({ properTarget: "", properForecast: "", properStandby: "", bpTarget: "", bpForecast: "", flTarget: "", flForecast: "", coTarget: "", coForecast: "" });
         setFocusPeople([{ name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }]);
         setFocusProjects([{ company: "", title: "", price: 0, contract: "派遣", staff: "", position: "", location: "" }]);
         setAnnouncements([""]);
@@ -354,9 +383,10 @@ export default function DashboardPage() {
     if (!saveDate) { showToast("日付を選択してください"); return; }
     setSaving(true);
     const data: DayData = {
-      proper: { target: parseNum(inp.properTarget), progress: parseNum(inp.properProgress), forecast: parseNum(inp.properForecast), standby: parseNum(inp.properStandby) },
-      bp: { target: parseNum(inp.bpTarget), progress: parseNum(inp.bpProgress), forecast: parseNum(inp.bpForecast) },
-      fl: { target: parseNum(inp.flTarget), progress: parseNum(inp.flProgress), forecast: parseNum(inp.flForecast) },
+      proper: { target: parseNum(inp.properTarget), progress: 0, forecast: parseNum(inp.properForecast), standby: parseNum(inp.properStandby) },
+      bp: { target: parseNum(inp.bpTarget), progress: 0, forecast: parseNum(inp.bpForecast) },
+      fl: { target: parseNum(inp.flTarget), progress: 0, forecast: parseNum(inp.flForecast) },
+      co: { target: parseNum(inp.coTarget), progress: 0, forecast: parseNum(inp.coForecast) },
       focusPeople: focusPeople.filter((p) => p.name || p.cost),
       focusProjects: focusProjects.filter((p) => p.company || p.title || p.price),
       announcements: announcements.filter((a) => a.trim()),
@@ -566,11 +596,12 @@ export default function DashboardPage() {
           {/* メインコンテンツ */}
           <div style={{ flex: 1, minWidth: 0 }}>
             {/* カード4枚 */}
-            <div className="card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: isMobile ? 10 : 16, marginBottom: isMobile ? 16 : 24 }}>
+            <div className="card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: isMobile ? 8 : 12, marginBottom: isMobile ? 16 : 24 }}>
               <SummaryCard title="全体" data={total} rate={calcRate(total.progress, total.target)} isTotal />
               <SummaryCard title="プロパー" data={proper} rate={calcRate(proper.progress, proper.target)} standby={proper.standby} />
               <SummaryCard title="BP" data={bp} rate={calcRate(bp.progress, bp.target)} />
               <SummaryCard title="フリーランス" data={fl} rate={calcRate(fl.progress, fl.target)} />
+              <SummaryCard title="協業" data={co} rate={calcRate(co.progress, co.target)} />
             </div>
 
             {/* 前日営業活動成績（件数5カード + 金額2カード） */}
@@ -745,22 +776,23 @@ export default function DashboardPage() {
                   </div>
                   {sectionSalesOpen && (
                     <div style={{ padding: "16px", background: tc.bgSection, borderRadius: "0 0 10px 10px", border: "1px solid " + tc.border, borderTop: "none" }}>
-                      <div className="input-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
+                      <div className="input-4col" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
                         <InputGroup title="プロパー" fields={[
                           { label: "目標", value: inp.properTarget, key: "properTarget" },
-                          { label: "進捗", value: inp.properProgress, key: "properProgress" },
                           { label: "見込", value: inp.properForecast, key: "properForecast" },
                           { label: "待機（人数）", value: inp.properStandby, key: "properStandby" },
                         ]} onChange={handleNumInput} />
                         <InputGroup title="BP" fields={[
                           { label: "目標", value: inp.bpTarget, key: "bpTarget" },
-                          { label: "進捗", value: inp.bpProgress, key: "bpProgress" },
                           { label: "見込", value: inp.bpForecast, key: "bpForecast" },
                         ]} onChange={handleNumInput} />
                         <InputGroup title="フリーランス" fields={[
                           { label: "目標", value: inp.flTarget, key: "flTarget" },
-                          { label: "進捗", value: inp.flProgress, key: "flProgress" },
                           { label: "見込", value: inp.flForecast, key: "flForecast" },
+                        ]} onChange={handleNumInput} />
+                        <InputGroup title="協業" fields={[
+                          { label: "目標", value: inp.coTarget, key: "coTarget" },
+                          { label: "見込", value: inp.coForecast, key: "coForecast" },
                         ]} onChange={handleNumInput} />
                       </div>
                     </div>
