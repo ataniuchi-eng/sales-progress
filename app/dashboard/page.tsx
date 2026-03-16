@@ -276,10 +276,15 @@ export default function DashboardPage() {
     return Math.round(sum * 10) / 10;
   }, [allData, selectedDate]);
 
-  const properProgress = calcCAProgressByAffiliation("プロパー");
-  const bpProgress = calcCAProgressByAffiliation("BP");
-  const flProgress = calcCAProgressByAffiliation("フリーランス");
-  const coProgress = calcCAProgressByAffiliation("協業");
+  const properProgressMan = calcCAProgressByAffiliation("プロパー");
+  const bpProgressMan = calcCAProgressByAffiliation("BP");
+  const flProgressMan = calcCAProgressByAffiliation("フリーランス");
+  const coProgressMan = calcCAProgressByAffiliation("協業");
+  // 万円→円に変換（メインカード表示は円単位）
+  const properProgress = Math.round(properProgressMan * 10000);
+  const bpProgress = Math.round(bpProgressMan * 10000);
+  const flProgress = Math.round(flProgressMan * 10000);
+  const coProgress = Math.round(coProgressMan * 10000);
 
   const proper = { ...(displayData.proper || { target: 0, progress: 0, forecast: 0, standby: 0 }), progress: properProgress };
   const bp = { ...(displayData.bp || { target: 0, progress: 0, forecast: 0 }), progress: bpProgress };
