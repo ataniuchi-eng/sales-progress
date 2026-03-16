@@ -1558,6 +1558,21 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
     return days.reduce((sum, day) => sum + getStaffDayAmountTotal(staff, day.key, entryType), 0);
   };
 
+  // CA entries から所属別の件数を集計（日別）
+  const getStaffDayCACountByAffiliation = (staff: string, dayKey: string, affiliation: string): number => {
+    const dayData = allData[dayKey];
+    if (!dayData || !Array.isArray(dayData.staffActivities)) return 0;
+    const entry = dayData.staffActivities.find((s: any) => s.staff === staff);
+    if (!entry) return 0;
+    const entries = (entry as any).caEntries || [];
+    return entries.filter((e: any) => e.affiliation === affiliation).length;
+  };
+
+  // CA entries の所属別月間件数合計
+  const getStaffMonthCACountByAffiliation = (staff: string, affiliation: string): number => {
+    return days.reduce((sum, day) => sum + getStaffDayCACountByAffiliation(staff, day.key, affiliation), 0);
+  };
+
   // 3桁カンマ区切り（小数点以下あり対応）
   const fmtAmount = (v: number): string => {
     if (v === 0) return "—";
@@ -1768,6 +1783,9 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
           });
         }
 
+        const isCACount = af.key === "ordersCA";
+        const caCountSubs = ["プロパー", "BP", "フリーランス"];
+
         return (
         <div key={af.key} style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, marginBottom: 20, overflowX: "auto" }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: af.color, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8 }}>
@@ -1779,6 +1797,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
             <thead>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, minWidth: 70 }}>担当</th>
+                {isCACount && <th style={{ ...headerCellStyle, minWidth: 70 }}>区分</th>}
                 <th style={{ ...headerCellStyle, background: hdrYellow, minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSortTarget}>
                   {isDaily ? "日目標" : "目標"} {sortIconC(currentSortTarget)}
                 </th>
@@ -1798,6 +1817,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
               </tr>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, fontSize: 10, padding: "2px 6px" }}></th>
+                {isCACount && <th style={{ ...headerCellStyle, fontSize: 10, padding: "2px 6px" }}></th>}
                 <th style={{ ...headerCellStyle, background: hdrYellow, fontSize: 10, padding: "2px 6px" }}>{isDaily ? "/日" : "件"}</th>
                 {!isDaily && <th style={{ ...headerCellStyle, background: hdrGreen, fontSize: 10, padding: "2px 6px" }}>%</th>}
                 <th style={{ ...headerCellStyle, background: hdrBlue, fontSize: 10, padding: "2px 6px" }}></th>
@@ -1816,6 +1836,94 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                 const isEditingTarget = editingCell?.staff === staff && editingCell?.field === af.key && editingCell?.type === "countTarget";
                 // 月目標の達成率
                 const monthRate = (!isDaily && target > 0) ? Math.round((monthTotal / target) * 1000) / 10 : 0;
+
+                if (isCACount) {
+                  // CA受注数: 4行（プロパー/BP/フリーランス/計）
+                  const subRowCount = 4;
+                  const borderBottom = "2px solid " + (isDark ? "#4a4a4a" : "#d0d0d0");
+                  const dashBorder = "1px dashed " + (isDark ? "#555" : "#ddd");
+                  const subColor = isDark ? "#c4b5fd" : "#7c3aed";
+                  return (
+                    <Fragment key={staff}>
+                      {caCountSubs.map((sub, subIdx) => {
+                        const subTarget = getCountTarget(staff, `ordersCA_${sub}`);
+                        const subMonthTotal = getStaffMonthCACountByAffiliation(staff, sub);
+                        const subRate = subTarget > 0 ? Math.round((subMonthTotal / subTarget) * 1000) / 10 : 0;
+                        const isEditingSub = editingCell?.staff === staff && editingCell?.field === `ordersCA_${sub}` && editingCell?.type === "countTarget";
+                        return (
+                          <tr key={`${staff}-${sub}`} style={{ background: rowBg }}>
+                            {subIdx === 0 && (
+                              <td rowSpan={subRowCount} style={{ ...staffCellStyle, background: rowBg, borderBottom, verticalAlign: "middle" }}>{staff}</td>
+                            )}
+                            <td style={{ ...cellStyle, fontSize: 11, fontWeight: 600, color: subColor, background: rowBg, textAlign: "center", borderBottom: dashBorder }}>
+                              {sub}
+                            </td>
+                            {/* 目標（編集可能） */}
+                            <td style={{ ...cellStyle, background: isDark ? (idx % 2 === 1 ? "#2d2600" : "#332d00") : (idx % 2 === 1 ? "#fef9e7" : "#fffdf0"), cursor: "pointer", minWidth: 50, padding: 0, borderBottom: dashBorder }}
+                              onClick={() => { if (!isEditingSub) { setEditingCell({ staff, field: `ordersCA_${sub}`, type: "countTarget" }); setEditingCellValue(subTarget ? String(subTarget) : ""); } }}>
+                              {isEditingSub ? (
+                                <input type="text" inputMode="numeric" autoFocus value={editingCellValue}
+                                  onChange={(e) => { const v = e.target.value; if (/^\d{0,5}$/.test(v) || v === "") setEditingCellValue(v); }}
+                                  onBlur={() => { saveCountTarget(`ordersCA_${sub}`, staff, parseInt(editingCellValue) || 0); setEditingCell(null); }}
+                                  onKeyDown={(e) => { if (e.key === "Enter") { saveCountTarget(`ordersCA_${sub}`, staff, parseInt(editingCellValue) || 0); setEditingCell(null); } if (e.key === "Escape") setEditingCell(null); }}
+                                  style={{ width: "100%", border: "2px solid #f39c12", borderRadius: 4, padding: "3px 6px", fontSize: 12, textAlign: "right", outline: "none", background: "#fffef5", boxSizing: "border-box" }} />
+                              ) : (
+                                <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 600, color: subTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled }}>
+                                  {subTarget > 0 ? subTarget : "—"}
+                                </span>
+                              )}
+                            </td>
+                            {/* 達成率 */}
+                            <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subTarget > 0 ? getAchievementColor(subRate) : "#ccc", background: subTarget > 0 ? getAchievementBg(subRate) : undefined, borderBottom: dashBorder }}>
+                              {subTarget > 0 ? `${subRate.toFixed(1)}%` : "—"}
+                            </td>
+                            {/* 月計 */}
+                            <td style={{ ...cellStyle, fontWeight: 600, color: subMonthTotal > 0 ? subColor : tc.textDisabled, fontSize: 11, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd"), borderBottom: dashBorder }}>
+                              {subMonthTotal > 0 ? subMonthTotal : "-"}
+                            </td>
+                            {/* 日付セル */}
+                            {days.map(day => {
+                              const val = getStaffDayCACountByAffiliation(staff, day.key, sub);
+                              return (
+                                <td key={day.d} style={{ ...cellStyle, color: val > 0 ? subColor : (isDark ? "#555" : "#ddd"), fontWeight: val > 0 ? 600 : 400, fontSize: 11, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined, borderBottom: dashBorder }}>
+                                  {val || "-"}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                      {/* 計 row */}
+                      {(() => {
+                        const totalTarget = caCountSubs.reduce((sum, sub) => sum + getCountTarget(staff, `ordersCA_${sub}`), 0);
+                        const totalRate = totalTarget > 0 ? Math.round((monthTotal / totalTarget) * 1000) / 10 : 0;
+                        return (
+                          <tr key={`${staff}-total`} style={{ background: rowBg, borderBottom }}>
+                            <td style={{ ...cellStyle, fontSize: 11, fontWeight: 700, color: af.color, background: rowBg, textAlign: "center", borderBottom }}>計</td>
+                            <td style={{ ...cellStyle, fontWeight: 700, background: isDark ? (idx % 2 === 1 ? "#2d2600" : "#332d00") : (idx % 2 === 1 ? "#fef9e7" : "#fffdf0"), borderBottom }}>
+                              <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 700, color: totalTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled }}>
+                                {totalTarget > 0 ? totalTarget : "—"}
+                              </span>
+                            </td>
+                            <td style={{ ...cellStyle, fontWeight: 700, color: totalTarget > 0 ? getAchievementColor(totalRate) : "#ccc", background: totalTarget > 0 ? getAchievementBg(totalRate) : undefined, borderBottom }}>
+                              {totalTarget > 0 ? `${totalRate.toFixed(1)}%` : "—"}
+                            </td>
+                            <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : tc.textMuted, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd"), borderBottom }}>{monthTotal}</td>
+                            {days.map(day => {
+                              const val = getStaffDayValue(staff, day.key, af.key);
+                              return (
+                                <td key={day.d} style={{ ...cellStyle, color: val > 0 ? af.color : (isDark ? "#555" : "#ddd"), fontWeight: val > 0 ? 700 : 400, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined, borderBottom }}>
+                                  {val || "-"}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })()}
+                    </Fragment>
+                  );
+                }
+
                 return (
                   <tr key={staff} style={{ background: rowBg }}>
                     <td style={{ ...staffCellStyle, background: rowBg }}>{staff}</td>
@@ -1869,34 +1977,101 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                 );
               })}
               {/* 合計行 */}
-              <tr style={{ background: "#f8f9fa" }}>
-                <td style={{ ...staffCellStyle, fontWeight: 700, background: "#f0f2f5" }}>合計</td>
-                <td style={{ ...cellStyle, fontWeight: 700, color: "#856404", background: "#fff3cd" }}>
-                  {STAFF_LIST.reduce((sum, s) => sum + getCountTarget(s, af.key), 0) || "—"}
-                </td>
-                {!isDaily && (() => {
+              {(() => {
+                if (isCACount) {
+                  // CA受注数: 合計も4行
+                  const totalBorderBottom = "2px solid " + (isDark ? "#4a4a4a" : "#d0d0d0");
+                  const dashBorder = "1px dashed " + (isDark ? "#555" : "#ddd");
+                  const subColor = isDark ? "#c4b5fd" : "#7c3aed";
+                  return (
+                    <>
+                      {caCountSubs.map((sub, subIdx) => {
+                        const subTarget = STAFF_LIST.reduce((sum, s) => sum + getCountTarget(s, `ordersCA_${sub}`), 0);
+                        const subMonth = STAFF_LIST.reduce((sum, s) => sum + getStaffMonthCACountByAffiliation(s, sub), 0);
+                        const subRate = subTarget > 0 ? Math.round((subMonth / subTarget) * 1000) / 10 : 0;
+                        return (
+                          <tr key={`grand-${sub}`} style={{ background: tc.bgSection }}>
+                            {subIdx === 0 && (
+                              <td rowSpan={4} style={{ ...staffCellStyle, fontWeight: 700, background: tc.bgSection, verticalAlign: "middle", borderBottom: totalBorderBottom }}>合計</td>
+                            )}
+                            <td style={{ ...cellStyle, fontSize: 11, fontWeight: 600, color: subColor, background: tc.bgSection, textAlign: "center", borderBottom: dashBorder }}>{sub}</td>
+                            <td style={{ ...cellStyle, fontWeight: 600, color: subTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled, background: hdrYellow, fontSize: 11, borderBottom: dashBorder }}>
+                              {subTarget > 0 ? subTarget : "—"}
+                            </td>
+                            <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subTarget > 0 ? getAchievementColor(subRate) : "#ccc", background: subTarget > 0 ? getAchievementBg(subRate) : hdrGreen, borderBottom: dashBorder }}>
+                              {subTarget > 0 ? `${subRate.toFixed(1)}%` : "—"}
+                            </td>
+                            <td style={{ ...cellStyle, fontWeight: 600, color: subMonth > 0 ? subColor : tc.textDisabled, background: hdrBlue, fontSize: 11, borderBottom: dashBorder }}>
+                              {subMonth > 0 ? subMonth : "-"}
+                            </td>
+                            {days.map(day => {
+                              const dayVal = STAFF_LIST.reduce((sum, s) => sum + getStaffDayCACountByAffiliation(s, day.key, sub), 0);
+                              return (
+                                <td key={day.d} style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: dayVal > 0 ? subColor : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection, borderBottom: dashBorder }}>
+                                  {dayVal || "-"}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                      {/* 計 row */}
+                      {(() => {
+                        const grandTarget = STAFF_LIST.reduce((sum, s) => sum + caCountSubs.reduce((ss, sub) => ss + getCountTarget(s, `ordersCA_${sub}`), 0), 0);
+                        const grandMonth = getMonthGrandTotal(af.key);
+                        const grandRate = grandTarget > 0 ? Math.round((grandMonth / grandTarget) * 1000) / 10 : 0;
+                        return (
+                          <tr style={{ background: tc.bgSection, borderBottom: totalBorderBottom }}>
+                            <td style={{ ...cellStyle, fontSize: 11, fontWeight: 700, color: af.color, background: tc.bgSection, textAlign: "center", borderBottom: totalBorderBottom }}>計</td>
+                            <td style={{ ...cellStyle, fontWeight: 700, color: grandTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled, background: hdrYellow, borderBottom: totalBorderBottom }}>
+                              {grandTarget > 0 ? grandTarget : "—"}
+                            </td>
+                            <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen, borderBottom: totalBorderBottom }}>
+                              {grandTarget > 0 ? <span style={{ color: getAchievementColor(grandRate) }}>{grandRate.toFixed(1)}%</span> : "—"}
+                            </td>
+                            <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, fontSize: 14, borderBottom: totalBorderBottom }}>{grandMonth}</td>
+                            {days.map(day => {
+                              const dayTotal = getDayTotal(day.key, af.key);
+                              return (
+                                <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? (isDark ? "#e2e8f0" : "#1a1a2e") : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection, borderBottom: totalBorderBottom }}>
+                                  {dayTotal || "-"}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })()}
+                    </>
+                  );
+                } else {
+                  // RA等: 従来通り1行
                   const totalTarget = STAFF_LIST.reduce((sum, s) => sum + getCountTarget(s, af.key), 0);
                   const totalMonth = getMonthGrandTotal(af.key);
                   const totalRate = totalTarget > 0 ? Math.round((totalMonth / totalTarget) * 1000) / 10 : 0;
                   return (
-                    <td style={{ ...cellStyle, fontWeight: 700, background: "#d4edda" }}>
-                      {totalTarget > 0 ? <span style={{ color: getAchievementColor(totalRate) }}>{totalRate.toFixed(1)}%</span> : "—"}
-                    </td>
+                    <tr style={{ background: tc.bgSection }}>
+                      <td style={{ ...staffCellStyle, fontWeight: 700, background: tc.bgSection }}>合計</td>
+                      <td style={{ ...cellStyle, fontWeight: 700, color: totalTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled, background: hdrYellow }}>
+                        {totalTarget > 0 ? totalTarget : "—"}
+                      </td>
+                      {!isDaily && (
+                        <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen }}>
+                          {totalTarget > 0 ? <span style={{ color: getAchievementColor(totalRate) }}>{totalRate.toFixed(1)}%</span> : "—"}
+                        </td>
+                      )}
+                      <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, fontSize: 14 }}>{totalMonth}</td>
+                      {days.map(day => {
+                        const dayTotal = getDayTotal(day.key, af.key);
+                        return (
+                          <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? (isDark ? "#e2e8f0" : "#1a1a2e") : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection }}>
+                            {dayTotal || "-"}
+                          </td>
+                        );
+                      })}
+                    </tr>
                   );
-                })()}
-                <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: "#d6eaf8", fontSize: 14 }}>{getMonthGrandTotal(af.key)}</td>
-                {days.map(day => {
-                  const dayTotal = getDayTotal(day.key, af.key);
-                  return (
-                    <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? "#1a1a2e" : "#ddd", background: day.isRed ? "#fef2f2" : "#f8f9fa" }}>
-                      {dayTotal || "-"}
-                    </td>
-                  );
-                })}
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                }
+              })()}
         );
       })}
 
