@@ -1984,7 +1984,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
             <thead>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, minWidth: 70 }}>担当</th>
-                {isCA && <th style={{ ...headerCellStyle, minWidth: 70 }}>区分</th>}
+                {isCATable && <th style={{ ...headerCellStyle, minWidth: 70 }}>区分</th>}
                 <th style={{ ...headerCellStyle, background: hdrYellow, minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortBudget}>
                   予算 {sortIcon(currentSortBudget)}
                 </th>
@@ -2008,7 +2008,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
               </tr>
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, fontSize: 10, padding: "2px 6px" }}></th>
-                {isCA && <th style={{ ...headerCellStyle, fontSize: 10, padding: "2px 6px" }}></th>}
+                {isCATable && <th style={{ ...headerCellStyle, fontSize: 10, padding: "2px 6px" }}></th>}
                 <th style={{ ...headerCellStyle, background: hdrYellow, fontSize: 10, padding: "2px 6px" }}>万円</th>
                 <th style={{ ...headerCellStyle, background: hdrBlueAlt, fontSize: 10, padding: "2px 6px" }}>万円</th>
                 <th style={{ ...headerCellStyle, background: hdrGreen, fontSize: 10, padding: "2px 6px" }}>%</th>
@@ -2031,15 +2031,14 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                 const rowBg = idx % 2 === 1 ? rowOdd : rowEven;
                 const isEditingBudget = editingCell?.staff === staff && editingCell?.field === af.key && editingCell?.type === "budget";
                 const isEditingCarryover = editingCell?.staff === staff && editingCell?.field === af.key && editingCell?.type === "carryover";
-                const isCA = af.key === "amountCA";
-                const caSubTypes = isCA ? [
+                const caSubTypes = isCATable ? [
                   { label: "プロパー", affiliation: "プロパー" },
                   { label: "BP", affiliation: "BP" },
                   { label: "フリーランス", affiliation: "フリーランス" },
                 ] : [];
-                const subRowCount = isCA ? 4 : 1;
-                const borderBottom = isCA ? "2px solid " + (isDark ? "#4a4a4a" : "#d0d0d0") : undefined;
-                return isCA ? (
+                const subRowCount = isCATable ? 4 : 1;
+                const borderBottom = isCATable ? "2px solid " + (isDark ? "#4a4a4a" : "#d0d0d0") : undefined;
+                return isCATable ? (
                   <Fragment key={staff}>
                     {/* プロパー/BP/フリーランス sub-rows */}
                     {caSubTypes.map((sub, subIdx) => {
@@ -2219,13 +2218,13 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
               {/* 合計行 */}
               {(() => {
                 const caSubs = ["プロパー", "BP", "フリーランス"];
-                const grandBudget = isCA
+                const grandBudget = isCATable
                   ? Math.round(STAFF_LIST.reduce((sum, s) => sum + caSubs.reduce((ss, a) => ss + getStaffBudget(s, `amountCA_${a}`), 0), 0) * 10) / 10
                   : Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffBudget(s, af.key), 0) * 10) / 10;
-                const grandCarry = isCA
+                const grandCarry = isCATable
                   ? Math.round(STAFF_LIST.reduce((sum, s) => sum + caSubs.reduce((ss, a) => ss + getStaffCarryover(s, `amountCA_${a}`), 0), 0) * 10) / 10
                   : Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffCarryover(s, af.key), 0) * 10) / 10;
-                const grandMonth = isCA
+                const grandMonth = isCATable
                   ? Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffMonthAmountTotal(s, "ca"), 0) * 10) / 10
                   : Math.round(getMonthGrandTotal(af.key) * 10) / 10;
                 const grandProgress = Math.round((grandCarry + grandMonth) * 10) / 10;
@@ -2233,7 +2232,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                 return (
                 <tr style={{ background: tc.bgSection }}>
                   <td style={{ ...staffCellStyle, fontWeight: 700, background: tc.bgSection }}>合計</td>
-                  {isCA && <td style={{ ...cellStyle, fontWeight: 700, background: tc.bgSection }}></td>}
+                  {isCATable && <td style={{ ...cellStyle, fontWeight: 700, background: tc.bgSection }}></td>}
                   <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#fbbf24" : "#856404", background: hdrYellow }}>
                     {fmtAmount(grandBudget)}
                   </td>
@@ -2248,7 +2247,7 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                   </td>
                   <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, fontSize: 14 }}>{fmtAmount(grandMonth)}</td>
                   {days.map(day => {
-                    const dayTotal = isCA
+                    const dayTotal = isCATable
                       ? Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffDayAmountTotal(s, day.key, "ca"), 0) * 10) / 10
                       : Math.round(getDayTotal(day.key, af.key) * 10) / 10;
                     return (
