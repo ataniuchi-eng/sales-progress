@@ -6,7 +6,7 @@ import { useTheme } from "../theme-provider";
 import { ADashLogo, ThemeToggle } from "../logo";
 
 // ===== Imports from extracted files =====
-import { STAFF_LIST, POSITION_LIST, JAPAN_HOLIDAYS, ACTIVITY_FIELDS, ACTIVITY_AMOUNT_FIELDS, LOCATION_LIST } from "./constants/data";
+import { STAFF_LIST, POSITION_LIST, JAPAN_HOLIDAYS, ACTIVITY_FIELDS, ACTIVITY_AMOUNT_FIELDS, LOCATION_LIST, COMPANY_LIST } from "./constants/data";
 import { CategoryData, FocusPerson, FocusProject, RACompany, RAData, OrderEntry, StaffActivity, DayData, AllData } from "./types/index";
 import { dateKey, todayKey, parseDate, formatDateJP, isBusinessDay, getNextBusinessDay, getPrevBusinessDay, getLatestDataForDate } from "./utils/dates";
 import { parseNum, parseAmount, formatAmount, formatNumStr, formatYen, calcRate, getTitle, emptyData } from "./utils/numbers";
@@ -23,6 +23,7 @@ import { FocusProjectsDisplay } from "./components/displays/FocusProjectsDisplay
 import { RADisplay } from "./components/displays/RADisplay";
 import { MonthlyActivityView } from "./components/MonthlyActivityView";
 import { InputGroup } from "./components/forms/InputGroup";
+import { CompanySelect } from "./components/ui/CompanySelect";
 
 // ===== メインコンポーネント =====
 export default function DashboardPage() {
@@ -61,6 +62,23 @@ export default function DashboardPage() {
   const [raAcqCompanies, setRaAcqCompanies] = useState<RACompany[]>([]);
   const [raJoinCompanies, setRaJoinCompanies] = useState<RACompany[]>([]);
   const [staffActivities, setStaffActivities] = useState<StaffActivity[]>([]);
+
+  // カスタム企業リスト（ユーザーが追加した企業）
+  const [customCompanies, setCustomCompanies] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("customCompanies");
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
+  const allCompanies = [...COMPANY_LIST, ...customCompanies].sort((a, b) => a.localeCompare(b, "ja"));
+  const handleAddCompany = useCallback((name: string) => {
+    if (!COMPANY_LIST.includes(name) && !customCompanies.includes(name)) {
+      const updated = [...customCompanies, name];
+      setCustomCompanies(updated);
+      localStorage.setItem("customCompanies", JSON.stringify(updated));
+    }
+  }, [customCompanies]);
 
   // 天気情報
   const [weatherInfo, setWeatherInfo] = useState<{ shibuya: string; shinjuku: string } | null>(null);
@@ -295,8 +313,8 @@ export default function DashboardPage() {
   appointmentAcquisitions: s.appointmentAcquisitions || 0,
   ordersRA: s.ordersRA || 0,
   ordersCA: s.ordersCA || 0,
-  raEntries: s.raEntries?.length ? s.raEntries : (s.ordersRA > 0 ? [{ amount: s.amountRA || 0, revenue: 0, company: s.companyRA || "", affiliation: s.affiliationRA || "", position: s.positionRA || "" }] : []),
-  caEntries: s.caEntries?.length ? s.caEntries : (s.ordersCA > 0 ? [{ amount: s.amountCA || 0, revenue: 0, company: s.companyCA || "", affiliation: s.affiliationCA || "", position: s.positionCA || "" }] : []),
+  raEntries: s.raEntries?.length ? s.raEntries.map((e: any) => ({ ...e, company: "" })) : (s.ordersRA > 0 ? [{ amount: s.amountRA || 0, revenue: 0, company: "", affiliation: s.affiliationRA || "", position: s.positionRA || "" }] : []),
+  caEntries: s.caEntries?.length ? s.caEntries.map((e: any) => ({ ...e, company: "" })) : (s.ordersCA > 0 ? [{ amount: s.amountCA || 0, revenue: 0, company: "", affiliation: s.affiliationCA || "", position: s.positionCA || "" }] : []),
 })) : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }]);
     } else {
       // データがない場合は前日までの最新データをフォールバックで表示
@@ -684,7 +702,7 @@ export default function DashboardPage() {
                               <span style={{ fontSize: 11, color: "#e74c3c", fontWeight: 600, minWidth: 30, alignSelf: "center" }}>{j + 1}件目</span>
                               <FieldWrap label="売上（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(entry.revenue || 0)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], revenue: parseAmount(v) }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
                               <FieldWrap label="粗利（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(entry.amount)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], amount: parseAmount(v) }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
-                              <FieldWrap label="企業名" grow><input type="text" value={entry.company || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], company: e.target.value }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
+                              <FieldWrap label="企業名" grow><CompanySelect value={entry.company || ""} onChange={(v) => { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], company: v }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} companies={allCompanies} onAddCompany={handleAddCompany} style={focusInputStyle} /></FieldWrap>
                               <FieldWrap label="所属" className="fw-select" w={110}><select value={entry.affiliation || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
                               <FieldWrap label="ポジション" className="fw-select" w={120}><select value={entry.position || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], position: e.target.value }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
                             </div>
@@ -708,7 +726,7 @@ export default function DashboardPage() {
                               <span style={{ fontSize: 11, color: "#9b59b6", fontWeight: 600, minWidth: 30, alignSelf: "center" }}>{j + 1}件目</span>
                               <FieldWrap label="仕入（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(entry.revenue || 0)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], revenue: parseAmount(v) }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
                               <FieldWrap label="粗利（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(entry.amount)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], amount: parseAmount(v) }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
-                              <FieldWrap label="企業名" grow><input type="text" value={entry.company || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], company: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
+                              <FieldWrap label="企業名" grow><CompanySelect value={entry.company || ""} onChange={(v) => { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], company: v }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} companies={allCompanies} onAddCompany={handleAddCompany} style={focusInputStyle} /></FieldWrap>
                               <FieldWrap label="所属" className="fw-select" w={110}><select value={entry.affiliation || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
                               <FieldWrap label="ポジション" className="fw-select" w={120}><select value={entry.position || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], position: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
                             </div>
