@@ -93,6 +93,7 @@ interface RAData {
 
 interface OrderEntry {
   amount: number;
+  revenue: number;
   company: string;
   affiliation: string;
   position: string;
@@ -465,8 +466,8 @@ export default function DashboardPage() {
   appointmentAcquisitions: s.appointmentAcquisitions || 0,
   ordersRA: s.ordersRA || 0,
   ordersCA: s.ordersCA || 0,
-  raEntries: s.raEntries?.length ? s.raEntries : (s.ordersRA > 0 ? [{ amount: s.amountRA || 0, company: s.companyRA || "", affiliation: s.affiliationRA || "", position: s.positionRA || "" }] : []),
-  caEntries: s.caEntries?.length ? s.caEntries : (s.ordersCA > 0 ? [{ amount: s.amountCA || 0, company: s.companyCA || "", affiliation: s.affiliationCA || "", position: s.positionCA || "" }] : []),
+  raEntries: s.raEntries?.length ? s.raEntries : (s.ordersRA > 0 ? [{ amount: s.amountRA || 0, revenue: 0, company: s.companyRA || "", affiliation: s.affiliationRA || "", position: s.positionRA || "" }] : []),
+  caEntries: s.caEntries?.length ? s.caEntries : (s.ordersCA > 0 ? [{ amount: s.amountCA || 0, revenue: 0, company: s.companyCA || "", affiliation: s.affiliationCA || "", position: s.positionCA || "" }] : []),
 })) : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }]);
     } else {
       // データがない場合は前日までの最新データをフォールバックで表示
@@ -810,7 +811,7 @@ export default function DashboardPage() {
                       const oldEntries = a[i].raEntries || [];
                       let newEntries: OrderEntry[] = [];
                       if (newCount > oldEntries.length) {
-                        newEntries = [...oldEntries, ...Array(newCount - oldEntries.length).fill(null).map(() => ({ amount: 0, company: "", affiliation: "", position: "" }))];
+                        newEntries = [...oldEntries, ...Array(newCount - oldEntries.length).fill(null).map(() => ({ amount: 0, revenue: 0, company: "", affiliation: "", position: "" }))];
                       } else {
                         newEntries = oldEntries.slice(0, newCount);
                       }
@@ -823,7 +824,7 @@ export default function DashboardPage() {
                       const oldEntries = a[i].caEntries || [];
                       let newEntries: OrderEntry[] = [];
                       if (newCount > oldEntries.length) {
-                        newEntries = [...oldEntries, ...Array(newCount - oldEntries.length).fill(null).map(() => ({ amount: 0, company: "", affiliation: "", position: "" }))];
+                        newEntries = [...oldEntries, ...Array(newCount - oldEntries.length).fill(null).map(() => ({ amount: 0, revenue: 0, company: "", affiliation: "", position: "" }))];
                       } else {
                         newEntries = oldEntries.slice(0, newCount);
                       }
@@ -852,7 +853,8 @@ export default function DashboardPage() {
                           {(s.raEntries || []).map((entry, j) => (
                             <div key={`ra-${i}-${j}`} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: isMobile ? "wrap" : "nowrap", marginBottom: j < s.raEntries.length - 1 ? 6 : 0 }}>
                               <span style={{ fontSize: 11, color: "#e74c3c", fontWeight: 600, minWidth: 30, alignSelf: "center" }}>{j + 1}件目</span>
-                              <FieldWrap label="金額（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(entry.amount)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], amount: parseAmount(v) }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                              <FieldWrap label="売上（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(entry.revenue || 0)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], revenue: parseAmount(v) }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                              <FieldWrap label="粗利（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(entry.amount)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], amount: parseAmount(v) }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
                               <FieldWrap label="企業名" grow><input type="text" value={entry.company || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], company: e.target.value }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
                               <FieldWrap label="所属" className="fw-select" w={110}><select value={entry.affiliation || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
                               <FieldWrap label="ポジション" className="fw-select" w={120}><select value={entry.position || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], position: e.target.value }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
@@ -875,7 +877,8 @@ export default function DashboardPage() {
                           {(s.caEntries || []).map((entry, j) => (
                             <div key={`ca-${i}-${j}`} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: isMobile ? "wrap" : "nowrap", marginBottom: j < s.caEntries.length - 1 ? 6 : 0 }}>
                               <span style={{ fontSize: 11, color: "#9b59b6", fontWeight: 600, minWidth: 30, alignSelf: "center" }}>{j + 1}件目</span>
-                              <FieldWrap label="金額（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(entry.amount)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], amount: parseAmount(v) }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                              <FieldWrap label="仕入（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(entry.revenue || 0)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], revenue: parseAmount(v) }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                              <FieldWrap label="粗利（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(entry.amount)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], amount: parseAmount(v) }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
                               <FieldWrap label="企業名" grow><input type="text" value={entry.company || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], company: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
                               <FieldWrap label="所属" className="fw-select" w={110}><select value={entry.affiliation || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
                               <FieldWrap label="ポジション" className="fw-select" w={120}><select value={entry.position || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], position: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
