@@ -1,5 +1,5 @@
 "use client";
-
+// CompanySelect - searchable dropdown for company selection
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useTheme } from "../../../theme-provider";
 
