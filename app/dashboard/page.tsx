@@ -81,8 +81,10 @@ export default function DashboardPage() {
     }
   }, [customCompanies]);
 
-  // 天気情報
-  const [weatherInfo, setWeatherInfo] = useState<{ shibuya: string; shinjuku: string } | null>(null);
+  // 天気情報（9時・14時・18時の3時間帯）
+  type WeatherSlot = { time: string; weather: string; temp: number };
+  type AreaWeather = { slots: WeatherSlot[] };
+  const [weatherInfo, setWeatherInfo] = useState<{ shibuya: AreaWeather; shinjuku: AreaWeather } | null>(null);
   // ビジネス格言
   const [dailyQuote, setDailyQuote] = useState<string>("");
 
@@ -97,24 +99,27 @@ export default function DashboardPage() {
   // モバイルではカレンダー非表示がデフォルト
   useEffect(() => { if (isMobile) setCalendarOpen(false); }, [isMobile]);
 
-  // 天気取得（Open-Meteo API、渋谷・新宿）
+  // 天気取得（Open-Meteo API、渋谷・新宿、9時/14時/18時の3時間帯）
   useEffect(() => {
-    const cacheKey = `weather_${todayKey()}`;
+    const cacheKey = `weather3_${todayKey()}`;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) { setWeatherInfo(JSON.parse(cached)); return; }
     const weatherCode: Record<number, string> = {
-      0: "☀️快晴", 1: "🌤️晴れ", 2: "⛅曇り", 3: "☁️曇り",
-      45: "🌫️霧", 48: "🌫️霧", 51: "🌦️小雨", 53: "🌧️雨", 55: "🌧️雨",
-      61: "🌧️雨", 63: "🌧️雨", 65: "🌧️大雨", 71: "🌨️雪", 73: "🌨️雪", 75: "❄️大雪",
-      80: "🌦️にわか雨", 81: "🌧️にわか雨", 82: "⛈️豪雨", 95: "⛈️雷雨", 96: "⛈️雷雨", 99: "⛈️雷雨",
+      0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️",
+      45: "🌫️", 48: "🌫️", 51: "🌦️", 53: "🌧️", 55: "🌧️",
+      61: "🌧️", 63: "🌧️", 65: "🌧️", 71: "🌨️", 73: "🌨️", 75: "❄️",
+      80: "🌦️", 81: "🌧️", 82: "⛈️", 95: "⛈️", 96: "⛈️", 99: "⛈️",
     };
-    const fetchW = async (lat: number, lon: number) => {
+    const timeSlots = [{ hour: 9, label: "9時" }, { hour: 14, label: "14時" }, { hour: 18, label: "18時" }];
+    const fetchW = async (lat: number, lon: number): Promise<AreaWeather> => {
       const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weather_code&timezone=Asia%2FTokyo&forecast_days=1`);
       const d = await res.json();
-      const idx = 10; // 10時
-      const temp = Math.round(d.hourly.temperature_2m[idx]);
-      const code = d.hourly.weather_code[idx];
-      return `${weatherCode[code] || "—"} ${temp}°C`;
+      const slots = timeSlots.map(s => ({
+        time: s.label,
+        weather: weatherCode[d.hourly.weather_code[s.hour]] || "—",
+        temp: Math.round(d.hourly.temperature_2m[s.hour]),
+      }));
+      return { slots };
     };
     Promise.all([
       fetchW(35.6580, 139.7016), // 渋谷
@@ -539,11 +544,17 @@ export default function DashboardPage() {
                 </div>
                 {/* 天気 & 格言 */}
                 {weatherInfo && (
-                  <div style={{ fontSize: 11, color: tc.textSecondary, marginBottom: 8, lineHeight: 1.6, background: tc.bgSection, borderRadius: 8, padding: "6px 10px" }}>
-                    <div style={{ display: "flex", gap: 12, whiteSpace: "nowrap" }}>
-                      <span><b>渋谷</b> {weatherInfo.shibuya}</span>
-                      <span><b>新宿</b> {weatherInfo.shinjuku}</span>
-                    </div>
+                  <div style={{ fontSize: 11, color: tc.textSecondary, marginBottom: 8, lineHeight: 1.6, background: tc.bgSection, borderRadius: 8, padding: "8px 10px" }}>
+                    {[{ label: "渋谷", data: weatherInfo.shibuya }, { label: "新宿", data: weatherInfo.shinjuku }].map((area, i) => (
+                      <div key={area.label} style={{ display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", marginTop: i > 0 ? 4 : 0 }}>
+                        <b style={{ minWidth: 28 }}>{area.label}</b>
+                        {area.data.slots.map(s => (
+                          <span key={s.time} style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
+                            <span style={{ fontSize: 10, color: tc.textSecondary }}>{s.time}</span>{s.weather}{s.temp}°
+                          </span>
+                        ))}
+                      </div>
+                    ))}
                   </div>
                 )}
                 {dailyQuote && (
