@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "../theme-provider";
 import { ADashLogo, ThemeToggle } from "../logo";
@@ -98,8 +98,14 @@ interface StaffActivity {
   appointmentAcquisitions: number;
   ordersRA: number;
   ordersCA: number;
+  ordersCAProper: number;
+  ordersCaBP: number;
+  ordersCaFL: number;
   amountRA: number;
   amountCA: number;
+  amountCAProper: number;
+  amountCaBP: number;
+  amountCaFL: number;
   companyRA: string;
   affiliationRA: string;
   positionRA: string;
@@ -457,7 +463,7 @@ export default function DashboardPage() {
       setRaAcqCompanies(ra.acquisitionCompanies?.length ? ra.acquisitionCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
       setRaJoinCompanies(ra.joinCompanies?.length ? ra.joinCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
       // 営業活動：当日に入力済みデータがあればそれを表示、なければ空で開始
-      setStaffActivities(d.staffActivities?.length ? d.staffActivities.map(s => ({ ...s, ordersRA: s.ordersRA || 0, ordersCA: s.ordersCA || 0, amountRA: s.amountRA || 0, amountCA: s.amountCA || 0, companyRA: s.companyRA || "", affiliationRA: s.affiliationRA || "", positionRA: s.positionRA || "", companyCA: s.companyCA || "", affiliationCA: s.affiliationCA || "", positionCA: s.positionCA || "" })) : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, amountRA: 0, amountCA: 0, companyRA: "", affiliationRA: "", positionRA: "", companyCA: "", affiliationCA: "", positionCA: "" }]);
+      setStaffActivities(d.staffActivities?.length ? d.staffActivities.map(s => ({ ...s, ordersRA: s.ordersRA || 0, ordersCA: s.ordersCA || 0, ordersCAProper: s.ordersCAProper || 0, ordersCaBP: s.ordersCaBP || 0, ordersCaFL: s.ordersCaFL || 0, amountRA: s.amountRA || 0, amountCA: s.amountCA || 0, amountCAProper: s.amountCAProper || 0, amountCaBP: s.amountCaBP || 0, amountCaFL: s.amountCaFL || 0, companyRA: s.companyRA || "", affiliationRA: s.affiliationRA || "", positionRA: s.positionRA || "", companyCA: s.companyCA || "", affiliationCA: s.affiliationCA || "", positionCA: s.positionCA || "" })) : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, ordersCAProper: 0, ordersCaBP: 0, ordersCaFL: 0, amountRA: 0, amountCA: 0, amountCAProper: 0, amountCaBP: 0, amountCaFL: 0, companyRA: "", affiliationRA: "", positionRA: "", companyCA: "", affiliationCA: "", positionCA: "" }]);
     } else {
       // データがない場合は前日までの最新データをフォールバックで表示
       const fallback = getLatestDataForDate(allData, selectedDate);
@@ -477,7 +483,7 @@ export default function DashboardPage() {
         setRaAcqCompanies(ra.acquisitionCompanies?.length ? ra.acquisitionCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
         setRaJoinCompanies(ra.joinCompanies?.length ? ra.joinCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
         // 営業活動は日次入力のため常に空で開始
-        setStaffActivities([{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, amountRA: 0, amountCA: 0, companyRA: "", affiliationRA: "", positionRA: "", companyCA: "", affiliationCA: "", positionCA: "" }]);
+        setStaffActivities([{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, ordersCAProper: 0, ordersCaBP: 0, ordersCaFL: 0, amountRA: 0, amountCA: 0, amountCAProper: 0, amountCaBP: 0, amountCaFL: 0, companyRA: "", affiliationRA: "", positionRA: "", companyCA: "", affiliationCA: "", positionCA: "" }]);
       } else {
         setInp({ properTarget: "", properProgress: "", properForecast: "", properStandby: "", bpTarget: "", bpProgress: "", bpForecast: "", flTarget: "", flProgress: "", flForecast: "" });
         setFocusPeople([{ name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }]);
@@ -486,7 +492,7 @@ export default function DashboardPage() {
         setRaInp({ acquisitionTarget: "", acquisitionProgress: "", joinTarget: "", joinProgress: "" });
         setRaAcqCompanies([{ name: "", staff: "" }]);
         setRaJoinCompanies([{ name: "", staff: "" }]);
-        setStaffActivities([{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, amountRA: 0, amountCA: 0, companyRA: "", affiliationRA: "", positionRA: "", companyCA: "", affiliationCA: "", positionCA: "" }]);
+        setStaffActivities([{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, ordersCAProper: 0, ordersCaBP: 0, ordersCaFL: 0, amountRA: 0, amountCA: 0, amountCAProper: 0, amountCaBP: 0, amountCaFL: 0, companyRA: "", affiliationRA: "", positionRA: "", companyCA: "", affiliationCA: "", positionCA: "" }]);
       }
     }
   };
@@ -796,10 +802,17 @@ export default function DashboardPage() {
                     <FieldWrap label="RA開拓アポ獲得" w={130}><input type="text" inputMode="numeric" value={s.appointmentAcquisitions || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], appointmentAcquisitions: parseNum(e.target.value) }; setStaffActivities(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
                     <FieldWrap label="RA受注数" w={100}><input type="text" inputMode="numeric" value={s.ordersRA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], ordersRA: parseNum(e.target.value) }; setStaffActivities(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
                     <FieldWrap label="CA受注数" w={100}><input type="text" inputMode="numeric" value={s.ordersCA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], ordersCA: parseNum(e.target.value) }; setStaffActivities(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                    {(s.ordersCA || 0) > 0 && (
+                      <>
+                        <FieldWrap label="プロパー" w={80}><input type="text" inputMode="numeric" value={s.ordersCAProper || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], ordersCAProper: parseNum(e.target.value) }; setStaffActivities(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right", borderColor: "#9b59b6" }} /></FieldWrap>
+                        <FieldWrap label="BP" w={80}><input type="text" inputMode="numeric" value={s.ordersCaBP || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], ordersCaBP: parseNum(e.target.value) }; setStaffActivities(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right", borderColor: "#9b59b6" }} /></FieldWrap>
+                        <FieldWrap label="フリーランス" w={90}><input type="text" inputMode="numeric" value={s.ordersCaFL || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], ordersCaFL: parseNum(e.target.value) }; setStaffActivities(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right", borderColor: "#9b59b6" }} /></FieldWrap>
+                      </>
+                    )}
                     <button onClick={() => setStaffActivities(staffActivities.filter((_, j) => j !== i))} style={removeBtnStyle}>×</button>
                   </div>
                 ))}
-                <button onClick={() => setStaffActivities([...staffActivities, { staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, amountRA: 0, amountCA: 0, companyRA: "", affiliationRA: "", positionRA: "", companyCA: "", affiliationCA: "", positionCA: "" }])} style={addBtnStyle}>＋ 担当を追加</button>
+                <button onClick={() => setStaffActivities([...staffActivities, { staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, ordersCAProper: 0, ordersCaBP: 0, ordersCaFL: 0, amountRA: 0, amountCA: 0, amountCAProper: 0, amountCaBP: 0, amountCaFL: 0, companyRA: "", affiliationRA: "", positionRA: "", companyCA: "", affiliationCA: "", positionCA: "" }])} style={addBtnStyle}>＋ 担当を追加</button>
 
                 <h4 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, marginBottom: 4, marginTop: 20, display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#e74c3c", display: "inline-block" }} />
@@ -836,10 +849,16 @@ export default function DashboardPage() {
                         <div key={`ca-${i}`} style={{ marginBottom: 8, padding: "10px 12px", background: "#f9f5fc", borderRadius: 8, borderLeft: "3px solid #9b59b6" }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: tc.textPrimary, marginBottom: 6 }}>{s.staff}（{s.ordersCA}件）</div>
                           <div className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: isMobile ? "wrap" : "nowrap" }}>
-                            <FieldWrap label="金額（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(s.amountCA)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; a[i] = { ...a[i], amountCA: parseAmount(v) }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                            <FieldWrap label="金額合計（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(s.amountCA)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; a[i] = { ...a[i], amountCA: parseAmount(v) }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
                             <FieldWrap label="企業名" grow><input type="text" value={s.companyCA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], companyCA: e.target.value }; setStaffActivities(a); }} placeholder="企業名" style={focusInputStyle} /></FieldWrap>
                             <FieldWrap label="所属" className="fw-select" w={110}><select value={s.affiliationCA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], affiliationCA: e.target.value }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option></select></FieldWrap>
                             <FieldWrap label="ポジション" className="fw-select" w={120}><select value={s.positionCA || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], positionCA: e.target.value }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
+                          </div>
+                          <div className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: isMobile ? "wrap" : "nowrap", marginTop: 6, paddingLeft: 4 }}>
+                            <span style={{ fontSize: 11, color: "#9b59b6", fontWeight: 600, minWidth: 50, alignSelf: "center" }}>内訳:</span>
+                            <FieldWrap label="プロパー（万円）" w={120}><input type="text" inputMode="decimal" value={formatAmount(s.amountCAProper)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; a[i] = { ...a[i], amountCAProper: parseAmount(v) }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right", borderColor: "#9b59b6" }} /></FieldWrap>
+                            <FieldWrap label="BP（万円）" w={120}><input type="text" inputMode="decimal" value={formatAmount(s.amountCaBP)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; a[i] = { ...a[i], amountCaBP: parseAmount(v) }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right", borderColor: "#9b59b6" }} /></FieldWrap>
+                            <FieldWrap label="フリーランス（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(s.amountCaFL)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; a[i] = { ...a[i], amountCaFL: parseAmount(v) }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right", borderColor: "#9b59b6" }} /></FieldWrap>
                           </div>
                         </div>
                       ))}
@@ -1919,7 +1938,95 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
                 const rowBg = idx % 2 === 1 ? rowOdd : rowEven;
                 const isEditingBudget = editingCell?.staff === staff && editingCell?.field === af.key && editingCell?.type === "budget";
                 const isEditingCarryover = editingCell?.staff === staff && editingCell?.field === af.key && editingCell?.type === "carryover";
-                return (
+                const isCA = af.key === "amountCA";
+                const caSubTypes: { label: string; field: keyof StaffActivity }[] = [
+                  { label: "プロパー", field: "amountCAProper" },
+                  { label: "BP", field: "amountCaBP" },
+                  { label: "フリーランス", field: "amountCaFL" },
+                ];
+                const subRowCount = isCA ? 4 : 1;
+                const borderBottom = isCA ? "2px solid " + (isDark ? "#4a4a4a" : "#d0d0d0") : undefined;
+                return isCA ? (
+                  <Fragment key={staff}>
+                    {/* プロパー/BP/フリーランス sub-rows */}
+                    {caSubTypes.map((sub, subIdx) => {
+                      const subMonthTotal = Math.round(getStaffMonthTotal(staff, sub.field) * 10) / 10;
+                      const subColor = isDark ? "#c4b5fd" : "#7c3aed";
+                      const dashBorder = "1px dashed " + (isDark ? "#555" : "#ddd");
+                      return (
+                        <tr key={`${staff}-${sub.label}`} style={{ background: rowBg }}>
+                          {subIdx === 0 && (
+                            <td rowSpan={subRowCount} style={{ ...staffCellStyle, background: rowBg, borderBottom, verticalAlign: "middle" }}>{staff}</td>
+                          )}
+                          <td style={{ ...cellStyle, fontSize: 11, fontWeight: 600, color: subColor, background: rowBg, textAlign: "center", borderBottom: dashBorder }}>
+                            {sub.label}
+                          </td>
+                          <td style={{ ...cellStyle, background: rowBg, borderBottom: dashBorder }}></td>
+                          <td style={{ ...cellStyle, background: rowBg, borderBottom: dashBorder }}></td>
+                          <td style={{ ...cellStyle, background: rowBg, borderBottom: dashBorder }}></td>
+                          <td style={{ ...cellStyle, fontWeight: 600, color: subMonthTotal > 0 ? subColor : tc.textDisabled, fontSize: 11, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd"), borderBottom: dashBorder }}>
+                            {fmtAmount(subMonthTotal)}
+                          </td>
+                          {days.map(day => {
+                            const val = getStaffDayValue(staff, day.key, sub.field);
+                            const rounded = Math.round(val * 10) / 10;
+                            return (
+                              <td key={day.d} style={{ ...cellStyle, color: rounded > 0 ? subColor : tc.textDisabled, fontWeight: rounded > 0 ? 600 : 400, fontSize: 11, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined, borderBottom: dashBorder }}>
+                                {rounded > 0 ? fmtAmount(rounded) : "-"}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                    {/* 計 sub-row */}
+                    <tr key={`${staff}-total`} style={{ background: rowBg, borderBottom }}>
+                      {/* 予算（クリックで編集）— 計ラベル付き */}
+                      <td style={{ ...cellStyle, background: isDark ? (idx % 2 === 1 ? "#2d2600" : "#332d00") : (idx % 2 === 1 ? "#fef9e7" : "#fffdf0"), cursor: "pointer", minWidth: 70, padding: 0, borderBottom }}
+                        onClick={() => { if (!isEditingBudget) { setEditingCell({ staff, field: af.key, type: "budget" }); setEditingCellValue(budget ? String(budget) : ""); } }}>
+                        {isEditingBudget ? (
+                          <input type="text" inputMode="decimal" autoFocus value={editingCellValue}
+                            onChange={(e) => { const v = e.target.value; if (/^\d{0,6}(\.\d{0,1})?$/.test(v) || v === "") setEditingCellValue(v); }}
+                            onBlur={() => { const val = parseFloat(editingCellValue) || 0; saveBudget(af.key, staff, Math.round(val * 10) / 10); setEditingCell(null); }}
+                            onKeyDown={(e) => { if (e.key === "Enter") { const val = parseFloat(editingCellValue) || 0; saveBudget(af.key, staff, Math.round(val * 10) / 10); setEditingCell(null); } if (e.key === "Escape") setEditingCell(null); }}
+                            style={{ width: "100%", border: "2px solid #f39c12", borderRadius: 4, padding: "3px 6px", fontSize: 12, textAlign: "right", outline: "none", background: "#fffef5", boxSizing: "border-box" }} />
+                        ) : (
+                          <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 600, color: budget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled }}>
+                            <span style={{ fontSize: 9, color: af.color, fontWeight: 700, marginRight: 4 }}>計</span>{fmtAmount(budget)}
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ ...cellStyle, fontWeight: 700, color: progress > 0 ? (isDark ? "#93c5fd" : "#1e40af") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a2540" : "#1e2d4a") : (idx % 2 === 1 ? "#eff6ff" : "#f0f7ff"), borderBottom }}>
+                        {fmtAmount(progress)}
+                      </td>
+                      <td style={{ ...cellStyle, fontWeight: 700, color: budget > 0 ? getAchievementColor(achievementRate) : "#ccc", background: budget > 0 ? getAchievementBg(achievementRate) : undefined, borderBottom }}>
+                        {budget > 0 ? `${achievementRate.toFixed(1)}%` : "—"}
+                      </td>
+                      <td style={{ ...cellStyle, background: isDark ? (idx % 2 === 1 ? "#2d3748" : "#374151") : (idx % 2 === 1 ? "#eff0f2" : "#f5f6f8"), cursor: "pointer", minWidth: 70, padding: 0, borderBottom }}
+                        onClick={() => { if (!isEditingCarryover) { setEditingCell({ staff, field: af.key, type: "carryover" }); setEditingCellValue(carryover ? String(carryover) : ""); } }}>
+                        {isEditingCarryover ? (
+                          <input type="text" inputMode="decimal" autoFocus value={editingCellValue}
+                            onChange={(e) => { const v = e.target.value; if (/^\d{0,6}(\.\d{0,1})?$/.test(v) || v === "") setEditingCellValue(v); }}
+                            onBlur={() => { const val = parseFloat(editingCellValue) || 0; saveCarryover(af.key, staff, Math.round(val * 10) / 10); setEditingCell(null); }}
+                            onKeyDown={(e) => { if (e.key === "Enter") { const val = parseFloat(editingCellValue) || 0; saveCarryover(af.key, staff, Math.round(val * 10) / 10); setEditingCell(null); } if (e.key === "Escape") setEditingCell(null); }}
+                            style={{ width: "100%", border: "2px solid #6c757d", borderRadius: 4, padding: "3px 6px", fontSize: 12, textAlign: "right", outline: "none", background: "#f8f9fa", boxSizing: "border-box" }} />
+                        ) : (
+                          <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 600, color: carryover > 0 ? tc.textSecondary : tc.textDisabled }}>{fmtAmount(carryover)}</span>
+                        )}
+                      </td>
+                      <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : tc.textMuted, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd"), borderBottom }}>{fmtAmount(monthTotal)}</td>
+                      {days.map(day => {
+                        const val = getStaffDayValue(staff, day.key, af.key);
+                        const rounded = Math.round(val * 10) / 10;
+                        return (
+                          <td key={day.d} style={{ ...cellStyle, color: rounded > 0 ? af.color : tc.textDisabled, fontWeight: rounded > 0 ? 700 : 400, background: day.isRed ? (isDark ? "#3b1419" : "#fef8f8") : undefined, borderBottom }}>
+                            {rounded > 0 ? fmtAmount(rounded) : "-"}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  </Fragment>
+                ) : (
                   <tr key={staff} style={{ background: rowBg }}>
                     <td style={{ ...staffCellStyle, background: rowBg }}>{staff}</td>
                     {/* 予算（クリックで編集） */}
@@ -2119,68 +2226,69 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
           </div>
 
           {/* 一覧（下） */}
-          <div style={{ background: "#fff", borderRadius: 14, padding: "20px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1a1a2e", margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ background: tc.bgCard, borderRadius: 14, padding: "20px", boxShadow: tc.shadow }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: tc.textHeading, margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#6c757d", display: "inline-block" }} />
               登録一覧
-              <span style={{ fontSize: 13, color: "#999", fontWeight: 400, marginLeft: 8 }}>{miscItems.length}件</span>
+              <span style={{ fontSize: 13, color: tc.textMuted, fontWeight: 400, marginLeft: 8 }}>{miscItems.length}件</span>
             </h3>
             {miscItems.length === 0 ? (
-              <p style={{ color: "#bbb", fontSize: 13, margin: 0 }}>データなし</p>
+              <p style={{ color: tc.textMuted, fontSize: 13, margin: 0 }}>データなし</p>
             ) : (
               <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
                 <thead>
                   <tr>
-                    <th style={{ padding: "8px 12px", textAlign: "left", borderBottom: "2px solid #e0e0e0", fontWeight: 700, color: "#1a1a2e", width: 80, cursor: "pointer", userSelect: "none" }}
+                    <th style={{ padding: "8px 12px", textAlign: "left", borderBottom: "2px solid " + tc.border, fontWeight: 700, color: tc.textHeading, width: 80, cursor: "pointer", userSelect: "none" }}
                       onClick={() => toggleMiscSort("staff")}>
                       担当 {miscSortIcon("staff")}
                     </th>
-                    <th style={{ padding: "8px 12px", textAlign: "left", borderBottom: "2px solid #e0e0e0", fontWeight: 700, color: "#1a1a2e" }}>内容</th>
-                    <th style={{ padding: "8px 12px", textAlign: "center", borderBottom: "2px solid #e0e0e0", fontWeight: 700, color: "#1a1a2e", width: 130 }}>締切</th>
-                    <th style={{ padding: "8px 12px", textAlign: "center", borderBottom: "2px solid #e0e0e0", fontWeight: 700, color: "#1a1a2e", width: 120, cursor: "pointer", userSelect: "none" }}
+                    <th style={{ padding: "8px 12px", textAlign: "left", borderBottom: "2px solid " + tc.border, fontWeight: 700, color: tc.textHeading }}>内容</th>
+                    <th style={{ padding: "8px 12px", textAlign: "center", borderBottom: "2px solid " + tc.border, fontWeight: 700, color: tc.textHeading, width: 130 }}>締切</th>
+                    <th style={{ padding: "8px 12px", textAlign: "center", borderBottom: "2px solid " + tc.border, fontWeight: 700, color: tc.textHeading, width: 120, cursor: "pointer", userSelect: "none" }}
                       onClick={() => toggleMiscSort("status")}>
                       進捗 {miscSortIcon("status")}
                     </th>
-                    <th style={{ padding: "8px 12px", textAlign: "center", borderBottom: "2px solid #e0e0e0", fontWeight: 700, color: "#1a1a2e", width: 90 }}>登録日時</th>
-                    <th style={{ padding: "8px 12px", textAlign: "center", borderBottom: "2px solid #e0e0e0", fontWeight: 700, color: "#1a1a2e", width: 40 }}></th>
+                    <th style={{ padding: "8px 12px", textAlign: "center", borderBottom: "2px solid " + tc.border, fontWeight: 700, color: tc.textHeading, width: 90 }}>登録日時</th>
+                    <th style={{ padding: "8px 12px", textAlign: "center", borderBottom: "2px solid " + tc.border, fontWeight: 700, color: tc.textHeading, width: 40 }}></th>
                   </tr>
                 </thead>
                 <tbody>
                   {sortedMisc.map((item, idx) => {
                     const st = statusDisplay[item.status] || { icon: "—", color: "#999", order: 9 };
+                    const miscRowBg = idx % 2 === 1 ? (isDark ? "#1e2533" : "#f8f9fb") : tc.bgCard;
                     return (
-                      <tr key={item.origIdx} style={{ background: idx % 2 === 1 ? "#f8f9fb" : "#fff" }}>
-                        <td style={{ padding: "10px 12px", borderBottom: "1px solid #f0f2f5", fontWeight: 600 }}>{item.staff}</td>
-                        <td style={{ padding: "6px 8px", borderBottom: "1px solid #f0f2f5" }}>
+                      <tr key={item.origIdx} style={{ background: miscRowBg }}>
+                        <td style={{ padding: "10px 12px", borderBottom: "1px solid " + tc.border, fontWeight: 600, color: isDark ? "#f1f5f9" : tc.text }}>{item.staff}</td>
+                        <td style={{ padding: "6px 8px", borderBottom: "1px solid " + tc.border }}>
                           <input type="text" value={item.content} maxLength={20}
                             onChange={(e) => updateMiscItem(item.origIdx, "content", e.target.value)}
-                            style={{ width: "100%", border: "1px solid #e0e0e0", borderRadius: 6, padding: "6px 10px", fontSize: 13, background: "#fafafa", boxSizing: "border-box" }} />
+                            style={{ width: "100%", border: "1px solid " + tc.border, borderRadius: 6, padding: "6px 10px", fontSize: 13, background: tc.bgSection, color: tc.text, boxSizing: "border-box" }} />
                         </td>
-                        <td style={{ padding: "6px 8px", borderBottom: "1px solid #f0f2f5", textAlign: "center" }}>
+                        <td style={{ padding: "6px 8px", borderBottom: "1px solid " + tc.border, textAlign: "center" }}>
                           <input type="date" value={item.deadline || ""}
                             onChange={(e) => updateMiscItem(item.origIdx, "deadline", e.target.value)}
-                            style={{ border: "1px solid #e0e0e0", borderRadius: 6, padding: "6px 8px", fontSize: 12, background: "#fafafa", width: "100%", boxSizing: "border-box" }} />
+                            style={{ border: "1px solid " + tc.border, borderRadius: 6, padding: "6px 8px", fontSize: 12, background: tc.bgSection, color: tc.text, width: "100%", boxSizing: "border-box" }} />
                         </td>
-                        <td style={{ padding: "6px 8px", borderBottom: "1px solid #f0f2f5", textAlign: "center" }}>
+                        <td style={{ padding: "6px 8px", borderBottom: "1px solid " + tc.border, textAlign: "center" }}>
                           <div style={{ display: "flex", gap: 3, justifyContent: "center" }}>
                             {statusOptions.map(opt => (
                               <button key={opt.key} onClick={() => updateMiscItem(item.origIdx, "status", opt.key)}
                                 style={{
                                   padding: opt.key === "done" ? "3px 6px" : "3px 4px",
-                                  border: item.status === opt.key ? "2px solid #0077b6" : "1px solid #eee",
-                                  borderRadius: 6, background: item.status === opt.key ? "#e8f4fd" : "transparent", cursor: "pointer",
+                                  border: item.status === opt.key ? "2px solid #0077b6" : "1px solid " + tc.border,
+                                  borderRadius: 6, background: item.status === opt.key ? (isDark ? "#1e3a5f" : "#e8f4fd") : "transparent", cursor: "pointer",
                                   fontSize: opt.key === "done" ? 10 : 14, fontWeight: opt.key === "done" ? 700 : 400,
-                                  color: opt.key === "done" ? "#2980b9" : undefined, lineHeight: 1, opacity: item.status === opt.key ? 1 : 0.5,
+                                  color: opt.key === "done" ? (isDark ? "#60a5fa" : "#2980b9") : undefined, lineHeight: 1, opacity: item.status === opt.key ? 1 : 0.5,
                                 }} title={opt.label}>
                                 {opt.icon}
                               </button>
                             ))}
                           </div>
                         </td>
-                        <td style={{ padding: "10px 8px", borderBottom: "1px solid #f0f2f5", textAlign: "center", fontSize: 11, color: "#999" }}>
+                        <td style={{ padding: "10px 8px", borderBottom: "1px solid " + tc.border, textAlign: "center", fontSize: 11, color: tc.textMuted }}>
                           {formatDT(item.createdAt)}
                         </td>
-                        <td style={{ padding: "10px 8px", borderBottom: "1px solid #f0f2f5", textAlign: "center" }}>
+                        <td style={{ padding: "10px 8px", borderBottom: "1px solid " + tc.border, textAlign: "center" }}>
                           <button onClick={() => removeMiscItem(item.origIdx)} style={{ border: "none", background: "transparent", color: "#e74c3c", cursor: "pointer", fontSize: 16, padding: 2, lineHeight: 1 }} title="削除">×</button>
                         </td>
                       </tr>

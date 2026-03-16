@@ -59,7 +59,7 @@ export default function LoginPage() {
             <rect x="78" y="58" width="50" height="3" rx="1.5" fill="url(#la2)" />
           </svg>
           <h1 style={styles.title}>営業ダッシュボード</h1>
-          <p style={styles.subtitle}>Cell Promote Inc.</p>
+          {/* 会社名非表示 */}
         </div>
 
         <form onSubmit={handleSubmit} style={styles.form}>
