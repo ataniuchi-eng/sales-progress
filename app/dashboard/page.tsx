@@ -2218,46 +2218,125 @@ function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isM
               {/* 合計行 */}
               {(() => {
                 const caSubs = ["プロパー", "BP", "フリーランス"];
-                const grandBudget = isCATable
-                  ? Math.round(STAFF_LIST.reduce((sum, s) => sum + caSubs.reduce((ss, a) => ss + getStaffBudget(s, `amountCA_${a}`), 0), 0) * 10) / 10
-                  : Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffBudget(s, af.key), 0) * 10) / 10;
-                const grandCarry = isCATable
-                  ? Math.round(STAFF_LIST.reduce((sum, s) => sum + caSubs.reduce((ss, a) => ss + getStaffCarryover(s, `amountCA_${a}`), 0), 0) * 10) / 10
-                  : Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffCarryover(s, af.key), 0) * 10) / 10;
-                const grandMonth = isCATable
-                  ? Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffMonthAmountTotal(s, "ca"), 0) * 10) / 10
-                  : Math.round(getMonthGrandTotal(af.key) * 10) / 10;
-                const grandProgress = Math.round((grandCarry + grandMonth) * 10) / 10;
-                const grandRate = grandBudget > 0 ? Math.round((grandProgress / grandBudget) * 1000) / 10 : 0;
-                return (
-                <tr style={{ background: tc.bgSection }}>
-                  <td style={{ ...staffCellStyle, fontWeight: 700, background: tc.bgSection }}>合計</td>
-                  {isCATable && <td style={{ ...cellStyle, fontWeight: 700, background: tc.bgSection }}></td>}
-                  <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#fbbf24" : "#856404", background: hdrYellow }}>
-                    {fmtAmount(grandBudget)}
-                  </td>
-                  <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#93c5fd" : "#1e40af", background: hdrBlueAlt }}>
-                    {fmtAmount(grandProgress)}
-                  </td>
-                  <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen }}>
-                    {grandBudget > 0 ? <span style={{ color: getAchievementColor(grandRate) }}>{grandRate.toFixed(1)}%</span> : "—"}
-                  </td>
-                  <td style={{ ...cellStyle, fontWeight: 700, color: tc.textSecondary, background: hdrGray }}>
-                    {fmtAmount(grandCarry)}
-                  </td>
-                  <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, fontSize: 14 }}>{fmtAmount(grandMonth)}</td>
-                  {days.map(day => {
-                    const dayTotal = isCATable
-                      ? Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffDayAmountTotal(s, day.key, "ca"), 0) * 10) / 10
-                      : Math.round(getDayTotal(day.key, af.key) * 10) / 10;
-                    return (
-                      <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? (isDark ? "#e2e8f0" : "#1a1a2e") : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection }}>
-                        {dayTotal > 0 ? fmtAmount(dayTotal) : "-"}
+                if (isCATable) {
+                  // CA: 4行（プロパー/BP/フリーランス/計）
+                  const totalBorderBottom = "2px solid " + (isDark ? "#4a4a4a" : "#d0d0d0");
+                  const dashBorder = "1px dashed " + (isDark ? "#555" : "#ddd");
+                  const subColor = isDark ? "#c4b5fd" : "#7c3aed";
+                  return (
+                    <>
+                      {caSubs.map((sub, subIdx) => {
+                        const subBudget = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffBudget(s, `amountCA_${sub}`), 0) * 10) / 10;
+                        const subCarry = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffCarryover(s, `amountCA_${sub}`), 0) * 10) / 10;
+                        const subMonth = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffMonthAmountByAffiliation(s, "ca", sub), 0) * 10) / 10;
+                        const subProgress = Math.round((subCarry + subMonth) * 10) / 10;
+                        const subRate = subBudget > 0 ? Math.round((subProgress / subBudget) * 1000) / 10 : 0;
+                        return (
+                          <tr key={`grand-${sub}`} style={{ background: tc.bgSection }}>
+                            {subIdx === 0 && (
+                              <td rowSpan={4} style={{ ...staffCellStyle, fontWeight: 700, background: tc.bgSection, verticalAlign: "middle", borderBottom: totalBorderBottom }}>合計</td>
+                            )}
+                            <td style={{ ...cellStyle, fontSize: 11, fontWeight: 600, color: subColor, background: tc.bgSection, textAlign: "center", borderBottom: dashBorder }}>
+                              {sub}
+                            </td>
+                            <td style={{ ...cellStyle, fontWeight: 600, color: subBudget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled, background: hdrYellow, fontSize: 11, borderBottom: dashBorder }}>
+                              {fmtAmount(subBudget)}
+                            </td>
+                            <td style={{ ...cellStyle, fontWeight: 600, color: subProgress > 0 ? (isDark ? "#93c5fd" : "#1e40af") : tc.textDisabled, background: hdrBlueAlt, fontSize: 11, borderBottom: dashBorder }}>
+                              {fmtAmount(subProgress)}
+                            </td>
+                            <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subBudget > 0 ? getAchievementColor(subRate) : "#ccc", background: subBudget > 0 ? getAchievementBg(subRate) : hdrGreen, borderBottom: dashBorder }}>
+                              {subBudget > 0 ? `${subRate.toFixed(1)}%` : "—"}
+                            </td>
+                            <td style={{ ...cellStyle, fontWeight: 600, color: subCarry > 0 ? tc.textSecondary : tc.textDisabled, background: hdrGray, fontSize: 11, borderBottom: dashBorder }}>
+                              {fmtAmount(subCarry)}
+                            </td>
+                            <td style={{ ...cellStyle, fontWeight: 600, color: subMonth > 0 ? subColor : tc.textDisabled, background: hdrBlue, fontSize: 11, borderBottom: dashBorder }}>
+                              {fmtAmount(subMonth)}
+                            </td>
+                            {days.map(day => {
+                              const dayVal = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffDayAmountByAffiliation(s, day.key, "ca", sub), 0) * 10) / 10;
+                              return (
+                                <td key={day.d} style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: dayVal > 0 ? subColor : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection, borderBottom: dashBorder }}>
+                                  {dayVal > 0 ? fmtAmount(dayVal) : "-"}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                      {/* 計 row */}
+                      {(() => {
+                        const grandBudget = Math.round(STAFF_LIST.reduce((sum, s) => sum + caSubs.reduce((ss, a) => ss + getStaffBudget(s, `amountCA_${a}`), 0), 0) * 10) / 10;
+                        const grandCarry = Math.round(STAFF_LIST.reduce((sum, s) => sum + caSubs.reduce((ss, a) => ss + getStaffCarryover(s, `amountCA_${a}`), 0), 0) * 10) / 10;
+                        const grandMonth = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffMonthAmountTotal(s, "ca"), 0) * 10) / 10;
+                        const grandProgress = Math.round((grandCarry + grandMonth) * 10) / 10;
+                        const grandRate = grandBudget > 0 ? Math.round((grandProgress / grandBudget) * 1000) / 10 : 0;
+                        return (
+                          <tr style={{ background: tc.bgSection, borderBottom: totalBorderBottom }}>
+                            <td style={{ ...cellStyle, fontSize: 11, fontWeight: 700, color: af.color, background: tc.bgSection, textAlign: "center", borderBottom: totalBorderBottom }}>
+                              計
+                            </td>
+                            <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#fbbf24" : "#856404", background: hdrYellow, borderBottom: totalBorderBottom }}>
+                              {fmtAmount(grandBudget)}
+                            </td>
+                            <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#93c5fd" : "#1e40af", background: hdrBlueAlt, borderBottom: totalBorderBottom }}>
+                              {fmtAmount(grandProgress)}
+                            </td>
+                            <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen, borderBottom: totalBorderBottom }}>
+                              {grandBudget > 0 ? <span style={{ color: getAchievementColor(grandRate) }}>{grandRate.toFixed(1)}%</span> : "—"}
+                            </td>
+                            <td style={{ ...cellStyle, fontWeight: 700, color: tc.textSecondary, background: hdrGray, borderBottom: totalBorderBottom }}>
+                              {fmtAmount(grandCarry)}
+                            </td>
+                            <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, fontSize: 14, borderBottom: totalBorderBottom }}>{fmtAmount(grandMonth)}</td>
+                            {days.map(day => {
+                              const dayTotal = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffDayAmountTotal(s, day.key, "ca"), 0) * 10) / 10;
+                              return (
+                                <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? (isDark ? "#e2e8f0" : "#1a1a2e") : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection, borderBottom: totalBorderBottom }}>
+                                  {dayTotal > 0 ? fmtAmount(dayTotal) : "-"}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })()}
+                    </>
+                  );
+                } else {
+                  // RA: 1行（従来通り）
+                  const grandBudget = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffBudget(s, af.key), 0) * 10) / 10;
+                  const grandCarry = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffCarryover(s, af.key), 0) * 10) / 10;
+                  const grandMonth = Math.round(getMonthGrandTotal(af.key) * 10) / 10;
+                  const grandProgress = Math.round((grandCarry + grandMonth) * 10) / 10;
+                  const grandRate = grandBudget > 0 ? Math.round((grandProgress / grandBudget) * 1000) / 10 : 0;
+                  return (
+                    <tr style={{ background: tc.bgSection }}>
+                      <td style={{ ...staffCellStyle, fontWeight: 700, background: tc.bgSection }}>合計</td>
+                      <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#fbbf24" : "#856404", background: hdrYellow }}>
+                        {fmtAmount(grandBudget)}
                       </td>
-                    );
-                  })}
-                </tr>
-                );
+                      <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#93c5fd" : "#1e40af", background: hdrBlueAlt }}>
+                        {fmtAmount(grandProgress)}
+                      </td>
+                      <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen }}>
+                        {grandBudget > 0 ? <span style={{ color: getAchievementColor(grandRate) }}>{grandRate.toFixed(1)}%</span> : "—"}
+                      </td>
+                      <td style={{ ...cellStyle, fontWeight: 700, color: tc.textSecondary, background: hdrGray }}>
+                        {fmtAmount(grandCarry)}
+                      </td>
+                      <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, fontSize: 14 }}>{fmtAmount(grandMonth)}</td>
+                      {days.map(day => {
+                        const dayTotal = Math.round(getDayTotal(day.key, af.key) * 10) / 10;
+                        return (
+                          <td key={day.d} style={{ ...cellStyle, fontWeight: 700, color: dayTotal > 0 ? (isDark ? "#e2e8f0" : "#1a1a2e") : (isDark ? "#555" : "#ddd"), background: day.isRed ? (isDark ? "#3b1419" : "#fef2f2") : tc.bgSection }}>
+                            {dayTotal > 0 ? fmtAmount(dayTotal) : "-"}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                }
               })()}
             </tbody>
           </table>
