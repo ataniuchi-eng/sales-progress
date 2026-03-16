@@ -314,6 +314,29 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
     return parts.join(".");
   };
 
+  // 月間の企業別売上ランキング（RA受注のrevenueを企業ごとに集計）
+  const getMonthlyCompanyRevenue = (): { company: string; revenue: number; profit: number }[] => {
+    const companyMap: Record<string, { revenue: number; profit: number }> = {};
+    days.forEach(day => {
+      const dayData = allData[day.key];
+      if (!dayData || !Array.isArray(dayData.staffActivities)) return;
+      dayData.staffActivities.forEach((s: any) => {
+        const entries = s.raEntries || [];
+        entries.forEach((e: any) => {
+          if (e.company && (e.revenue || 0) > 0) {
+            if (!companyMap[e.company]) companyMap[e.company] = { revenue: 0, profit: 0 };
+            companyMap[e.company].revenue += (e.revenue || 0);
+            companyMap[e.company].profit += (e.amount || 0);
+          }
+        });
+      });
+    });
+    return Object.entries(companyMap)
+      .map(([company, data]) => ({ company, revenue: Math.round(data.revenue * 10) / 10, profit: Math.round(data.profit * 10) / 10 }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+  };
+
   // 繰越粗利ヘッダーラベル（X/1繰越粗利）
   const carryoverLabel = (() => {
     const [, m] = monthlyYM.split("-").map(Number);
@@ -474,6 +497,39 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
           })}
         </div>
       )}
+
+      {/* 売上企業ベスト5（金額タブ） */}
+      {monthlyMode === "amount" && (() => {
+        const companyRanked = getMonthlyCompanyRevenue();
+        const medals = ["🥇", "🥈", "🥉"];
+        const totalRevenue = Math.round(companyRanked.reduce((sum, c) => sum + c.revenue, 0) * 10) / 10;
+        return (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16, marginBottom: 24, maxWidth: 480 }} className="focus-grid">
+            <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, borderTop: "3px solid #e74c3c" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>売上企業ベスト5</h3>
+                <span style={{ fontSize: 18, fontWeight: 700, color: "#e74c3c" }}>{totalRevenue > 0 ? fmtAmount(totalRevenue) : "0"}万円</span>
+              </div>
+              {companyRanked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
+                companyRanked.map((r, i) => (
+                  <div key={r.company} style={{ padding: "8px 0", borderBottom: `1px solid ${tc.borderLight || "#f0f2f5"}` }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
+                        {i < 3 ? <span style={{ fontSize: 16, flexShrink: 0 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center", flexShrink: 0 }}>{i + 1}</span>}
+                        <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.company}</span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexShrink: 0, marginLeft: 8 }}>
+                        <span style={{ fontSize: 15, fontWeight: 700, color: "#e74c3c" }}>{fmtAmount(r.revenue)}万円</span>
+                        <span style={{ fontSize: 11, color: tc.textMuted }}>（粗利：{fmtAmount(r.profit)}万円）</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 各指標ごとにテーブル（件数）— 面談設定数を先頭に */}
       {monthlyMode === "count" && [...ACTIVITY_FIELDS].sort((a, b) => a.targetType === "daily" ? -1 : b.targetType === "daily" ? 1 : 0).map(af => {

@@ -313,8 +313,8 @@ export default function DashboardPage() {
   appointmentAcquisitions: s.appointmentAcquisitions || 0,
   ordersRA: s.ordersRA || 0,
   ordersCA: s.ordersCA || 0,
-  raEntries: s.raEntries?.length ? s.raEntries.map((e: any) => ({ ...e, company: "" })) : (s.ordersRA > 0 ? [{ amount: s.amountRA || 0, revenue: 0, company: "", affiliation: s.affiliationRA || "", position: s.positionRA || "" }] : []),
-  caEntries: s.caEntries?.length ? s.caEntries.map((e: any) => ({ ...e, company: "" })) : (s.ordersCA > 0 ? [{ amount: s.amountCA || 0, revenue: 0, company: "", affiliation: s.affiliationCA || "", position: s.positionCA || "" }] : []),
+  raEntries: s.raEntries?.length ? s.raEntries : (s.ordersRA > 0 ? [{ amount: s.amountRA || 0, revenue: 0, company: "", affiliation: s.affiliationRA || "", position: s.positionRA || "" }] : []),
+  caEntries: s.caEntries?.length ? s.caEntries : (s.ordersCA > 0 ? [{ amount: s.amountCA || 0, revenue: 0, company: "", affiliation: s.affiliationCA || "", position: s.positionCA || "" }] : []),
 })) : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }]);
     } else {
       // データがない場合は前日までの最新データをフォールバックで表示
