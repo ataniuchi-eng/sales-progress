@@ -802,7 +802,7 @@ export default function DashboardPage() {
                 {/* 売上数値セクション */}
                 <div style={{ marginTop: 24, borderTop: "3px solid " + tc.textPrimary }}>
                   <div onClick={() => setSectionSalesOpen(!sectionSalesOpen)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "linear-gradient(135deg, #1a1a2e, #16213e)", borderRadius: sectionSalesOpen ? "0" : "0 0 10px 10px", cursor: "pointer", userSelect: "none" as const }}>
-                    <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>売上数値</h2>
+                    <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>売上数値 <span style={{ fontSize: 12, color: "#ff4444", fontWeight: 600 }}>※追加・更新は本日日付選択後、保存</span></h2>
                     <span style={{ fontSize: 18, color: "#fff", transform: sectionSalesOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
                   </div>
                   {sectionSalesOpen && (
@@ -834,7 +834,7 @@ export default function DashboardPage() {
                 {/* 注力セクション */}
                 <div style={{ marginTop: 24, borderTop: "3px solid #1a1a2e" }}>
                   <div onClick={() => setSectionFocusOpen(!sectionFocusOpen)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "linear-gradient(135deg, #1a1a2e, #16213e)", borderRadius: sectionFocusOpen ? "0" : "0 0 10px 10px", cursor: "pointer", userSelect: "none" as const }}>
-                    <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>注力</h2>
+                    <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>注力 <span style={{ fontSize: 12, color: "#ff4444", fontWeight: 600 }}>※追加・更新は本日日付選択後、保存</span></h2>
                     <span style={{ fontSize: 18, color: "#fff", transform: sectionFocusOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
                   </div>
                   {sectionFocusOpen && (
@@ -876,7 +876,7 @@ export default function DashboardPage() {
                 {/* RA開拓セクション */}
                 <div style={{ marginTop: 24, borderTop: "3px solid " + tc.textPrimary }}>
                   <div onClick={() => setSectionRAOpen(!sectionRAOpen)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "linear-gradient(135deg, #1a1a2e, #16213e)", borderRadius: sectionRAOpen ? "0" : "0 0 10px 10px", cursor: "pointer", userSelect: "none" as const }}>
-                    <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>RA開拓</h2>
+                    <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>RA開拓 <span style={{ fontSize: 12, color: "#ff4444", fontWeight: 600 }}>※追加・更新は本日日付選択後、保存</span></h2>
                     <span style={{ fontSize: 18, color: "#fff", transform: sectionRAOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
                   </div>
                   {sectionRAOpen && (
@@ -942,7 +942,7 @@ export default function DashboardPage() {
                   <div onClick={() => setSectionAnnouncementOpen(!sectionAnnouncementOpen)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "linear-gradient(135deg, #1a1a2e, #16213e)", borderRadius: sectionAnnouncementOpen ? "0" : "0 0 10px 10px", cursor: "pointer", userSelect: "none" as const }}>
                     <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                      全体連絡
+                      全体連絡 <span style={{ fontSize: 12, color: "#ff4444", fontWeight: 600 }}>※追加・更新は本日日付選択後、保存</span>
                     </h2>
                     <span style={{ fontSize: 18, color: "#fff", transform: sectionAnnouncementOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
                   </div>
