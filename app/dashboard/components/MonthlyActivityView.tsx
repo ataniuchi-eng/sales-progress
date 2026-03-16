@@ -365,7 +365,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
   const countCarryoverLabel = (() => {
     const [, m] = monthlyYM.split("-").map(Number);
     const nextMonth = m === 12 ? 1 : m + 1;
-    return `${nextMonth}/1繰越件数`;
+    return `${nextMonth}/1稼働件数`;
   })();
 
   // 繰越粗利ヘッダーラベル（X/1繰越粗利）
@@ -631,10 +631,10 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, minWidth: 70 }}>担当</th>
                 {isCACount && !caCountTotalOnly && <th style={{ ...headerCellStyle, minWidth: 70 }}>所属</th>}
-                {isCACount && !isDaily && <th style={{ ...headerCellStyle, background: isDark ? "#1a3a4a" : "#d1ecf1", minWidth: 50 }}>進捗</th>}
                 <th style={{ ...headerCellStyle, background: hdrYellow, minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSortTarget}>
                   {isDaily ? "日目標" : "目標"} {sortIconC(currentSortTarget)}
                 </th>
+                {isCACount && !isDaily && <th style={{ ...headerCellStyle, background: isDark ? "#1a3a4a" : "#d1ecf1", minWidth: 50 }}>進捗</th>}
                 {!isDaily && (
                   <th style={{ ...headerCellStyle, background: hdrGreen, minWidth: 50, cursor: "pointer", userSelect: "none" }} onClick={toggleSortRate}>
                     達成率 {sortIconC(currentSortRate)}
@@ -653,8 +653,8 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
               <tr>
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, fontSize: 10, padding: "2px 6px" }}></th>
                 {isCACount && !caCountTotalOnly && <th style={{ ...headerCellStyle, fontSize: 10, padding: "2px 6px" }}></th>}
-                {isCACount && !isDaily && <th style={{ ...headerCellStyle, background: isDark ? "#1a3a4a" : "#d1ecf1", fontSize: 10, padding: "2px 6px" }}>件</th>}
                 <th style={{ ...headerCellStyle, background: hdrYellow, fontSize: 10, padding: "2px 6px" }}>{isDaily ? "/日" : "件"}</th>
+                {isCACount && !isDaily && <th style={{ ...headerCellStyle, background: isDark ? "#1a3a4a" : "#d1ecf1", fontSize: 10, padding: "2px 6px" }}>件</th>}
                 {!isDaily && <th style={{ ...headerCellStyle, background: hdrGreen, fontSize: 10, padding: "2px 6px" }}>%</th>}
                 {isCACount && !isDaily && <th style={{ ...headerCellStyle, background: isDark ? "#2d1a3a" : "#e8d5f5", fontSize: 10, padding: "2px 6px" }}>件</th>}
                 <th style={{ ...headerCellStyle, background: hdrBlue, fontSize: 10, padding: "2px 6px" }}></th>
@@ -689,12 +689,12 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                     return (
                       <tr key={staff} style={{ background: rowBg }}>
                         <td style={{ ...staffCellStyle, background: rowBg }}>{staff}</td>
-                        {!isDaily && <td style={{ ...cellStyle, fontWeight: 700, color: totalProgressAll > 0 ? (isDark ? "#17a2b8" : "#0c5460") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a3a4a" : "#1e4050") : (idx % 2 === 1 ? "#d1ecf1" : "#d8f0f5"), textAlign: "right" }}>{totalProgressAll > 0 ? totalProgressAll : "\u2014"}</td>}
                         <td style={{ ...cellStyle, fontWeight: 700, background: isDark ? (idx % 2 === 1 ? "#2d2600" : "#332d00") : (idx % 2 === 1 ? "#fef9e7" : "#fffdf0") }}>
                           <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 700, color: totalTargetAll > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled }}>
                             {totalTargetAll > 0 ? totalTargetAll : "\u2014"}
                           </span>
                         </td>
+                        {!isDaily && <td style={{ ...cellStyle, fontWeight: 700, color: totalProgressAll > 0 ? (isDark ? "#17a2b8" : "#0c5460") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a3a4a" : "#1e4050") : (idx % 2 === 1 ? "#d1ecf1" : "#d8f0f5"), textAlign: "right" }}>{totalProgressAll > 0 ? totalProgressAll : "\u2014"}</td>}
                         <td style={{ ...cellStyle, fontWeight: 700, color: totalTargetAll > 0 ? getAchievementColor(totalRateAllNew) : "#ccc", background: totalTargetAll > 0 ? getAchievementBg(totalRateAllNew) : undefined, textAlign: "right" }}>
                           {totalTargetAll > 0 ? `${totalRateAllNew.toFixed(1)}%` : "\u2014"}
                         </td>
@@ -730,10 +730,6 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                             <td style={{ ...cellStyle, fontSize: 11, fontWeight: 600, color: subColor, background: rowBg, textAlign: "left", paddingLeft: 8, borderBottom: dashBorder }}>
                               {sub}
                             </td>
-                            {/* 進捗 */}
-                            <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subProgress > 0 ? (isDark ? "#17a2b8" : "#0c5460") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a3a4a" : "#1e4050") : (idx % 2 === 1 ? "#d1ecf1" : "#d8f0f5"), borderBottom: dashBorder, textAlign: "right" }}>
-                              {subProgress > 0 ? subProgress : "\u2014"}
-                            </td>
                             {/* 目標（編集可能） */}
                             <td style={{ ...cellStyle, background: isDark ? (idx % 2 === 1 ? "#2d2600" : "#332d00") : (idx % 2 === 1 ? "#fef9e7" : "#fffdf0"), cursor: "pointer", minWidth: 50, padding: 0, borderBottom: dashBorder }}
                               onClick={() => { if (!isEditingSub) { setEditingCell({ staff, field: `ordersCA_${sub}`, type: "countTarget" }); setEditingCellValue(subTarget ? String(subTarget) : ""); } }}>
@@ -748,6 +744,10 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                                   {subTarget > 0 ? subTarget : "—"}
                                 </span>
                               )}
+                            </td>
+                            {/* 進捗 */}
+                            <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subProgress > 0 ? (isDark ? "#17a2b8" : "#0c5460") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a3a4a" : "#1e4050") : (idx % 2 === 1 ? "#d1ecf1" : "#d8f0f5"), borderBottom: dashBorder, textAlign: "right" }}>
+                              {subProgress > 0 ? subProgress : "\u2014"}
                             </td>
                             {/* 達成率 */}
                             <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subTarget > 0 ? getAchievementColor(subRate) : "#ccc", background: subTarget > 0 ? getAchievementBg(subRate) : undefined, borderBottom: dashBorder, textAlign: "right" }}>
@@ -793,17 +793,17 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                         return (
                           <tr key={`${staff}-total`} style={{ background: rowBg, borderBottom }}>
                             <td style={{ ...cellStyle, fontSize: 11, fontWeight: 700, color: af.color, background: rowBg, textAlign: "left", paddingLeft: 8, borderBottom }}>計</td>
-                            {/* 進捗 */}
-                            <td style={{ ...cellStyle, fontWeight: 700, color: totalProgress > 0 ? (isDark ? "#17a2b8" : "#0c5460") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a3a4a" : "#1e4050") : (idx % 2 === 1 ? "#d1ecf1" : "#d8f0f5"), borderBottom, textAlign: "right" }}>{totalProgress > 0 ? totalProgress : "\u2014"}</td>
                             <td style={{ ...cellStyle, fontWeight: 700, background: isDark ? (idx % 2 === 1 ? "#2d2600" : "#332d00") : (idx % 2 === 1 ? "#fef9e7" : "#fffdf0"), borderBottom }}>
                               <span style={{ display: "block", padding: "4px 6px", textAlign: "right", fontWeight: 700, color: totalTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled }}>
                                 {totalTarget > 0 ? totalTarget : "—"}
                               </span>
                             </td>
+                            {/* 進捗 */}
+                            <td style={{ ...cellStyle, fontWeight: 700, color: totalProgress > 0 ? (isDark ? "#17a2b8" : "#0c5460") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a3a4a" : "#1e4050") : (idx % 2 === 1 ? "#d1ecf1" : "#d8f0f5"), borderBottom, textAlign: "right" }}>{totalProgress > 0 ? totalProgress : "\u2014"}</td>
                             <td style={{ ...cellStyle, fontWeight: 700, color: totalTarget > 0 ? getAchievementColor(totalRate) : "#ccc", background: totalTarget > 0 ? getAchievementBg(totalRate) : undefined, borderBottom, textAlign: "right" }}>
                               {totalTarget > 0 ? `${totalRate.toFixed(1)}%` : "—"}
                             </td>
-                            {/* 繰越件数 */}
+                            {/* 稼働件数 */}
                             <td style={{ ...cellStyle, fontWeight: 700, color: totalCarryover > 0 ? (isDark ? "#b794f4" : "#6f42c1") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#2d1a3a" : "#331e42") : (idx % 2 === 1 ? "#e8d5f5" : "#f0e0fa"), borderBottom, textAlign: "right" }}>{totalCarryover > 0 ? totalCarryover : "\u2014"}</td>
                             <td style={{ ...cellStyle, fontWeight: 700, color: monthTotal > 0 ? af.color : tc.textMuted, background: isDark ? (idx % 2 === 1 ? "#1a2e4a" : "#1e3550") : (idx % 2 === 1 ? "#e1eef8" : "#e8f4fd"), borderBottom, textAlign: "right" }}>{monthTotal}</td>
                             {days.map(day => {
@@ -889,8 +889,8 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                     return (
                       <tr style={{ background: tc.bgSection }}>
                         <td style={{ ...staffCellStyle, fontWeight: 700, background: tc.bgSection }}>合計</td>
-                        {!isDaily && <td style={{ ...cellStyle, fontWeight: 700, color: gProgress > 0 ? (isDark ? "#17a2b8" : "#0c5460") : tc.textDisabled, background: isDark ? "#1a3a4a" : "#d1ecf1", textAlign: "right" }}>{gProgress > 0 ? gProgress : "\u2014"}</td>}
                         <td style={{ ...cellStyle, fontWeight: 700, color: gTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled, background: hdrYellow, textAlign: "right" }}>{gTarget > 0 ? gTarget : "\u2014"}</td>
+                        {!isDaily && <td style={{ ...cellStyle, fontWeight: 700, color: gProgress > 0 ? (isDark ? "#17a2b8" : "#0c5460") : tc.textDisabled, background: isDark ? "#1a3a4a" : "#d1ecf1", textAlign: "right" }}>{gProgress > 0 ? gProgress : "\u2014"}</td>}
                         <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen, textAlign: "right" }}>{gTarget > 0 ? <span style={{ color: getAchievementColor(gRate) }}>{gRate.toFixed(1)}%</span> : "\u2014"}</td>
                         {!isDaily && <td style={{ ...cellStyle, fontWeight: 700, color: gCarryover > 0 ? (isDark ? "#b794f4" : "#6f42c1") : tc.textDisabled, background: isDark ? "#2d1a3a" : "#e8d5f5", textAlign: "right" }}>{gCarryover > 0 ? gCarryover : "\u2014"}</td>}
                         <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, textAlign: "right" }}>{gMonth}</td>
@@ -920,17 +920,19 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                               <td rowSpan={5} style={{ ...staffCellStyle, fontWeight: 700, background: tc.bgSection, verticalAlign: "middle", borderBottom: totalBorderBottom }}>合計</td>
                             )}
                             <td style={{ ...cellStyle, fontSize: 11, fontWeight: 600, color: subColor, background: tc.bgSection, textAlign: "left", paddingLeft: 8, borderBottom: dashBorder }}>{sub}</td>
+                            {/* 目標 */}
+                            <td style={{ ...cellStyle, fontWeight: 600, color: subTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled, background: hdrYellow, fontSize: 11, borderBottom: dashBorder, textAlign: "right" }}>
+                              {subTarget > 0 ? subTarget : "—"}
+                            </td>
                             {/* 進捗 */}
                             <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subProgressGrand > 0 ? (isDark ? "#17a2b8" : "#0c5460") : tc.textDisabled, background: isDark ? "#1a3a4a" : "#d1ecf1", borderBottom: dashBorder, textAlign: "right" }}>
                               {subProgressGrand > 0 ? subProgressGrand : "\u2014"}
                             </td>
-                            <td style={{ ...cellStyle, fontWeight: 600, color: subTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled, background: hdrYellow, fontSize: 11, borderBottom: dashBorder, textAlign: "right" }}>
-                              {subTarget > 0 ? subTarget : "—"}
-                            </td>
+                            {/* 達成率 */}
                             <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subTarget > 0 ? getAchievementColor(subRate) : "#ccc", background: subTarget > 0 ? getAchievementBg(subRate) : hdrGreen, borderBottom: dashBorder, textAlign: "right" }}>
                               {subTarget > 0 ? `${subRate.toFixed(1)}%` : "—"}
                             </td>
-                            {/* 繰越件数 */}
+                            {/* 稼働件数 */}
                             <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subCarryoverGrand > 0 ? (isDark ? "#b794f4" : "#6f42c1") : tc.textDisabled, background: isDark ? "#2d1a3a" : "#e8d5f5", borderBottom: dashBorder, textAlign: "right" }}>
                               {subCarryoverGrand > 0 ? subCarryoverGrand : "\u2014"}
                             </td>
@@ -958,15 +960,16 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                         return (
                           <tr style={{ background: tc.bgSection, borderBottom: totalBorderBottom }}>
                             <td style={{ ...cellStyle, fontSize: 11, fontWeight: 700, color: af.color, background: tc.bgSection, textAlign: "left", paddingLeft: 8, borderBottom: totalBorderBottom }}>計</td>
-                            {/* 進捗 */}
-                            <td style={{ ...cellStyle, fontWeight: 700, color: grandProgress > 0 ? (isDark ? "#17a2b8" : "#0c5460") : tc.textDisabled, background: isDark ? "#1a3a4a" : "#d1ecf1", borderBottom: totalBorderBottom, textAlign: "right" }}>{grandProgress > 0 ? grandProgress : "\u2014"}</td>
+                            {/* 目標 */}
                             <td style={{ ...cellStyle, fontWeight: 700, color: grandTarget > 0 ? (isDark ? "#fbbf24" : "#856404") : tc.textDisabled, background: hdrYellow, borderBottom: totalBorderBottom, textAlign: "right" }}>
                               {grandTarget > 0 ? grandTarget : "—"}
                             </td>
+                            {/* 進捗 */}
+                            <td style={{ ...cellStyle, fontWeight: 700, color: grandProgress > 0 ? (isDark ? "#17a2b8" : "#0c5460") : tc.textDisabled, background: isDark ? "#1a3a4a" : "#d1ecf1", borderBottom: totalBorderBottom, textAlign: "right" }}>{grandProgress > 0 ? grandProgress : "\u2014"}</td>
                             <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen, borderBottom: totalBorderBottom, textAlign: "right" }}>
                               {grandTarget > 0 ? <span style={{ color: getAchievementColor(grandRate) }}>{grandRate.toFixed(1)}%</span> : "—"}
                             </td>
-                            {/* 繰越件数 */}
+                            {/* 稼働件数 */}
                             <td style={{ ...cellStyle, fontWeight: 700, color: grandCarryover > 0 ? (isDark ? "#b794f4" : "#6f42c1") : tc.textDisabled, background: isDark ? "#2d1a3a" : "#e8d5f5", borderBottom: totalBorderBottom, textAlign: "right" }}>{grandCarryover > 0 ? grandCarryover : "\u2014"}</td>
                             <td style={{ ...cellStyle, fontWeight: 700, color: af.color, background: hdrBlue, borderBottom: totalBorderBottom, textAlign: "right" }}>{grandMonth}</td>
                             {days.map(day => {
