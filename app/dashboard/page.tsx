@@ -387,12 +387,18 @@ export default function DashboardPage() {
         coTarget: formatNumStr(d.co?.target || 0), coForecast: formatNumStr(d.co?.forecast || 0),
       });
       {
-        // 注力データ: 全担当分をロード（非管理者も全員分表示、編集・削除は自担当のみUI側で制御）
+        // 注力データ: 非管理者は自担当のみロード（API側マージで他担当に干渉しないため安全）
         const allPeople = d.focusPeople?.length ? d.focusPeople.map((p: any) => ({ ...p, staff: p.staff || "", position: p.position || "", skill: p.skill || "" })) : [];
         const allProjects = d.focusProjects?.length ? d.focusProjects.map((p: any) => ({ ...p, staff: p.staff || "", position: p.position || "", location: p.location || "" })) : [];
-        const defaultStaff = (!isAdmin && currentStaffName) ? currentStaffName : "";
-        setFocusPeople(allPeople.length > 0 ? allPeople : [{ name: "", affiliation: "プロパー", cost: 0, staff: defaultStaff, position: "", skill: "" }]);
-        setFocusProjects(allProjects.length > 0 ? allProjects : [{ company: "", title: "", price: 0, contract: "派遣", staff: defaultStaff, position: "", location: "" }]);
+        if (!isAdmin && currentStaffName) {
+          const myPeople = allPeople.filter((p: any) => p.staff === currentStaffName);
+          setFocusPeople(myPeople.length > 0 ? myPeople : []);
+          const myProjects = allProjects.filter((p: any) => p.staff === currentStaffName);
+          setFocusProjects(myProjects.length > 0 ? myProjects : []);
+        } else {
+          setFocusPeople(allPeople.length > 0 ? allPeople : [{ name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }]);
+          setFocusProjects(allProjects.length > 0 ? allProjects : [{ company: "", title: "", price: 0, contract: "派遣", staff: "", position: "", location: "" }]);
+        }
       }
       setAnnouncements(d.announcements?.length ? [...d.announcements] : [""]);
       const ra = d.ra || { acquisitionTarget: 0, acquisitionProgress: 0, acquisitionCompanies: [], joinTarget: 0, joinProgress: 0, joinCompanies: [] };
@@ -434,9 +440,15 @@ export default function DashboardPage() {
         {
           const allPeople = d.focusPeople?.length ? d.focusPeople.map((p: any) => ({ ...p, staff: p.staff || "", position: p.position || "", skill: p.skill || "" })) : [];
           const allProjects = d.focusProjects?.length ? d.focusProjects.map((p: any) => ({ ...p, staff: p.staff || "", position: p.position || "", location: p.location || "" })) : [];
-          const defaultStaff = (!isAdmin && currentStaffName) ? currentStaffName : "";
-          setFocusPeople(allPeople.length > 0 ? allPeople : [{ name: "", affiliation: "プロパー", cost: 0, staff: defaultStaff, position: "", skill: "" }]);
-          setFocusProjects(allProjects.length > 0 ? allProjects : [{ company: "", title: "", price: 0, contract: "派遣", staff: defaultStaff, position: "", location: "" }]);
+          if (!isAdmin && currentStaffName) {
+            const myPeople = allPeople.filter((p: any) => p.staff === currentStaffName);
+            setFocusPeople(myPeople.length > 0 ? myPeople : []);
+            const myProjects = allProjects.filter((p: any) => p.staff === currentStaffName);
+            setFocusProjects(myProjects.length > 0 ? myProjects : []);
+          } else {
+            setFocusPeople(allPeople.length > 0 ? allPeople : [{ name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }]);
+            setFocusProjects(allProjects.length > 0 ? allProjects : [{ company: "", title: "", price: 0, contract: "派遣", staff: "", position: "", location: "" }]);
+          }
         }
         setAnnouncements(d.announcements?.length ? [...d.announcements] : [""]);
         const ra = d.ra || { acquisitionTarget: 0, acquisitionProgress: 0, acquisitionCompanies: [], joinTarget: 0, joinProgress: 0, joinCompanies: [] };
@@ -977,50 +989,40 @@ export default function DashboardPage() {
                     <div style={{ padding: "16px", background: tc.bgSection, borderRadius: "0 0 10px 10px", border: "1px solid " + tc.border, borderTop: "none" }}>
 
                   <h4 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, marginBottom: 10 }}>注力案件</h4>
-                  {focusProjects.map((p, i) => {
-                    const isOwnRow = isAdmin || !currentStaffName || p.staff === currentStaffName;
-                    const rowBg = isOwnRow ? "#f8f9fa" : "#f0f0f0";
-                    const rowOpacity = isOwnRow ? 1 : 0.7;
-                    return (
-                    <div key={i} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "10px 12px", background: rowBg, opacity: rowOpacity, borderRadius: 8, flexWrap: isMobile ? "wrap" : "nowrap" }}>
-                      <FieldWrap label="企業名" grow>{isOwnRow ? <CompanySelect value={p.company || ""} onChange={(v) => { const a = [...focusProjects]; a[i] = { ...a[i], company: v }; setFocusProjects(a); }} companies={allCompanies} onAddCompany={handleAddCompany} style={focusInputStyle} /> : <div style={{ ...focusInputStyle, background: "#e8e8e8" }}>{p.company || ""}</div>}</FieldWrap>
-                      <FieldWrap label="案件タイトル" grow>{isOwnRow ? <input type="text" value={p.title} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], title: e.target.value.slice(0, 20) }; setFocusProjects(a); }} placeholder="案件タイトル" maxLength={20} style={focusInputStyle} /> : <div style={{ ...focusInputStyle, background: "#e8e8e8" }}>{p.title || ""}</div>}</FieldWrap>
-                      <FieldWrap label="ポジション" className="fw-select" w={120}>{isOwnRow ? <select value={p.position} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], position: e.target.value }; setFocusProjects(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(s => <option key={s}>{s}</option>)}</select> : <div style={{ ...focusInputStyle, background: "#e8e8e8" }}>{p.position || ""}</div>}</FieldWrap>
+                  {focusProjects.map((p, i) => (
+                    <div key={i} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "10px 12px", background: "#f8f9fa", borderRadius: 8, flexWrap: isMobile ? "wrap" : "nowrap" }}>
+                      <FieldWrap label="企業名" grow><CompanySelect value={p.company || ""} onChange={(v) => { const a = [...focusProjects]; a[i] = { ...a[i], company: v }; setFocusProjects(a); }} companies={allCompanies} onAddCompany={handleAddCompany} style={focusInputStyle} /></FieldWrap>
+                      <FieldWrap label="案件タイトル" grow><input type="text" value={p.title} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], title: e.target.value.slice(0, 20) }; setFocusProjects(a); }} placeholder="案件タイトル" maxLength={20} style={focusInputStyle} /></FieldWrap>
+                      <FieldWrap label="ポジション" className="fw-select" w={120}><select value={p.position} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], position: e.target.value }; setFocusProjects(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(s => <option key={s}>{s}</option>)}</select></FieldWrap>
                       <FieldWrap label="担当" className="fw-select" w={110}>{isAdmin ? (
                         <select value={p.staff} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], staff: e.target.value }; setFocusProjects(a); }} style={focusSelectStyle}><option value="">選択</option>{STAFF_LIST.map(s => <option key={s}>{s}</option>)}</select>
                       ) : (
-                        <div style={{ ...focusInputStyle, background: tc.bgSection, display: "flex", alignItems: "center" }}>{p.staff || ""}</div>
+                        <div style={{ ...focusInputStyle, background: tc.bgSection, display: "flex", alignItems: "center" }}>{currentStaffName}</div>
                       )}</FieldWrap>
-                      <FieldWrap label="単価" className="fw-money" w={120}>{isOwnRow ? <input type="text" inputMode="numeric" value={p.price ? p.price.toLocaleString("ja-JP") : ""} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], price: parseNum(e.target.value) }; setFocusProjects(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /> : <div style={{ ...focusInputStyle, background: "#e8e8e8", textAlign: "right" }}>{p.price ? p.price.toLocaleString("ja-JP") : ""}</div>}</FieldWrap>
-                      <FieldWrap label="契約形態" className="fw-select" w={110}>{isOwnRow ? <select value={p.contract} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], contract: e.target.value }; setFocusProjects(a); }} style={focusSelectStyle}><option>派遣</option><option>準委任</option><option>両方OK</option></select> : <div style={{ ...focusInputStyle, background: "#e8e8e8" }}>{p.contract || ""}</div>}</FieldWrap>
-                      <FieldWrap label="勤務場所" className="fw-select" w={120}>{isOwnRow ? <select value={p.location} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], location: e.target.value }; setFocusProjects(a); }} style={focusSelectStyle}><option value="">選択</option>{LOCATION_LIST.map(s => <option key={s}>{s}</option>)}</select> : <div style={{ ...focusInputStyle, background: "#e8e8e8" }}>{p.location || ""}</div>}</FieldWrap>
-                      {isOwnRow && <button onClick={() => setFocusProjects(focusProjects.filter((_, j) => j !== i))} style={removeBtnStyle}>×</button>}
+                      <FieldWrap label="単価" className="fw-money" w={120}><input type="text" inputMode="numeric" value={p.price ? p.price.toLocaleString("ja-JP") : ""} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], price: parseNum(e.target.value) }; setFocusProjects(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                      <FieldWrap label="契約形態" className="fw-select" w={110}><select value={p.contract} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], contract: e.target.value }; setFocusProjects(a); }} style={focusSelectStyle}><option>派遣</option><option>準委任</option><option>両方OK</option></select></FieldWrap>
+                      <FieldWrap label="勤務場所" className="fw-select" w={120}><select value={p.location} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], location: e.target.value }; setFocusProjects(a); }} style={focusSelectStyle}><option value="">選択</option>{LOCATION_LIST.map(s => <option key={s}>{s}</option>)}</select></FieldWrap>
+                      <button onClick={() => setFocusProjects(focusProjects.filter((_, j) => j !== i))} style={removeBtnStyle}>×</button>
                     </div>
-                    );
-                  })}
+                  ))}
                   <button onClick={() => setFocusProjects([...focusProjects, { company: "", title: "", price: 0, contract: "派遣", staff: (!isAdmin && currentStaffName) ? currentStaffName : "", position: "", location: "" }])} style={addBtnStyle}>＋ 案件を追加</button>
 
                   <h4 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, marginBottom: 10, marginTop: 24 }}>注力人材</h4>
-                  {focusPeople.map((p, i) => {
-                    const isOwnRow = isAdmin || !currentStaffName || p.staff === currentStaffName;
-                    const rowBg = isOwnRow ? "#f8f9fa" : "#f0f0f0";
-                    const rowOpacity = isOwnRow ? 1 : 0.7;
-                    return (
-                    <div key={i} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "10px 12px", background: rowBg, opacity: rowOpacity, borderRadius: 8, flexWrap: isMobile ? "wrap" : "nowrap" }}>
-                      <FieldWrap label="氏名" grow>{isOwnRow ? <input type="text" value={p.name} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], name: e.target.value }; setFocusPeople(a); }} placeholder="氏名" style={focusInputStyle} /> : <div style={{ ...focusInputStyle, background: "#e8e8e8" }}>{p.name || ""}</div>}</FieldWrap>
-                      <FieldWrap label="所属" className="fw-select" w={110}>{isOwnRow ? <select value={p.affiliation} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], affiliation: e.target.value }; setFocusPeople(a); }} style={focusSelectStyle}><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select> : <div style={{ ...focusInputStyle, background: "#e8e8e8" }}>{p.affiliation || ""}</div>}</FieldWrap>
-                      <FieldWrap label="ポジション" className="fw-select" w={120}>{isOwnRow ? <select value={p.position} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], position: e.target.value }; setFocusPeople(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(s => <option key={s}>{s}</option>)}</select> : <div style={{ ...focusInputStyle, background: "#e8e8e8" }}>{p.position || ""}</div>}</FieldWrap>
+                  {focusPeople.map((p, i) => (
+                    <div key={i} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "10px 12px", background: "#f8f9fa", borderRadius: 8, flexWrap: isMobile ? "wrap" : "nowrap" }}>
+                      <FieldWrap label="氏名" grow><input type="text" value={p.name} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], name: e.target.value }; setFocusPeople(a); }} placeholder="氏名" style={focusInputStyle} /></FieldWrap>
+                      <FieldWrap label="所属" className="fw-select" w={110}><select value={p.affiliation} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], affiliation: e.target.value }; setFocusPeople(a); }} style={focusSelectStyle}><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
+                      <FieldWrap label="ポジション" className="fw-select" w={120}><select value={p.position} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], position: e.target.value }; setFocusPeople(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(s => <option key={s}>{s}</option>)}</select></FieldWrap>
                       <FieldWrap label="担当" className="fw-select" w={110}>{isAdmin ? (
                         <select value={p.staff} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], staff: e.target.value }; setFocusPeople(a); }} style={focusSelectStyle}><option value="">選択</option>{STAFF_LIST.map(s => <option key={s}>{s}</option>)}</select>
                       ) : (
-                        <div style={{ ...focusInputStyle, background: tc.bgSection, display: "flex", alignItems: "center" }}>{p.staff || ""}</div>
+                        <div style={{ ...focusInputStyle, background: tc.bgSection, display: "flex", alignItems: "center" }}>{currentStaffName}</div>
                       )}</FieldWrap>
-                      <FieldWrap label="スキル" w={140}>{isOwnRow ? <input type="text" value={p.skill} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], skill: e.target.value.slice(0, 15) }; setFocusPeople(a); }} placeholder="スキル" maxLength={15} style={focusInputStyle} /> : <div style={{ ...focusInputStyle, background: "#e8e8e8" }}>{p.skill || ""}</div>}</FieldWrap>
-                      <FieldWrap label="仕入れ額" className="fw-money" w={120}>{isOwnRow ? <input type="text" inputMode="numeric" value={p.cost ? p.cost.toLocaleString("ja-JP") : ""} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], cost: parseNum(e.target.value) }; setFocusPeople(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /> : <div style={{ ...focusInputStyle, background: "#e8e8e8", textAlign: "right" }}>{p.cost ? p.cost.toLocaleString("ja-JP") : ""}</div>}</FieldWrap>
-                      {isOwnRow && <button onClick={() => setFocusPeople(focusPeople.filter((_, j) => j !== i))} style={removeBtnStyle}>×</button>}
+                      <FieldWrap label="スキル" w={140}><input type="text" value={p.skill} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], skill: e.target.value.slice(0, 15) }; setFocusPeople(a); }} placeholder="スキル" maxLength={15} style={focusInputStyle} /></FieldWrap>
+                      <FieldWrap label="仕入れ額" className="fw-money" w={120}><input type="text" inputMode="numeric" value={p.cost ? p.cost.toLocaleString("ja-JP") : ""} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], cost: parseNum(e.target.value) }; setFocusPeople(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                      <button onClick={() => setFocusPeople(focusPeople.filter((_, j) => j !== i))} style={removeBtnStyle}>×</button>
                     </div>
-                    );
-                  })}
+                  ))}
                   <button onClick={() => setFocusPeople([...focusPeople, { name: "", affiliation: "プロパー", cost: 0, staff: (!isAdmin && currentStaffName) ? currentStaffName : "", position: "", skill: "" }])} style={addBtnStyle}>＋ 人材を追加</button>
 
                     </div>
