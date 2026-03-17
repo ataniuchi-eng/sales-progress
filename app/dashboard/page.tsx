@@ -50,6 +50,7 @@ export default function DashboardPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab] = useState<"main" | "monthly" | "users">("main");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [currentStaffName, setCurrentStaffName] = useState<string | null>(null); // null = admin (全担当編集可)
   const [monthlyYM, setMonthlyYM] = useState(`${new Date().getFullYear()}-${("0" + (new Date().getMonth() + 1)).slice(-2)}`);
 
   const [inp, setInp] = useState({
@@ -90,11 +91,15 @@ export default function DashboardPage() {
   // ビジネス格言
   const [dailyQuote, setDailyQuote] = useState<string>("");
 
-  // 管理者判定
+  // ログインユーザー情報取得
   useEffect(() => {
     fetch("/api/auth/me")
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.isAdmin) setIsAdmin(true); })
+      .then(data => {
+        if (data?.isAdmin) setIsAdmin(true);
+        if (data?.staffName) setCurrentStaffName(data.staffName);
+        // admin の場合 currentStaffName は null のまま（全担当編集可）
+      })
       .catch(() => {});
   }, []);
 
@@ -405,8 +410,8 @@ export default function DashboardPage() {
         setRaInp({ acquisitionTarget: formatNumStr(ra.acquisitionTarget), acquisitionProgress: formatNumStr(ra.acquisitionProgress), joinTarget: formatNumStr(ra.joinTarget), joinProgress: formatNumStr(ra.joinProgress) });
         setRaAcqCompanies(ra.acquisitionCompanies?.length ? ra.acquisitionCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
         setRaJoinCompanies(ra.joinCompanies?.length ? ra.joinCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
-        // 営業活動は日次入力のため常に空で開始
-        setStaffActivities([{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }]);
+        // 営業活動は日次入力のため常に空で開始（非管理者は自分の担当名で初期化）
+        setStaffActivities([{ staff: currentStaffName || "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }]);
       } else {
         setInp({ properTarget: "", properForecast: "", properStandby: "", bpTarget: "", bpForecast: "", flTarget: "", flForecast: "", coTarget: "", coForecast: "" });
         setFocusPeople([{ name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }]);
@@ -415,7 +420,7 @@ export default function DashboardPage() {
         setRaInp({ acquisitionTarget: "", acquisitionProgress: "", joinTarget: "", joinProgress: "" });
         setRaAcqCompanies([{ name: "", staff: "" }]);
         setRaJoinCompanies([{ name: "", staff: "" }]);
-        setStaffActivities([{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }]);
+        setStaffActivities([{ staff: currentStaffName || "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }]);
       }
     }
   };
@@ -543,7 +548,7 @@ export default function DashboardPage() {
         </div>
 
         {activeTab === "monthly" && (
-          <MonthlyActivityView allData={allData} setAllData={setAllData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} />
+          <MonthlyActivityView allData={allData} setAllData={setAllData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} currentStaffName={currentStaffName} isAdmin={isAdmin} />
         )}
 
         {activeTab === "users" && isAdmin && (
@@ -735,13 +740,21 @@ export default function DashboardPage() {
                   <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#0077b6", display: "inline-block" }} />
                   件数セクター
                 </h4>
-                {staffActivities.map((s, i) => (
-                  <div key={`count-${i}`} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "10px 12px", background: "#f8f9fa", borderRadius: 8, flexWrap: isMobile ? "wrap" : "nowrap" }}>
-                    <FieldWrap label="担当" className="fw-select" w={120}><select value={s.staff} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], staff: e.target.value }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{STAFF_LIST.map(n => <option key={n}>{n}</option>)}</select></FieldWrap>
-                    <FieldWrap label="面談設定数" w={100}><input type="text" inputMode="numeric" value={s.interviewSetups || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], interviewSetups: parseNum(e.target.value) }; setStaffActivities(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
-                    <FieldWrap label="面談実施数" w={100}><input type="text" inputMode="numeric" value={s.interviewsConducted || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], interviewsConducted: parseNum(e.target.value) }; setStaffActivities(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
-                    <FieldWrap label="RA開拓アポ獲得" w={130}><input type="text" inputMode="numeric" value={s.appointmentAcquisitions || ""} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], appointmentAcquisitions: parseNum(e.target.value) }; setStaffActivities(a); }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                {staffActivities.map((s, i) => {
+                  const isOwnStaff = !currentStaffName || s.staff === currentStaffName;
+                  const canEditRow = isAdmin || isOwnStaff;
+                  return (
+                  <div key={`count-${i}`} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "10px 12px", background: "#f8f9fa", borderRadius: 8, flexWrap: isMobile ? "wrap" : "nowrap", opacity: canEditRow ? 1 : 0.5 }}>
+                    <FieldWrap label="担当" className="fw-select" w={120}>{currentStaffName && !isAdmin ? (
+                      <div style={{ ...focusSelectStyle, background: tc.bgSection, display: "flex", alignItems: "center", fontWeight: 700 }}>{currentStaffName}</div>
+                    ) : (
+                      <select value={s.staff} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], staff: e.target.value }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{STAFF_LIST.map(n => <option key={n}>{n}</option>)}</select>
+                    )}</FieldWrap>
+                    <FieldWrap label="面談設定数" w={100}><input type="text" inputMode="numeric" value={s.interviewSetups || ""} onChange={(e) => { if (!canEditRow) return; const a = [...staffActivities]; a[i] = { ...a[i], interviewSetups: parseNum(e.target.value) }; setStaffActivities(a); }} readOnly={!canEditRow} placeholder="0" style={{ ...focusInputStyle, textAlign: "right", ...(canEditRow ? {} : { cursor: "not-allowed" }) }} /></FieldWrap>
+                    <FieldWrap label="面談実施数" w={100}><input type="text" inputMode="numeric" value={s.interviewsConducted || ""} onChange={(e) => { if (!canEditRow) return; const a = [...staffActivities]; a[i] = { ...a[i], interviewsConducted: parseNum(e.target.value) }; setStaffActivities(a); }} readOnly={!canEditRow} placeholder="0" style={{ ...focusInputStyle, textAlign: "right", ...(canEditRow ? {} : { cursor: "not-allowed" }) }} /></FieldWrap>
+                    <FieldWrap label="RA開拓アポ獲得" w={130}><input type="text" inputMode="numeric" value={s.appointmentAcquisitions || ""} onChange={(e) => { if (!canEditRow) return; const a = [...staffActivities]; a[i] = { ...a[i], appointmentAcquisitions: parseNum(e.target.value) }; setStaffActivities(a); }} readOnly={!canEditRow} placeholder="0" style={{ ...focusInputStyle, textAlign: "right", ...(canEditRow ? {} : { cursor: "not-allowed" }) }} /></FieldWrap>
                     <FieldWrap label="RA受注数" w={100}><input type="text" inputMode="numeric" value={s.ordersRA || ""} onChange={(e) => {
+                      if (!canEditRow) return;
                       const a = [...staffActivities];
                       const newCount = parseNum(e.target.value);
                       const oldEntries = a[i].raEntries || [];
@@ -753,8 +766,9 @@ export default function DashboardPage() {
                       }
                       a[i] = { ...a[i], ordersRA: newCount, raEntries: newEntries };
                       setStaffActivities(a);
-                    }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                    }} readOnly={!canEditRow} placeholder="0" style={{ ...focusInputStyle, textAlign: "right", ...(canEditRow ? {} : { cursor: "not-allowed" }) }} /></FieldWrap>
                     <FieldWrap label="CA受注数" w={100}><input type="text" inputMode="numeric" value={s.ordersCA || ""} onChange={(e) => {
+                      if (!canEditRow) return;
                       const a = [...staffActivities];
                       const newCount = parseNum(e.target.value);
                       const oldEntries = a[i].caEntries || [];
@@ -766,11 +780,12 @@ export default function DashboardPage() {
                       }
                       a[i] = { ...a[i], ordersCA: newCount, caEntries: newEntries };
                       setStaffActivities(a);
-                    }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
-                    <button onClick={() => setStaffActivities(staffActivities.filter((_, j) => j !== i))} style={removeBtnStyle}>×</button>
+                    }} readOnly={!canEditRow} placeholder="0" style={{ ...focusInputStyle, textAlign: "right", ...(canEditRow ? {} : { cursor: "not-allowed" }) }} /></FieldWrap>
+                    {(isAdmin || canEditRow) && <button onClick={() => setStaffActivities(staffActivities.filter((_, j) => j !== i))} style={removeBtnStyle}>×</button>}
                   </div>
-                ))}
-                <button onClick={() => setStaffActivities([...staffActivities, { staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }])} style={addBtnStyle}>＋ 担当を追加</button>
+                  );
+                })}
+                {isAdmin && <button onClick={() => setStaffActivities([...staffActivities, { staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }])} style={addBtnStyle}>＋ 担当を追加</button>}
 
                 <h4 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, marginBottom: 4, marginTop: 20, display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#e74c3c", display: "inline-block" }} />
@@ -783,21 +798,24 @@ export default function DashboardPage() {
                   return raEntries.length > 0 && (
                     <div style={{ marginBottom: 16 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: "#e74c3c", marginBottom: 8 }}>RA受注</div>
-                      {raEntries.map(({ s, i }) => (
-                        <div key={`ra-${i}`} style={{ marginBottom: 8, padding: "10px 12px", background: "#fef8f8", borderRadius: 8, borderLeft: "3px solid #e74c3c" }}>
+                      {raEntries.map(({ s, i }) => {
+                        const canEdit = isAdmin || !currentStaffName || s.staff === currentStaffName;
+                        return (
+                        <div key={`ra-${i}`} style={{ marginBottom: 8, padding: "10px 12px", background: "#fef8f8", borderRadius: 8, borderLeft: "3px solid #e74c3c", opacity: canEdit ? 1 : 0.5 }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: tc.textPrimary, marginBottom: 6 }}>{s.staff}（{s.ordersRA}件）</div>
                           {(s.raEntries || []).map((entry, j) => (
                             <div key={`ra-${i}-${j}`} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: isMobile ? "wrap" : "nowrap", marginBottom: j < s.raEntries.length - 1 ? 6 : 0 }}>
                               <span style={{ fontSize: 11, color: "#e74c3c", fontWeight: 600, minWidth: 30, alignSelf: "center" }}>{j + 1}件目</span>
-                              <FieldWrap label="売上（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(entry.revenue || 0)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], revenue: parseAmount(v) }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
-                              <FieldWrap label="粗利（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(entry.amount)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], amount: parseAmount(v) }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
-                              <FieldWrap label="企業名" grow><CompanySelect value={entry.company || ""} onChange={(v) => { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], company: v }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} companies={allCompanies} onAddCompany={handleAddCompany} style={focusInputStyle} /></FieldWrap>
-                              <FieldWrap label="所属" className="fw-select" w={110}><select value={entry.affiliation || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
-                              <FieldWrap label="ポジション" className="fw-select" w={120}><select value={entry.position || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], position: e.target.value }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
+                              <FieldWrap label="売上（万円）" w={130}><input type="text" inputMode="decimal" readOnly={!canEdit} value={formatAmount(entry.revenue || 0)} onChange={(e) => { if (!canEdit) return; const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], revenue: parseAmount(v) }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                              <FieldWrap label="粗利（万円）" w={130}><input type="text" inputMode="decimal" readOnly={!canEdit} value={formatAmount(entry.amount)} onChange={(e) => { if (!canEdit) return; const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], amount: parseAmount(v) }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                              <FieldWrap label="企業名" grow><CompanySelect value={entry.company || ""} onChange={(v) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], company: v }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} companies={allCompanies} onAddCompany={handleAddCompany} style={focusInputStyle} /></FieldWrap>
+                              <FieldWrap label="所属" className="fw-select" w={110}><select disabled={!canEdit} value={entry.affiliation || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
+                              <FieldWrap label="ポジション" className="fw-select" w={120}><select disabled={!canEdit} value={entry.position || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], position: e.target.value }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
                             </div>
                           ))}
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   );
                 })()}
@@ -807,21 +825,24 @@ export default function DashboardPage() {
                   return caEntries.length > 0 && (
                     <div style={{ marginBottom: 12 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: "#9b59b6", marginBottom: 8 }}>CA受注</div>
-                      {caEntries.map(({ s, i }) => (
-                        <div key={`ca-${i}`} style={{ marginBottom: 8, padding: "10px 12px", background: "#f9f5fc", borderRadius: 8, borderLeft: "3px solid #9b59b6" }}>
+                      {caEntries.map(({ s, i }) => {
+                        const canEdit = isAdmin || !currentStaffName || s.staff === currentStaffName;
+                        return (
+                        <div key={`ca-${i}`} style={{ marginBottom: 8, padding: "10px 12px", background: "#f9f5fc", borderRadius: 8, borderLeft: "3px solid #9b59b6", opacity: canEdit ? 1 : 0.5 }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: tc.textPrimary, marginBottom: 6 }}>{s.staff}（{s.ordersCA}件）</div>
                           {(s.caEntries || []).map((entry, j) => (
                             <div key={`ca-${i}-${j}`} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: isMobile ? "wrap" : "nowrap", marginBottom: j < s.caEntries.length - 1 ? 6 : 0 }}>
                               <span style={{ fontSize: 11, color: "#9b59b6", fontWeight: 600, minWidth: 30, alignSelf: "center" }}>{j + 1}件目</span>
-                              <FieldWrap label="仕入（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(entry.revenue || 0)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], revenue: parseAmount(v) }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
-                              <FieldWrap label="粗利（万円）" w={130}><input type="text" inputMode="decimal" value={formatAmount(entry.amount)} onChange={(e) => { const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], amount: parseAmount(v) }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
-                              <FieldWrap label="企業名" grow><CompanySelect value={entry.company || ""} onChange={(v) => { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], company: v }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} companies={allCompanies} onAddCompany={handleAddCompany} style={focusInputStyle} /></FieldWrap>
-                              <FieldWrap label="所属" className="fw-select" w={110}><select value={entry.affiliation || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
-                              <FieldWrap label="ポジション" className="fw-select" w={120}><select value={entry.position || ""} onChange={(e) => { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], position: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
+                              <FieldWrap label="仕入（万円）" w={130}><input type="text" inputMode="decimal" readOnly={!canEdit} value={formatAmount(entry.revenue || 0)} onChange={(e) => { if (!canEdit) return; const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], revenue: parseAmount(v) }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                              <FieldWrap label="粗利（万円）" w={130}><input type="text" inputMode="decimal" readOnly={!canEdit} value={formatAmount(entry.amount)} onChange={(e) => { if (!canEdit) return; const v = e.target.value; if (/^\d{0,4}(\.\d{0,1})?$/.test(v) || v === "") { const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], amount: parseAmount(v) }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); } }} placeholder="0" style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                              <FieldWrap label="企業名" grow><CompanySelect value={entry.company || ""} onChange={(v) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], company: v }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} companies={allCompanies} onAddCompany={handleAddCompany} style={focusInputStyle} /></FieldWrap>
+                              <FieldWrap label="所属" className="fw-select" w={110}><select disabled={!canEdit} value={entry.affiliation || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
+                              <FieldWrap label="ポジション" className="fw-select" w={120}><select disabled={!canEdit} value={entry.position || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], position: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
                             </div>
                           ))}
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   );
                 })()}
