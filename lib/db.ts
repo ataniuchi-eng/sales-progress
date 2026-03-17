@@ -70,11 +70,14 @@ export async function deleteData(dateKey: string): Promise<void> {
 
 // ===== ユーザー管理 =====
 
+export type UserRole = "A" | "B" | "C";
+
 export interface AppUser {
   id: number;
   email: string;
   password_hash: string;
   staff_name: string;
+  role: UserRole;
   created_at: string;
 }
 
@@ -86,9 +89,16 @@ export async function ensureUsersTable() {
       email VARCHAR(255) UNIQUE NOT NULL,
       password_hash VARCHAR(255) NOT NULL,
       staff_name VARCHAR(255) NOT NULL,
+      role VARCHAR(1) NOT NULL DEFAULT 'C',
       created_at TIMESTAMP DEFAULT NOW()
     )
   `;
+  // 既存テーブルにroleカラムがない場合に追加
+  try {
+    await sql`ALTER TABLE app_users ADD COLUMN IF NOT EXISTS role VARCHAR(1) NOT NULL DEFAULT 'C'`;
+  } catch (e) {
+    // 既にある場合は無視
+  }
 }
 
 // 担当者テーブル作成
@@ -106,7 +116,7 @@ export async function ensureStaffTable() {
 export async function getAllUsers(): Promise<AppUser[]> {
   await ensureUsersTable();
   const { rows } = await sql`
-    SELECT id, email, password_hash, staff_name, created_at FROM app_users ORDER BY created_at DESC
+    SELECT id, email, password_hash, staff_name, role, created_at FROM app_users ORDER BY created_at DESC
   `;
   return rows as AppUser[];
 }
@@ -115,20 +125,26 @@ export async function getAllUsers(): Promise<AppUser[]> {
 export async function getUserByEmail(email: string): Promise<AppUser | null> {
   await ensureUsersTable();
   const { rows } = await sql`
-    SELECT id, email, password_hash, staff_name, created_at FROM app_users WHERE email = ${email}
+    SELECT id, email, password_hash, staff_name, role, created_at FROM app_users WHERE email = ${email}
   `;
   return rows.length > 0 ? (rows[0] as AppUser) : null;
 }
 
 // ユーザー追加
-export async function createUser(email: string, passwordHash: string, staffName: string): Promise<AppUser> {
+export async function createUser(email: string, passwordHash: string, staffName: string, role: UserRole = "C"): Promise<AppUser> {
   await ensureUsersTable();
   const { rows } = await sql`
-    INSERT INTO app_users (email, password_hash, staff_name)
-    VALUES (${email}, ${passwordHash}, ${staffName})
-    RETURNING id, email, password_hash, staff_name, created_at
+    INSERT INTO app_users (email, password_hash, staff_name, role)
+    VALUES (${email}, ${passwordHash}, ${staffName}, ${role})
+    RETURNING id, email, password_hash, staff_name, role, created_at
   `;
   return rows[0] as AppUser;
+}
+
+// ユーザー権限更新
+export async function updateUserRole(id: number, role: UserRole): Promise<void> {
+  await ensureUsersTable();
+  await sql`UPDATE app_users SET role = ${role} WHERE id = ${id}`;
 }
 
 // ユーザー削除

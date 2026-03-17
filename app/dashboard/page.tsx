@@ -51,6 +51,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<"main" | "monthly" | "users">("main");
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentStaffName, setCurrentStaffName] = useState<string | null>(null); // null = admin (全担当編集可)
+  const [userRole, setUserRole] = useState<"A" | "B" | "C">("C");
   const [monthlyYM, setMonthlyYM] = useState(`${new Date().getFullYear()}-${("0" + (new Date().getMonth() + 1)).slice(-2)}`);
 
   const [inp, setInp] = useState({
@@ -96,9 +97,10 @@ export default function DashboardPage() {
     fetch("/api/auth/me")
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        if (data?.isAdmin) setIsAdmin(true);
+        if (data?.isAdmin || data?.role === "A") { setIsAdmin(true); setUserRole("A"); }
         if (data?.staffName) setCurrentStaffName(data.staffName);
-        // admin の場合 currentStaffName は null のまま（全担当編集可）
+        if (data?.role) setUserRole(data.role);
+        // admin / role A の場合は全担当編集可
       })
       .catch(() => {});
   }, []);
@@ -591,7 +593,7 @@ export default function DashboardPage() {
         </div>
 
         {activeTab === "monthly" && (
-          <MonthlyActivityView allData={allData} setAllData={setAllData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} currentStaffName={currentStaffName} isAdmin={isAdmin} />
+          <MonthlyActivityView allData={allData} setAllData={setAllData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} currentStaffName={currentStaffName} isAdmin={isAdmin} userRole={userRole} />
         )}
 
         {activeTab === "users" && isAdmin && (

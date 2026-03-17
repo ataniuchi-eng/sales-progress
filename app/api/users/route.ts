@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession, isAdmin, sha256 } from "@/lib/auth";
-import { getAllUsers, createUser, deleteUser } from "@/lib/db";
+import { getAllUsers, createUser, deleteUser, updateUserRole } from "@/lib/db";
+import type { UserRole } from "@/lib/db";
 
 // GET: 全ユーザー取得（管理者のみ）
 export async function GET() {
@@ -11,11 +12,11 @@ export async function GET() {
 
   try {
     const users = await getAllUsers();
-    // パスワードハッシュは返さない（一覧表示用に平文パスワードは保持しないため）
     const safeUsers = users.map(u => ({
       id: u.id,
       email: u.email,
       staffName: u.staff_name,
+      role: u.role || "C",
       createdAt: u.created_at,
     }));
     return NextResponse.json(safeUsers);
@@ -33,19 +34,23 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { email, staffName, password } = await request.json();
+    const { email, staffName, password, role } = await request.json();
 
     if (!email || !staffName || !password) {
       return NextResponse.json({ error: "メールアドレス、担当、パスワードは必須です" }, { status: 400 });
     }
 
+    const validRoles: UserRole[] = ["A", "B", "C"];
+    const userRole: UserRole = validRoles.includes(role) ? role : "C";
+
     const passwordHash = await sha256(password);
-    const user = await createUser(email, passwordHash, staffName);
+    const user = await createUser(email, passwordHash, staffName, userRole);
 
     return NextResponse.json({
       id: user.id,
       email: user.email,
       staffName: user.staff_name,
+      role: user.role,
       password, // 作成直後のみ平文パスワードを返す
       createdAt: user.created_at,
     });
@@ -55,6 +60,32 @@ export async function POST(request: Request) {
     }
     console.error("User create error:", error);
     return NextResponse.json({ error: "ユーザー作成に失敗しました" }, { status: 500 });
+  }
+}
+
+// PATCH: ユーザー権限更新（管理者のみ）
+export async function PATCH(request: Request) {
+  const session = await getSession();
+  if (!session || !isAdmin(session.email)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  try {
+    const { id, role } = await request.json();
+    if (!id || !role) {
+      return NextResponse.json({ error: "IDと権限は必須です" }, { status: 400 });
+    }
+
+    const validRoles: UserRole[] = ["A", "B", "C"];
+    if (!validRoles.includes(role)) {
+      return NextResponse.json({ error: "無効な権限です" }, { status: 400 });
+    }
+
+    await updateUserRole(id, role);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("User role update error:", error);
+    return NextResponse.json({ error: "権限更新に失敗しました" }, { status: 500 });
   }
 }
 

@@ -7,9 +7,23 @@ import { STAFF_LIST, ACTIVITY_FIELDS, ACTIVITY_AMOUNT_FIELDS, JAPAN_HOLIDAYS } f
 import { parseNum, parseAmount, formatAmount, formatNumStr, calcRate, emptyData } from "../utils/numbers";
 import { dateKey, parseDate, formatDateJP, isBusinessDay } from "../utils/dates";
 
-export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isMobile, currentStaffName, isAdmin }: { allData: AllData; setAllData: React.Dispatch<React.SetStateAction<AllData>>; monthlyYM: string; setMonthlyYM: (v: string) => void; isMobile: boolean; currentStaffName: string | null; isAdmin: boolean }) {
-  // 編集可能判定: admin は全員、一般ユーザーは自分の担当のみ
+export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isMobile, currentStaffName, isAdmin, userRole = "C" }: { allData: AllData; setAllData: React.Dispatch<React.SetStateAction<AllData>>; monthlyYM: string; setMonthlyYM: (v: string) => void; isMobile: boolean; currentStaffName: string | null; isAdmin: boolean; userRole?: "A" | "B" | "C" }) {
+  // 編集可能判定: admin/roleA は全員、一般ユーザーは自分の担当のみ
   const canEditStaff = (staff: string) => isAdmin || !currentStaffName || staff === currentStaffName;
+  // 予算の編集可能判定:
+  // A: 全担当OK / B: 全担当OK / C: 不可
+  const canEditBudget = (_staff: string) => {
+    if (userRole === "C") return false;
+    if (userRole === "A" || userRole === "B") return true;
+    return isAdmin;
+  };
+  // 繰越粗利の編集可能判定:
+  // A: 全担当OK / B: 全担当OK / C: 自担当のみOK
+  const canEditCarryover = (staff: string) => {
+    if (userRole === "A" || userRole === "B") return true;
+    if (userRole === "C") return canEditStaff(staff); // 自担当のみ
+    return isAdmin;
+  };
   const { theme, t: tc } = useTheme();
   const [monthlyMode, setMonthlyMode] = useState<"count" | "amount" | "other">("amount");
   const [sortState, setSortState] = useState<Record<string, "asc" | "desc" | "none">>({});
@@ -17,9 +31,17 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
   const [carryovers, setCarryovers] = useState<Record<string, Record<string, number>>>({});
   const [countTargets, setCountTargets] = useState<Record<string, Record<string, number>>>({});
   const [editingCell, setEditingCellRaw] = useState<{ staff: string; field: string; type: "budget" | "carryover" | "countTarget" | "countCarryover" | "dailyTarget"; dayKey?: string } | null>(null);
-  // ガード付きsetEditingCell: 自分の担当のみ編集可能
+  // ガード付きsetEditingCell: 権限に応じて編集制御
   const setEditingCell = (val: typeof editingCell) => {
-    if (val && !canEditStaff(val.staff)) return;
+    if (!val) { setEditingCellRaw(val); return; }
+    if (val.type === "budget") {
+      if (!canEditBudget(val.staff)) return;
+    } else if (val.type === "carryover") {
+      if (!canEditCarryover(val.staff)) return;
+    } else {
+      // その他のセル（件数目標、日別目標など）は通常の担当制御
+      if (!canEditStaff(val.staff)) return;
+    }
     setEditingCellRaw(val);
   };
   const [caCountTotalOnly, setCaCountTotalOnly] = useState(false);

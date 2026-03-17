@@ -4,10 +4,31 @@ import { useState, useEffect, useCallback } from "react";
 import { useTheme } from "../../theme-provider";
 import { STAFF_LIST } from "../constants/data";
 
+type UserRole = "A" | "B" | "C";
+
+const ROLE_LABELS: Record<UserRole, string> = {
+  A: "A（管理者相当）",
+  B: "B（予算入力可）",
+  C: "C（予算入力不可）",
+};
+
+const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
+  A: "全担当の全操作が可能",
+  B: "自担当のみ編集可、予算は全担当入力可",
+  C: "自担当のみ編集可、予算入力は不可",
+};
+
+const ROLE_COLORS: Record<UserRole, string> = {
+  A: "#e74c3c",
+  B: "#f39c12",
+  C: "#3498db",
+};
+
 interface UserEntry {
   id: number;
   email: string;
   staffName: string;
+  role: UserRole;
   password?: string; // 作成直後のみ表示
   createdAt: string;
 }
@@ -18,6 +39,7 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
   const [customStaff, setCustomStaff] = useState<string[]>([]);
   const [email, setEmail] = useState("");
   const [selectedStaff, setSelectedStaff] = useState("");
+  const [selectedRole, setSelectedRole] = useState<UserRole>("C");
   const [newStaffName, setNewStaffName] = useState("");
   const [showNewStaff, setShowNewStaff] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -44,9 +66,8 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
       if (res.ok) {
         const data = await res.json();
         setUsers(prev => {
-          // 既存のpassword情報を保持
           const pwMap = new Map(prev.filter(u => u.password).map(u => [u.id, u.password]));
-          return data.map((u: UserEntry) => ({ ...u, password: pwMap.get(u.id) || undefined }));
+          return data.map((u: UserEntry) => ({ ...u, role: u.role || "C", password: pwMap.get(u.id) || undefined }));
         });
       }
     } catch {}
@@ -82,7 +103,7 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
       const res = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), staffName: selectedStaff, password }),
+        body: JSON.stringify({ email: email.trim(), staffName: selectedStaff, password, role: selectedRole }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -92,6 +113,7 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
         setUsers(prev => [{ ...data, password: data.password }, ...prev]);
         setEmail("");
         setSelectedStaff("");
+        setSelectedRole("C");
       }
     } catch {
       setError("ユーザー作成に失敗しました");
@@ -115,6 +137,20 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
         setSelectedStaff(name);
         setNewStaffName("");
         setShowNewStaff(false);
+      }
+    } catch {}
+  };
+
+  // 権限変更
+  const handleRoleChange = async (userId: number, newRole: UserRole) => {
+    try {
+      const res = await fetch("/api/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: userId, role: newRole }),
+      });
+      if (res.ok) {
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
       }
     } catch {}
   };
@@ -158,7 +194,7 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
   };
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: isMobile ? "0 12px" : 0 }}>
+    <div style={{ maxWidth: 1000, margin: "0 auto", padding: isMobile ? "0 12px" : 0 }}>
       {/* 入力フォーム */}
       <div style={{
         background: tc.bgCard,
@@ -229,6 +265,22 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
             </div>
           </div>
 
+          {/* 権限選択 */}
+          <div style={{ flex: 0.8 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: tc.textSecondary, marginBottom: 4, display: "block" }}>
+              権限
+            </label>
+            <select
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value as UserRole)}
+              style={{ ...inputStyle, cursor: "pointer" }}
+            >
+              {(["A", "B", "C"] as UserRole[]).map(r => (
+                <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+              ))}
+            </select>
+          </div>
+
           {/* 追加ボタン */}
           <button
             onClick={handleAddUser}
@@ -263,6 +315,14 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
             </button>
           </div>
         )}
+
+        {/* 権限説明 */}
+        <div style={{ marginTop: 16, padding: "12px 14px", borderRadius: 8, background: tc.bgSection, fontSize: 12, color: tc.textSecondary, lineHeight: 1.8 }}>
+          <b>権限の説明:</b><br />
+          <span style={{ color: ROLE_COLORS.A, fontWeight: 700 }}>A</span> … {ROLE_DESCRIPTIONS.A}<br />
+          <span style={{ color: ROLE_COLORS.B, fontWeight: 700 }}>B</span> … {ROLE_DESCRIPTIONS.B}<br />
+          <span style={{ color: ROLE_COLORS.C, fontWeight: 700 }}>C</span> … {ROLE_DESCRIPTIONS.C}
+        </div>
       </div>
 
       {/* ユーザー一覧 */}
@@ -290,6 +350,7 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
                 <tr style={{ borderBottom: `2px solid ${tc.border}` }}>
                   <th style={{ textAlign: "left", padding: "10px 12px", color: tc.textSecondary, fontWeight: 600, whiteSpace: "nowrap" }}>メールアドレス</th>
                   <th style={{ textAlign: "left", padding: "10px 12px", color: tc.textSecondary, fontWeight: 600, whiteSpace: "nowrap" }}>担当</th>
+                  <th style={{ textAlign: "center", padding: "10px 12px", color: tc.textSecondary, fontWeight: 600, whiteSpace: "nowrap" }}>権限</th>
                   <th style={{ textAlign: "left", padding: "10px 12px", color: tc.textSecondary, fontWeight: 600, whiteSpace: "nowrap" }}>パスワード</th>
                   <th style={{ textAlign: "center", padding: "10px 12px", color: tc.textSecondary, fontWeight: 600, whiteSpace: "nowrap" }}>操作</th>
                 </tr>
@@ -299,6 +360,27 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
                   <tr key={user.id} style={{ borderBottom: `1px solid ${tc.borderLight}` }}>
                     <td style={{ padding: "12px", color: tc.text }}>{user.email}</td>
                     <td style={{ padding: "12px", color: tc.text }}>{user.staffName}</td>
+                    <td style={{ padding: "12px", textAlign: "center" }}>
+                      <select
+                        value={user.role}
+                        onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
+                        style={{
+                          padding: "4px 8px",
+                          borderRadius: 6,
+                          border: `2px solid ${ROLE_COLORS[user.role]}`,
+                          background: tc.bgInput,
+                          color: ROLE_COLORS[user.role],
+                          fontSize: 13,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          outline: "none",
+                        }}
+                      >
+                        {(["A", "B", "C"] as UserRole[]).map(r => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </select>
+                    </td>
                     <td style={{ padding: "12px", color: tc.text, fontFamily: "monospace" }}>
                       {user.password ? (
                         <span style={{
