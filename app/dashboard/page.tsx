@@ -571,13 +571,15 @@ export default function DashboardPage() {
                 padding: "4px 10px",
                 borderRadius: 6,
                 whiteSpace: "nowrap",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
               }}>
-                {(() => {
-                  const h = new Date().getHours();
-                  const greeting = (h >= 5 && h < 12) ? "おはよう" : (h >= 12 && h < 17) ? "こんにちわ" : "こんばんわ";
-                  const name = isAdmin ? "管理者" : currentStaffName;
-                  return `${greeting} ${name}さん`;
-                })()}
+                <svg width={isMobile ? 13 : 15} height={isMobile ? 13 : 15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                {isAdmin ? "管理者" : currentStaffName}
               </span>
             )}
           </div>
