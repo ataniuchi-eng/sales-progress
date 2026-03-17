@@ -562,26 +562,6 @@ export default function DashboardPage() {
               </svg>
             </button>
             <ADashLogo height={isMobile ? 32 : 44} />
-            {(isAdmin || currentStaffName) && (
-              <span style={{
-                fontSize: isMobile ? 11 : 13,
-                fontWeight: 700,
-                color: tc.accentText,
-                background: tc.accentLight,
-                padding: "4px 10px",
-                borderRadius: 6,
-                whiteSpace: "nowrap",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-              }}>
-                <svg width={isMobile ? 13 : 15} height={isMobile ? 13 : 15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-                {isAdmin ? "管理者" : currentStaffName}
-              </span>
-            )}
           </div>
           <h1 style={{ fontSize: isMobile ? 22 : 32, color: tc.textHeading, margin: 0, flex: 1, textAlign: "center" }}>{(() => {
             const m = activeTab === "monthly" ? parseInt(monthlyYM.split("-")[1]) : calMonth + 1;
@@ -624,6 +604,17 @@ export default function DashboardPage() {
             <div className="sidebar" style={{ width: 300, flexShrink: 0 }}>
               <div style={{ position: isMobile ? "static" : "sticky", top: 24, maxHeight: isMobile ? "none" : "calc(100vh - 48px)", overflowY: isMobile ? "visible" : "auto" }}>
               <div style={{ background: tc.bgCard, borderRadius: 14, padding: 20, boxShadow: tc.shadow }}>
+                {/* 挨拶 + 担当名 */}
+                {(isAdmin || currentStaffName) && (
+                  <div style={{ textAlign: "center", marginBottom: 8, fontSize: 13, fontWeight: 700, color: tc.accentText }}>
+                    {(() => {
+                      const h = new Date().getHours();
+                      const greeting = (h >= 5 && h < 12) ? "おはよう" : (h >= 12 && h < 17) ? "こんにちわ" : "こんばんわ";
+                      const name = isAdmin ? "管理者" : currentStaffName;
+                      return `${greeting} ${name}さん`;
+                    })()}
+                  </div>
+                )}
                 {/* 会社ロゴ */}
                 <div style={{ textAlign: "center", marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${tc.border}` }}>
                   <img src="/logo.png" alt="Cell Promote" style={{ maxWidth: "80%", height: "auto", maxHeight: 40, objectFit: "contain" }} />
