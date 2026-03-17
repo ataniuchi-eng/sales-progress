@@ -574,9 +574,9 @@ export default function DashboardPage() {
               }}>
                 {(() => {
                   const h = new Date().getHours();
-                  const greeting = h < 12 ? "おはよう" : h < 17 ? "こんにちわ" : "こんばんわ";
+                  const greeting = (h >= 5 && h < 12) ? "おはよう" : (h >= 12 && h < 17) ? "こんにちわ" : "こんばんわ";
                   const name = isAdmin ? "管理者" : currentStaffName;
-                  return `${greeting}、${name}`;
+                  return `${greeting} ${name}さん`;
                 })()}
               </span>
             )}
