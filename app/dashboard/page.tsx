@@ -24,6 +24,7 @@ import { RADisplay } from "./components/displays/RADisplay";
 import { MonthlyActivityView } from "./components/MonthlyActivityView";
 import { InputGroup } from "./components/forms/InputGroup";
 import { CompanySelect } from "./components/ui/CompanySelect";
+import { UserManagementView } from "./components/UserManagementView";
 
 // ===== メインコンポーネント =====
 export default function DashboardPage() {
@@ -47,7 +48,8 @@ export default function DashboardPage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [activeTab, setActiveTab] = useState<"main" | "monthly">("main");
+  const [activeTab, setActiveTab] = useState<"main" | "monthly" | "users">("main");
+  const [isAdmin, setIsAdmin] = useState(false);
   const [monthlyYM, setMonthlyYM] = useState(`${new Date().getFullYear()}-${("0" + (new Date().getMonth() + 1)).slice(-2)}`);
 
   const [inp, setInp] = useState({
@@ -87,6 +89,14 @@ export default function DashboardPage() {
   const [weatherInfo, setWeatherInfo] = useState<{ shibuya: AreaWeather; shinjuku: AreaWeather } | null>(null);
   // ビジネス格言
   const [dailyQuote, setDailyQuote] = useState<string>("");
+
+  // 管理者判定
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.isAdmin) setIsAdmin(true); })
+      .catch(() => {});
+  }, []);
 
   // レスポンシブ検知
   useEffect(() => {
@@ -520,7 +530,11 @@ export default function DashboardPage() {
 
         {/* タブ切り替え */}
         <div style={{ display: "flex", gap: 0, maxWidth: 1400, margin: "0 auto 16px", borderBottom: "2px solid " + tc.tabBorder }}>
-          {[{ key: "main" as const, label: "メイン" }, { key: "monthly" as const, label: "月別営業活動成績" }].map(tab => (
+          {[
+            { key: "main" as const, label: "メイン" },
+            { key: "monthly" as const, label: "月別営業活動成績" },
+            ...(isAdmin ? [{ key: "users" as const, label: "ユーザー追加" }] : []),
+          ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
               padding: "10px 24px", fontSize: 14, fontWeight: 700, cursor: "pointer", border: "none", borderBottom: activeTab === tab.key ? "3px solid " + tc.tabActive : "3px solid transparent",
               background: "transparent", color: activeTab === tab.key ? tc.tabActive : tc.tabInactive, marginBottom: -2,
@@ -530,6 +544,10 @@ export default function DashboardPage() {
 
         {activeTab === "monthly" && (
           <MonthlyActivityView allData={allData} setAllData={setAllData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} />
+        )}
+
+        {activeTab === "users" && isAdmin && (
+          <UserManagementView isMobile={isMobile} />
         )}
 
         {activeTab === "main" && <div className="layout-flex" style={{ display: "flex", gap: 24, maxWidth: 1400, margin: "0 auto" }}>

@@ -1,13 +1,16 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
+import { getUserByEmail } from "./db";
 
 const SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "fallback-dev-secret-change-me"
 );
 
+const ADMIN_EMAIL = "ites@cellpromote.biz";
+
 // パスワードを簡易ハッシュ（SHA-256）で比較
-async function sha256(text: string): Promise<string> {
+export async function sha256(text: string): Promise<string> {
   const buf = await crypto.subtle.digest(
     "SHA-256",
     new TextEncoder().encode(text)
@@ -17,22 +20,29 @@ async function sha256(text: string): Promise<string> {
     .join("");
 }
 
+export function isAdmin(email: string): boolean {
+  return email === ADMIN_EMAIL;
+}
+
 export async function verifyCredentials(
   email: string,
   password: string
 ): Promise<boolean> {
-  const validEmail = process.env.AUTH_EMAIL || "ites@cellpromote.biz";
-  const validHash = process.env.AUTH_PASSWORD_HASH;
-
-  if (email !== validEmail) return false;
-
-  // ハッシュが未設定なら平文比較（初回セットアップ用）
-  if (!validHash) {
-    return password === "@884884@";
+  // 管理者アカウント
+  if (email === ADMIN_EMAIL) {
+    const validHash = process.env.AUTH_PASSWORD_HASH;
+    if (!validHash) {
+      return password === "@884884@";
+    }
+    const inputHash = await sha256(password);
+    return inputHash === validHash;
   }
 
+  // 一般ユーザー（DBから検証）
+  const user = await getUserByEmail(email);
+  if (!user) return false;
   const inputHash = await sha256(password);
-  return inputHash === validHash;
+  return inputHash === user.password_hash;
 }
 
 export async function createSession(email: string): Promise<string> {

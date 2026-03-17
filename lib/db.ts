@@ -67,3 +67,90 @@ export async function bulkSave(allData: Record<string, any>): Promise<number> {
 export async function deleteData(dateKey: string): Promise<void> {
   await sql`DELETE FROM sales_data WHERE date_key = ${dateKey}`;
 }
+
+// ===== ユーザー管理 =====
+
+export interface AppUser {
+  id: number;
+  email: string;
+  password_hash: string;
+  staff_name: string;
+  created_at: string;
+}
+
+// ユーザーテーブル作成
+export async function ensureUsersTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS app_users (
+      id SERIAL PRIMARY KEY,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      password_hash VARCHAR(255) NOT NULL,
+      staff_name VARCHAR(255) NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
+}
+
+// 担当者テーブル作成
+export async function ensureStaffTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS custom_staff (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) UNIQUE NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
+}
+
+// ユーザー全取得
+export async function getAllUsers(): Promise<AppUser[]> {
+  await ensureUsersTable();
+  const { rows } = await sql`
+    SELECT id, email, password_hash, staff_name, created_at FROM app_users ORDER BY created_at DESC
+  `;
+  return rows as AppUser[];
+}
+
+// メールでユーザー取得
+export async function getUserByEmail(email: string): Promise<AppUser | null> {
+  await ensureUsersTable();
+  const { rows } = await sql`
+    SELECT id, email, password_hash, staff_name, created_at FROM app_users WHERE email = ${email}
+  `;
+  return rows.length > 0 ? (rows[0] as AppUser) : null;
+}
+
+// ユーザー追加
+export async function createUser(email: string, passwordHash: string, staffName: string): Promise<AppUser> {
+  await ensureUsersTable();
+  const { rows } = await sql`
+    INSERT INTO app_users (email, password_hash, staff_name)
+    VALUES (${email}, ${passwordHash}, ${staffName})
+    RETURNING id, email, password_hash, staff_name, created_at
+  `;
+  return rows[0] as AppUser;
+}
+
+// ユーザー削除
+export async function deleteUser(id: number): Promise<void> {
+  await ensureUsersTable();
+  await sql`DELETE FROM app_users WHERE id = ${id}`;
+}
+
+// カスタム担当者全取得
+export async function getCustomStaff(): Promise<string[]> {
+  await ensureStaffTable();
+  const { rows } = await sql`
+    SELECT name FROM custom_staff ORDER BY name
+  `;
+  return rows.map(r => r.name);
+}
+
+// カスタム担当者追加
+export async function addCustomStaff(name: string): Promise<void> {
+  await ensureStaffTable();
+  await sql`
+    INSERT INTO custom_staff (name) VALUES (${name})
+    ON CONFLICT (name) DO NOTHING
+  `;
+}
