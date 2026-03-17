@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getAllData, saveData, bulkSave, deleteData } from "@/lib/db";
+import { getAllData, getDataByDate, saveData, bulkSave, deleteData } from "@/lib/db";
 
 // GET: 全データ取得
 export async function GET() {
@@ -33,6 +33,32 @@ export async function POST(request: Request) {
 
     // 単一日保存
     if (body.dateKey && body.data) {
+      // 担当別部分保存: staffName が指定された場合、その担当の staffActivities のみ差し替え
+      if (body.staffName) {
+        const existing = await getDataByDate(body.dateKey);
+        if (existing) {
+          // 既存データの他担当分を保持し、この担当分だけ差し替え
+          const otherStaffActs = (existing.staffActivities || []).filter(
+            (s: any) => s.staff !== body.staffName
+          );
+          const myStaffActs = (body.data.staffActivities || []).filter(
+            (s: any) => s.staff === body.staffName
+          );
+          // staffActivities 以外のフィールドは既存データを維持（管理者が入力した売上数値等）
+          const merged = {
+            ...existing,
+            staffActivities: [...otherStaffActs, ...myStaffActs],
+          };
+          await saveData(body.dateKey, merged);
+          return NextResponse.json({ success: true, dateKey: body.dateKey, mode: "staff-merge" });
+        } else {
+          // 既存データがない場合はそのまま保存
+          await saveData(body.dateKey, body.data);
+          return NextResponse.json({ success: true, dateKey: body.dateKey, mode: "staff-new" });
+        }
+      }
+
+      // 管理者: 全データそのまま保存
       await saveData(body.dateKey, body.data);
       return NextResponse.json({ success: true, dateKey: body.dateKey });
     }

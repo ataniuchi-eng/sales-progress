@@ -392,16 +392,25 @@ export default function DashboardPage() {
       setRaAcqCompanies(ra.acquisitionCompanies?.length ? ra.acquisitionCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
       setRaJoinCompanies(ra.joinCompanies?.length ? ra.joinCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
       // 営業活動：当日に入力済みデータがあればそれを表示、なければ空で開始
-      setStaffActivities(d.staffActivities?.length ? d.staffActivities.map((s: any) => ({
-  staff: s.staff || "",
-  interviewSetups: s.interviewSetups || 0,
-  interviewsConducted: s.interviewsConducted || 0,
-  appointmentAcquisitions: s.appointmentAcquisitions || 0,
-  ordersRA: s.ordersRA || 0,
-  ordersCA: s.ordersCA || 0,
-  raEntries: s.raEntries?.length ? s.raEntries : (s.ordersRA > 0 ? [{ amount: s.amountRA || 0, revenue: 0, company: "", affiliation: s.affiliationRA || "", position: s.positionRA || "" }] : []),
-  caEntries: s.caEntries?.length ? s.caEntries : (s.ordersCA > 0 ? [{ amount: s.amountCA || 0, revenue: 0, company: "", affiliation: s.affiliationCA || "", position: s.positionCA || "" }] : []),
-})) : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }]);
+      {
+        const allActs = d.staffActivities?.length ? d.staffActivities.map((s: any) => ({
+          staff: s.staff || "",
+          interviewSetups: s.interviewSetups || 0,
+          interviewsConducted: s.interviewsConducted || 0,
+          appointmentAcquisitions: s.appointmentAcquisitions || 0,
+          ordersRA: s.ordersRA || 0,
+          ordersCA: s.ordersCA || 0,
+          raEntries: s.raEntries?.length ? s.raEntries : (s.ordersRA > 0 ? [{ amount: s.amountRA || 0, revenue: 0, company: "", affiliation: s.affiliationRA || "", position: s.positionRA || "" }] : []),
+          caEntries: s.caEntries?.length ? s.caEntries : (s.ordersCA > 0 ? [{ amount: s.amountCA || 0, revenue: 0, company: "", affiliation: s.affiliationCA || "", position: s.positionCA || "" }] : []),
+        })) : [];
+        // 非管理者は自分の担当行のみ、管理者は全行
+        if (!isAdmin && currentStaffName) {
+          const own = allActs.filter((s: StaffActivity) => s.staff === currentStaffName);
+          setStaffActivities(own.length > 0 ? own : [{ staff: currentStaffName, interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }]);
+        } else {
+          setStaffActivities(allActs.length > 0 ? allActs : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }]);
+        }
+      }
     } else {
       // データがない場合は前日までの最新データをフォールバックで表示
       const fallback = getLatestDataForDate(allData, selectedDate);
@@ -422,7 +431,7 @@ export default function DashboardPage() {
         setRaAcqCompanies(ra.acquisitionCompanies?.length ? ra.acquisitionCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
         setRaJoinCompanies(ra.joinCompanies?.length ? ra.joinCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
         // 営業活動は日次入力のため常に空で開始（非管理者は自分の担当名で初期化）
-        setStaffActivities([{ staff: currentStaffName || "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }]);
+        setStaffActivities([{ staff: currentStaffName || "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] } as StaffActivity]);
       } else {
         setInp({ properTarget: "", properForecast: "", properStandby: "", bpTarget: "", bpForecast: "", flTarget: "", flForecast: "", coTarget: "", coForecast: "" });
         setFocusPeople([{ name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }]);
@@ -431,7 +440,7 @@ export default function DashboardPage() {
         setRaInp({ acquisitionTarget: "", acquisitionProgress: "", joinTarget: "", joinProgress: "" });
         setRaAcqCompanies([{ name: "", staff: "" }]);
         setRaJoinCompanies([{ name: "", staff: "" }]);
-        setStaffActivities([{ staff: currentStaffName || "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }]);
+        setStaffActivities([{ staff: currentStaffName || "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] } as StaffActivity]);
       }
     }
   };
@@ -440,6 +449,12 @@ export default function DashboardPage() {
   const saveCurrentData = async () => {
     if (!saveDate) { showToast("日付を選択してください"); return; }
     setSaving(true);
+
+    // 自分の担当のstaffActivitiesのみ（staffフィールドを確実にセット）
+    const myStaffActs = staffActivities
+      .map(s => ({ ...s, staff: s.staff || currentStaffName || "" }))
+      .filter(s => s.staff && (s.interviewSetups || s.interviewsConducted || s.appointmentAcquisitions || s.ordersRA || s.ordersCA));
+
     const data: DayData = {
       proper: { target: parseNum(inp.properTarget), progress: 0, forecast: parseNum(inp.properForecast), standby: parseNum(inp.properStandby) },
       bp: { target: parseNum(inp.bpTarget), progress: 0, forecast: parseNum(inp.bpForecast) },
@@ -448,7 +463,7 @@ export default function DashboardPage() {
       focusPeople: focusPeople.filter((p) => p.name || p.cost),
       focusProjects: focusProjects.filter((p) => p.company || p.title || p.price),
       announcements: announcements.filter((a) => a.trim()),
-      staffActivities: staffActivities.map(s => ({ ...s, staff: s.staff || currentStaffName || "" })).filter(s => s.staff && (s.interviewSetups || s.interviewsConducted || s.appointmentAcquisitions || s.ordersRA || s.ordersCA)),
+      staffActivities: myStaffActs,
       ra: {
         acquisitionTarget: parseNum(raInp.acquisitionTarget), acquisitionProgress: parseNum(raInp.acquisitionProgress),
         acquisitionCompanies: raAcqCompanies.filter(c => c.name),
@@ -456,10 +471,27 @@ export default function DashboardPage() {
         joinCompanies: raJoinCompanies.filter(c => c.name),
       },
     };
+
     try {
-      const res = await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dateKey: saveDate, data }) });
+      // 非管理者: staffName を送信 → API側でサーバーサイドマージ（他担当に干渉しない）
+      // 管理者: staffName なし → 全データそのまま保存
+      const payload: any = { dateKey: saveDate, data };
+      if (!isAdmin && currentStaffName) {
+        payload.staffName = currentStaffName;
+      }
+      const res = await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       if (!res.ok) throw new Error();
-      setAllData((prev) => ({ ...prev, [saveDate]: data }));
+
+      // ローカルの allData も更新（表示用）
+      setAllData((prev) => {
+        if (!isAdmin && currentStaffName && prev[saveDate]) {
+          // 既存データの他担当分を維持し、自分の分だけ差し替え
+          const existing = prev[saveDate];
+          const otherActs = (existing.staffActivities || []).filter(s => s.staff !== currentStaffName);
+          return { ...prev, [saveDate]: { ...existing, staffActivities: [...otherActs, ...myStaffActs] } };
+        }
+        return { ...prev, [saveDate]: data };
+      });
       showToast(`${formatDateJP(saveDate)} に保存しました`);
     } catch { showToast("保存に失敗しました"); }
     setSaving(false);
@@ -540,7 +572,12 @@ export default function DashboardPage() {
                 borderRadius: 6,
                 whiteSpace: "nowrap",
               }}>
-                {isAdmin ? "管理者" : currentStaffName}
+                {(() => {
+                  const h = new Date().getHours();
+                  const greeting = h < 12 ? "おはよう" : h < 17 ? "こんにちわ" : "こんばんわ";
+                  const name = isAdmin ? "管理者" : currentStaffName;
+                  return `${greeting}、${name}`;
+                })()}
               </span>
             )}
           </div>
