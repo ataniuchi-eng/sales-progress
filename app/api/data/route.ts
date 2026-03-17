@@ -33,21 +33,40 @@ export async function POST(request: Request) {
 
     // 単一日保存
     if (body.dateKey && body.data) {
-      // 担当別部分保存: staffName が指定された場合、その担当の staffActivities のみ差し替え
+      // 担当別部分保存: staffName が指定された場合、その担当のデータのみ差し替え
       if (body.staffName) {
         const existing = await getDataByDate(body.dateKey);
         if (existing) {
-          // 既存データの他担当分を保持し、この担当分だけ差し替え
+          // staffActivities: 担当別マージ
           const otherStaffActs = (existing.staffActivities || []).filter(
             (s: any) => s.staff !== body.staffName
           );
           const myStaffActs = (body.data.staffActivities || []).filter(
             (s: any) => s.staff === body.staffName
           );
-          // staffActivities 以外のフィールドは既存データを維持（管理者が入力した売上数値等）
+
+          // focusPeople: 担当別マージ
+          const otherFocusPeople = (existing.focusPeople || []).filter(
+            (p: any) => p.staff !== body.staffName
+          );
+          const myFocusPeople = (body.data.focusPeople || []).filter(
+            (p: any) => p.staff === body.staffName
+          );
+
+          // focusProjects: 担当別マージ
+          const otherFocusProjects = (existing.focusProjects || []).filter(
+            (p: any) => p.staff !== body.staffName
+          );
+          const myFocusProjects = (body.data.focusProjects || []).filter(
+            (p: any) => p.staff === body.staffName
+          );
+
+          // staffActivities・注力以外のフィールドは既存データを維持（管理者が入力した売上数値等）
           const merged = {
             ...existing,
             staffActivities: [...otherStaffActs, ...myStaffActs],
+            focusPeople: [...otherFocusPeople, ...myFocusPeople],
+            focusProjects: [...otherFocusProjects, ...myFocusProjects],
           };
           await saveData(body.dateKey, merged);
           return NextResponse.json({ success: true, dateKey: body.dateKey, mode: "staff-merge" });
