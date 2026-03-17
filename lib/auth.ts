@@ -31,7 +31,7 @@ export async function verifyCredentials(
   // 管理者アカウント
   if (email === ADMIN_EMAIL) {
     const validHash = process.env.AUTH_PASSWORD_HASH
-      || "f85328493760375f287a78f3179101145b612d6376ca858a5a3881902d2794df";
+      || "c6b2811efacfe1ca5f64387d5d77b0f49abb1bff4c2a31e0c6a16435648c3b15";
     const inputHash = await sha256(password);
     return inputHash === validHash;
   }
