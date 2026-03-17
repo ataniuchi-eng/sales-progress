@@ -103,6 +103,17 @@ export default function DashboardPage() {
       .catch(() => {});
   }, []);
 
+  // currentStaffNameが取得された後、空staffのstaffActivitiesを補完
+  useEffect(() => {
+    if (currentStaffName && !isAdmin) {
+      setStaffActivities(prev => {
+        const needsUpdate = prev.some(s => !s.staff);
+        if (!needsUpdate) return prev;
+        return prev.map(s => s.staff ? s : { ...s, staff: currentStaffName });
+      });
+    }
+  }, [currentStaffName, isAdmin]);
+
   // レスポンシブ検知
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -437,7 +448,7 @@ export default function DashboardPage() {
       focusPeople: focusPeople.filter((p) => p.name || p.cost),
       focusProjects: focusProjects.filter((p) => p.company || p.title || p.price),
       announcements: announcements.filter((a) => a.trim()),
-      staffActivities: staffActivities.filter(s => s.staff && (s.interviewSetups || s.interviewsConducted || s.appointmentAcquisitions || s.ordersRA || s.ordersCA)),
+      staffActivities: staffActivities.map(s => ({ ...s, staff: s.staff || currentStaffName || "" })).filter(s => s.staff && (s.interviewSetups || s.interviewsConducted || s.appointmentAcquisitions || s.ordersRA || s.ordersCA)),
       ra: {
         acquisitionTarget: parseNum(raInp.acquisitionTarget), acquisitionProgress: parseNum(raInp.acquisitionProgress),
         acquisitionCompanies: raAcqCompanies.filter(c => c.name),
@@ -519,6 +530,19 @@ export default function DashboardPage() {
               </svg>
             </button>
             <ADashLogo height={isMobile ? 32 : 44} />
+            {(isAdmin || currentStaffName) && (
+              <span style={{
+                fontSize: isMobile ? 11 : 13,
+                fontWeight: 700,
+                color: tc.accentText,
+                background: tc.accentLight,
+                padding: "4px 10px",
+                borderRadius: 6,
+                whiteSpace: "nowrap",
+              }}>
+                {isAdmin ? "管理者" : currentStaffName}
+              </span>
+            )}
           </div>
           <h1 style={{ fontSize: isMobile ? 22 : 32, color: tc.textHeading, margin: 0, flex: 1, textAlign: "center" }}>{(() => {
             const m = activeTab === "monthly" ? parseInt(monthlyYM.split("-")[1]) : calMonth + 1;
@@ -741,12 +765,13 @@ export default function DashboardPage() {
                   件数セクター
                 </h4>
                 {staffActivities.map((s, i) => {
-                  const isOwnStaff = !currentStaffName || s.staff === currentStaffName;
+                  const effectiveStaff = (!isAdmin && currentStaffName && !s.staff) ? currentStaffName : s.staff;
+                  const isOwnStaff = !currentStaffName || effectiveStaff === currentStaffName;
                   const canEditRow = isAdmin || isOwnStaff;
                   return (
                   <div key={`count-${i}`} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "10px 12px", background: "#f8f9fa", borderRadius: 8, flexWrap: isMobile ? "wrap" : "nowrap", opacity: canEditRow ? 1 : 0.5 }}>
-                    <FieldWrap label="担当" className="fw-select" w={120}>{currentStaffName && !isAdmin ? (
-                      <div style={{ ...focusSelectStyle, background: tc.bgSection, display: "flex", alignItems: "center", fontWeight: 700 }}>{currentStaffName}</div>
+                    <FieldWrap label="担当" className="fw-select" w={120}>{!isAdmin ? (
+                      <div style={{ ...focusSelectStyle, background: tc.bgSection, display: "flex", alignItems: "center", fontWeight: 700 }}>{effectiveStaff || currentStaffName || ""}</div>
                     ) : (
                       <select value={s.staff} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], staff: e.target.value }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{STAFF_LIST.map(n => <option key={n}>{n}</option>)}</select>
                     )}</FieldWrap>
@@ -799,7 +824,8 @@ export default function DashboardPage() {
                     <div style={{ marginBottom: 16 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: "#e74c3c", marginBottom: 8 }}>RA受注</div>
                       {raEntries.map(({ s, i }) => {
-                        const canEdit = isAdmin || !currentStaffName || s.staff === currentStaffName;
+                        const effStaff = (!isAdmin && currentStaffName && !s.staff) ? currentStaffName : s.staff;
+                        const canEdit = isAdmin || !currentStaffName || effStaff === currentStaffName;
                         return (
                         <div key={`ra-${i}`} style={{ marginBottom: 8, padding: "10px 12px", background: "#fef8f8", borderRadius: 8, borderLeft: "3px solid #e74c3c", opacity: canEdit ? 1 : 0.5 }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: tc.textPrimary, marginBottom: 6 }}>{s.staff}（{s.ordersRA}件）</div>
@@ -826,7 +852,8 @@ export default function DashboardPage() {
                     <div style={{ marginBottom: 12 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: "#9b59b6", marginBottom: 8 }}>CA受注</div>
                       {caEntries.map(({ s, i }) => {
-                        const canEdit = isAdmin || !currentStaffName || s.staff === currentStaffName;
+                        const effStaff = (!isAdmin && currentStaffName && !s.staff) ? currentStaffName : s.staff;
+                        const canEdit = isAdmin || !currentStaffName || effStaff === currentStaffName;
                         return (
                         <div key={`ca-${i}`} style={{ marginBottom: 8, padding: "10px 12px", background: "#f9f5fc", borderRadius: 8, borderLeft: "3px solid #9b59b6", opacity: canEdit ? 1 : 0.5 }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: tc.textPrimary, marginBottom: 6 }}>{s.staff}（{s.ordersCA}件）</div>

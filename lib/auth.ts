@@ -32,7 +32,7 @@ export async function verifyCredentials(
   if (email === ADMIN_EMAIL) {
     const validHash = process.env.AUTH_PASSWORD_HASH;
     if (!validHash) {
-      return password === "@884884@";
+      return password === "@884@884!@";
     }
     const inputHash = await sha256(password);
     return inputHash === validHash;

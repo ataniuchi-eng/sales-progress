@@ -28,7 +28,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
   const [editingCellValue, setEditingCellValue] = useState("");
   // その他
   const [miscItems, setMiscItems] = useState<{ staff: string; content: string; deadline: string; status: string; createdAt: string }[]>([]);
-  const [miscInput, setMiscInput] = useState<{ staff: string; content: string; deadline: string; status: string }>({ staff: currentStaffName || "", content: "", deadline: "", status: "" });
+  const [miscInput, setMiscInput] = useState<{ staff: string; content: string; deadline: string; status: string }>({ staff: "", content: "", deadline: "", status: "" });
   const [miscSortKey, setMiscSortKey] = useState<"staff" | "status">("staff");
   const [miscSortDir, setMiscSortDir] = useState<"asc" | "desc">("asc");
   const [ymYear, ymMonth] = monthlyYM.split("-").map(Number);
@@ -94,13 +94,12 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
 
   // その他アイテム追加
   const addMiscItem = () => {
-    const staffToUse = currentStaffName && !isAdmin ? currentStaffName : miscInput.staff;
-    if (!staffToUse || !miscInput.content || !miscInput.status) return;
+    if (!miscInput.staff || !miscInput.content || !miscInput.status) return;
     const now = new Date().toISOString();
-    const updated = [...miscItems, { ...miscInput, staff: staffToUse, createdAt: now }];
+    const updated = [...miscItems, { ...miscInput, createdAt: now }];
     setMiscItems(updated);
     saveMiscItems(updated);
-    setMiscInput({ staff: currentStaffName || "", content: "", deadline: "", status: "" });
+    setMiscInput({ staff: "", content: "", deadline: "", status: "" });
   };
 
   // その他アイテム更新（内容・進捗のみ、日時は変えない）
@@ -1617,15 +1616,11 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
             <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <label style={{ fontSize: 11, fontWeight: 600, color: tc.textSecondary }}>担当</label>
-                {currentStaffName && !isAdmin ? (
-                  <div style={{ padding: "8px 12px", border: "1px solid " + tc.inputBorder, borderRadius: 8, fontSize: 13, background: tc.bgSection, color: tc.text, minWidth: 100, fontWeight: 700 }}>{currentStaffName}</div>
-                ) : (
-                  <select value={miscInput.staff} onChange={(e) => setMiscInput(prev => ({ ...prev, staff: e.target.value }))}
-                    style={{ padding: "8px 12px", border: "1px solid " + tc.inputBorder, borderRadius: 8, fontSize: 13, background: tc.bgInput, color: tc.text, minWidth: 100 }}>
-                    <option value="">選択</option>
-                    {STAFF_LIST.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                )}
+                <select value={miscInput.staff} onChange={(e) => setMiscInput(prev => ({ ...prev, staff: e.target.value }))}
+                  style={{ padding: "8px 12px", border: "1px solid " + tc.inputBorder, borderRadius: 8, fontSize: 13, background: tc.bgInput, color: tc.text, minWidth: 100 }}>
+                  <option value="">選択</option>
+                  {STAFF_LIST.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 200 }}>
                 <label style={{ fontSize: 11, fontWeight: 600, color: tc.textSecondary }}>内容（20文字まで）</label>
@@ -1699,29 +1694,27 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                   {sortedMisc.map((item, idx) => {
                     const st = statusDisplay[item.status] || { icon: "—", color: "#999", order: 9 };
                     const miscRowBg = idx % 2 === 1 ? (isDark ? "#1e2533" : "#f8f9fb") : tc.bgCard;
-                    const canEditMisc = canEditStaff(item.staff);
                     return (
-                      <tr key={item.origIdx} style={{ background: miscRowBg, opacity: canEditMisc ? 1 : 0.7 }}>
+                      <tr key={item.origIdx} style={{ background: miscRowBg }}>
                         <td style={{ padding: "10px 12px", borderBottom: "1px solid " + tc.border, fontWeight: 600, color: isDark ? "#f1f5f9" : tc.text }}>{item.staff}</td>
                         <td style={{ padding: "6px 8px", borderBottom: "1px solid " + tc.border }}>
-                          <input type="text" value={item.content} maxLength={20} readOnly={!canEditMisc}
-                            onChange={(e) => { if (!canEditMisc) return; updateMiscItem(item.origIdx, "content", e.target.value); }}
+                          <input type="text" value={item.content} maxLength={20}
+                            onChange={(e) => updateMiscItem(item.origIdx, "content", e.target.value)}
                             style={{ width: "100%", border: "1px solid " + tc.border, borderRadius: 6, padding: "6px 10px", fontSize: 13, background: tc.bgSection, color: tc.text, boxSizing: "border-box" }} />
                         </td>
                         <td style={{ padding: "6px 8px", borderBottom: "1px solid " + tc.border, textAlign: "center" }}>
-                          <input type="date" value={item.deadline || ""} readOnly={!canEditMisc}
-                            onChange={(e) => { if (!canEditMisc) return; updateMiscItem(item.origIdx, "deadline", e.target.value); }}
+                          <input type="date" value={item.deadline || ""}
+                            onChange={(e) => updateMiscItem(item.origIdx, "deadline", e.target.value)}
                             style={{ border: "1px solid " + tc.border, borderRadius: 6, padding: "6px 8px", fontSize: 12, background: tc.bgSection, color: tc.text, width: "100%", boxSizing: "border-box" }} />
                         </td>
                         <td style={{ padding: "6px 8px", borderBottom: "1px solid " + tc.border, textAlign: "center" }}>
                           <div style={{ display: "flex", gap: 3, justifyContent: "center" }}>
                             {statusOptions.map(opt => (
-                              <button key={opt.key} onClick={() => { if (!canEditMisc) return; updateMiscItem(item.origIdx, "status", opt.key); }}
-                                disabled={!canEditMisc}
+                              <button key={opt.key} onClick={() => updateMiscItem(item.origIdx, "status", opt.key)}
                                 style={{
                                   padding: opt.key === "done" ? "3px 6px" : "3px 4px",
                                   border: item.status === opt.key ? "2px solid #0077b6" : "1px solid " + tc.border,
-                                  borderRadius: 6, background: item.status === opt.key ? (isDark ? "#1e3a5f" : "#e8f4fd") : "transparent", cursor: canEditMisc ? "pointer" : "not-allowed",
+                                  borderRadius: 6, background: item.status === opt.key ? (isDark ? "#1e3a5f" : "#e8f4fd") : "transparent", cursor: "pointer",
                                   fontSize: opt.key === "done" ? 10 : 14, fontWeight: opt.key === "done" ? 700 : 400,
                                   color: opt.key === "done" ? (isDark ? "#60a5fa" : "#2980b9") : undefined, lineHeight: 1, opacity: item.status === opt.key ? 1 : 0.5,
                                 }} title={opt.label}>
@@ -1734,7 +1727,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                           {formatDT(item.createdAt)}
                         </td>
                         <td style={{ padding: "10px 8px", borderBottom: "1px solid " + tc.border, textAlign: "center" }}>
-                          {canEditMisc && <button onClick={() => removeMiscItem(item.origIdx)} style={{ border: "none", background: "transparent", color: "#e74c3c", cursor: "pointer", fontSize: 16, padding: 2, lineHeight: 1 }} title="削除">×</button>}
+                          <button onClick={() => removeMiscItem(item.origIdx)} style={{ border: "none", background: "transparent", color: "#e74c3c", cursor: "pointer", fontSize: 16, padding: 2, lineHeight: 1 }} title="削除">×</button>
                         </td>
                       </tr>
                     );
