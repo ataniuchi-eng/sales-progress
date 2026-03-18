@@ -1145,12 +1145,12 @@ export default function DashboardPage() {
                 })()}
 
                 {/* 営業活動セクション保存ボタン */}
-                <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+                <div style={{ marginTop: 16 }}>
                   <button onClick={saveStaffActivities} disabled={savingSection === "staffActivities"} style={{
-                    padding: "8px 20px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
-                    border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: savingSection === "staffActivities" ? "not-allowed" : "pointer", opacity: savingSection === "staffActivities" ? 0.7 : 1,
+                    width: "100%", padding: "14px 24px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
+                    border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: savingSection === "staffActivities" ? "not-allowed" : "pointer", opacity: savingSection === "staffActivities" ? 0.7 : 1,
                   }}>
-                    {savingSection === "staffActivities" ? "保存中..." : "保存"}
+                    {savingSection === "staffActivities" ? "保存中..." : "営業活動を保存"}
                   </button>
                 </div>
 
@@ -1185,12 +1185,12 @@ export default function DashboardPage() {
                           { label: "見込", value: inp.coForecast, key: "coForecast" },
                         ]} onChange={handleNumInput} />
                       </div>
-                      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                      <div style={{ marginTop: 16 }}>
                         <button onClick={saveBudget} disabled={savingSection === "budget"} style={{
-                          padding: "8px 20px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
-                          border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: savingSection === "budget" ? "not-allowed" : "pointer", opacity: savingSection === "budget" ? 0.7 : 1,
+                          width: "100%", padding: "14px 24px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
+                          border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: savingSection === "budget" ? "not-allowed" : "pointer", opacity: savingSection === "budget" ? 0.7 : 1,
                         }}>
-                          {savingSection === "budget" ? "保存中..." : "保存"}
+                          {savingSection === "budget" ? "保存中..." : "予算・見込を保存"}
                         </button>
                       </div>
                     </div>
@@ -1252,12 +1252,12 @@ export default function DashboardPage() {
                   ))}
                   <button onClick={() => setFocusPeople([...focusPeople, { name: "", affiliation: "プロパー", cost: 0, staff: (!isAdmin && currentStaffName) ? currentStaffName : "", position: "", skill: "" }])} style={addBtnStyle}>＋ 人材を追加</button>
 
-                  <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+                  <div style={{ marginTop: 16 }}>
                     <button onClick={saveFocus} disabled={savingSection === "focus"} style={{
-                      padding: "8px 20px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
-                      border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: savingSection === "focus" ? "not-allowed" : "pointer", opacity: savingSection === "focus" ? 0.7 : 1,
+                      width: "100%", padding: "14px 24px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
+                      border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: savingSection === "focus" ? "not-allowed" : "pointer", opacity: savingSection === "focus" ? 0.7 : 1,
                     }}>
-                      {savingSection === "focus" ? "保存中..." : "保存"}
+                      {savingSection === "focus" ? "保存中..." : "注力を保存"}
                     </button>
                   </div>
 
@@ -1328,12 +1328,12 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+                  <div style={{ marginTop: 16 }}>
                     <button onClick={saveRA} disabled={savingSection === "ra"} style={{
-                      padding: "8px 20px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
-                      border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: savingSection === "ra" ? "not-allowed" : "pointer", opacity: savingSection === "ra" ? 0.7 : 1,
+                      width: "100%", padding: "14px 24px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
+                      border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: savingSection === "ra" ? "not-allowed" : "pointer", opacity: savingSection === "ra" ? 0.7 : 1,
                     }}>
-                      {savingSection === "ra" ? "保存中..." : "保存"}
+                      {savingSection === "ra" ? "保存中..." : "RA開拓を保存"}
                     </button>
                   </div>
 
@@ -1361,12 +1361,12 @@ export default function DashboardPage() {
                   ))}
                   <button onClick={() => setAnnouncements([...announcements, ""])} style={addBtnStyle}>＋ 連絡事項を追加</button>
 
-                  <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+                  <div style={{ marginTop: 16 }}>
                     <button onClick={saveAnnouncements} disabled={savingSection === "announcements"} style={{
-                      padding: "8px 20px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
-                      border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: savingSection === "announcements" ? "not-allowed" : "pointer", opacity: savingSection === "announcements" ? 0.7 : 1,
+                      width: "100%", padding: "14px 24px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
+                      border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: savingSection === "announcements" ? "not-allowed" : "pointer", opacity: savingSection === "announcements" ? 0.7 : 1,
                     }}>
-                      {savingSection === "announcements" ? "保存中..." : "保存"}
+                      {savingSection === "announcements" ? "保存中..." : "全体連絡を保存"}
                     </button>
                   </div>
 
