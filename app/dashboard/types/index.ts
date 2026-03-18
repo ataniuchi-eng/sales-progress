@@ -55,6 +55,10 @@ export interface StaffActivity {
   ordersCA: number;
   raEntries: OrderEntry[];
   caEntries: OrderEntry[];
+  raPriceUpCount: number;
+  caPriceUpCount: number;
+  raPriceUpEntries: OrderEntry[];
+  caPriceUpEntries: OrderEntry[];
 }
 
 export interface DayData {

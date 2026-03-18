@@ -310,26 +310,36 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
     return STAFF_LIST.reduce((sum, staff) => sum + getStaffMonthTotal(staff, field), 0);
   };
 
-  // CA/RA entries から所属別の金額を集計
+  // CA/RA entries から所属別の金額を集計（単価UPを含む）
   const getStaffDayAmountByAffiliation = (staff: string, dayKey: string, entryType: "ca" | "ra", affiliation: string): number => {
     const dayData = allData[dayKey];
     if (!dayData || !Array.isArray(dayData.staffActivities)) return 0;
     const entry = dayData.staffActivities.find((s: any) => s.staff === staff);
     if (!entry) return 0;
     const entries = entryType === "ca" ? ((entry as any).caEntries || []) : ((entry as any).raEntries || []);
-    return entries
+    const base = entries
       .filter((e: any) => e.affiliation === affiliation)
       .reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
+    // 単価UP分を加算
+    const puEntries = entryType === "ca" ? ((entry as any).caPriceUpEntries || []) : ((entry as any).raPriceUpEntries || []);
+    const puAmount = puEntries
+      .filter((e: any) => e.affiliation === affiliation)
+      .reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
+    return base + puAmount;
   };
 
-  // CA/RA entries の金額合計
+  // CA/RA entries の金額合計（単価UPを含む）
   const getStaffDayAmountTotal = (staff: string, dayKey: string, entryType: "ca" | "ra"): number => {
     const dayData = allData[dayKey];
     if (!dayData || !Array.isArray(dayData.staffActivities)) return 0;
     const entry = dayData.staffActivities.find((s: any) => s.staff === staff);
     if (!entry) return 0;
     const entries = entryType === "ca" ? ((entry as any).caEntries || []) : ((entry as any).raEntries || []);
-    return entries.reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
+    const base = entries.reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
+    // 単価UP分を加算
+    const puEntries = entryType === "ca" ? ((entry as any).caPriceUpEntries || []) : ((entry as any).raPriceUpEntries || []);
+    const puAmount = puEntries.reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
+    return base + puAmount;
   };
 
   // 月間合計（所属別）
@@ -365,15 +375,25 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
     return parts.join(".");
   };
 
-  // 月間の企業別集計（RA受注のrevenue/amountを企業ごとに集計）
+  // 月間の企業別集計（RA受注+RA単価UPのrevenue/amountを企業ごとに集計）
   const getMonthlyCompanyAggregates = () => {
     const companyMap: Record<string, { revenue: number; profit: number }> = {};
     days.forEach(day => {
       const dayData = allData[day.key];
       if (!dayData || !Array.isArray(dayData.staffActivities)) return;
       dayData.staffActivities.forEach((s: any) => {
+        // RA受注
         const entries = s.raEntries || [];
         entries.forEach((e: any) => {
+          if (e.company) {
+            if (!companyMap[e.company]) companyMap[e.company] = { revenue: 0, profit: 0 };
+            companyMap[e.company].revenue += (e.revenue || 0);
+            companyMap[e.company].profit += (e.amount || 0);
+          }
+        });
+        // RA単価UP分も加算
+        const raPUEntries = s.raPriceUpEntries || [];
+        raPUEntries.forEach((e: any) => {
           if (e.company) {
             if (!companyMap[e.company]) companyMap[e.company] = { revenue: 0, profit: 0 };
             companyMap[e.company].revenue += (e.revenue || 0);

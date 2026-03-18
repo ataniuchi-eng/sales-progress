@@ -309,7 +309,7 @@ export default function DashboardPage() {
     loadCarryovers();
   }, []);
 
-  // CA粗利を所属別に月間集計（前月繰越＋月間新規 = 月別タブの合計と同じ）
+  // CA粗利を所属別に月間集計（前月繰越＋月間新規＋CA単価UP = 月別タブの合計と同じ）
   const calcCAProgressByAffiliation = useCallback((affiliation: string): number => {
     const ym = selectedDate.substring(0, 7); // "YYYY-MM"
     const [y, m] = ym.split("-").map(Number);
@@ -318,7 +318,7 @@ export default function DashboardPage() {
     const carryKey = `carryover-amountCA_${affiliation}-${ym}`;
     const carryData = caCarryovers[carryKey] || {};
     const carryTotal = STAFF_LIST.reduce((sum, staff) => sum + (carryData[staff] || 0), 0);
-    // 月間新規: CA受注の粗利を所属別にSUM
+    // 月間新規: CA受注の粗利を所属別にSUM + CA単価UP分も加算
     let monthTotal = 0;
     for (let d = 1; d <= daysInMonth; d++) {
       const dk = `${y}-${("0" + m).slice(-2)}-${("0" + d).slice(-2)}`;
@@ -327,6 +327,11 @@ export default function DashboardPage() {
       dayData.staffActivities.forEach((s: any) => {
         const entries = s.caEntries || [];
         entries.forEach((e: any) => {
+          if (e.affiliation === affiliation) monthTotal += (e.amount || 0);
+        });
+        // CA単価UP分も加算
+        const puEntries = s.caPriceUpEntries || [];
+        puEntries.forEach((e: any) => {
           if (e.affiliation === affiliation) monthTotal += (e.amount || 0);
         });
       });
@@ -419,13 +424,17 @@ export default function DashboardPage() {
           ordersCA: s.ordersCA || 0,
           raEntries: s.raEntries?.length ? s.raEntries : (s.ordersRA > 0 ? [{ amount: s.amountRA || 0, revenue: 0, company: "", affiliation: s.affiliationRA || "", position: s.positionRA || "" }] : []),
           caEntries: s.caEntries?.length ? s.caEntries : (s.ordersCA > 0 ? [{ amount: s.amountCA || 0, revenue: 0, company: "", affiliation: s.affiliationCA || "", position: s.positionCA || "" }] : []),
+          raPriceUpCount: s.raPriceUpCount || 0,
+          caPriceUpCount: s.caPriceUpCount || 0,
+          raPriceUpEntries: s.raPriceUpEntries || [],
+          caPriceUpEntries: s.caPriceUpEntries || [],
         })) : [];
         // 非管理者は自分の担当行のみ、管理者は全行
         if (!isAdmin && currentStaffName) {
           const own = allActs.filter((s: StaffActivity) => s.staff === currentStaffName || s.staff === subStaffName);
-          setStaffActivities(own.length > 0 ? own : [{ staff: currentStaffName, interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }]);
+          setStaffActivities(own.length > 0 ? own : [{ staff: currentStaffName, interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [], raPriceUpCount: 0, caPriceUpCount: 0, raPriceUpEntries: [], caPriceUpEntries: [] }]);
         } else {
-          setStaffActivities(allActs.length > 0 ? allActs : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }]);
+          setStaffActivities(allActs.length > 0 ? allActs : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [], raPriceUpCount: 0, caPriceUpCount: 0, raPriceUpEntries: [], caPriceUpEntries: [] }]);
         }
       }
     } else {
@@ -459,7 +468,7 @@ export default function DashboardPage() {
         setRaAcqCompanies(ra.acquisitionCompanies?.length ? ra.acquisitionCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
         setRaJoinCompanies(ra.joinCompanies?.length ? ra.joinCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
         // 営業活動は日次入力のため常に空で開始（非管理者は自分の担当名で初期化）
-        setStaffActivities([{ staff: currentStaffName || "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] } as StaffActivity]);
+        setStaffActivities([{ staff: currentStaffName || "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [], raPriceUpCount: 0, caPriceUpCount: 0, raPriceUpEntries: [], caPriceUpEntries: [] } as StaffActivity]);
       } else {
         setInp({ properTarget: "", properForecast: "", properStandby: "", bpTarget: "", bpForecast: "", flTarget: "", flForecast: "", coTarget: "", coForecast: "" });
         setFocusPeople([{ name: "", affiliation: "プロパー", cost: 0, staff: (!isAdmin && currentStaffName) ? currentStaffName : "", position: "", skill: "" }]);
@@ -468,7 +477,7 @@ export default function DashboardPage() {
         setRaInp({ acquisitionTarget: "", acquisitionProgress: "", joinTarget: "", joinProgress: "" });
         setRaAcqCompanies([{ name: "", staff: "" }]);
         setRaJoinCompanies([{ name: "", staff: "" }]);
-        setStaffActivities([{ staff: currentStaffName || "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] } as StaffActivity]);
+        setStaffActivities([{ staff: currentStaffName || "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [], raPriceUpCount: 0, caPriceUpCount: 0, raPriceUpEntries: [], caPriceUpEntries: [] } as StaffActivity]);
       }
     }
   };
@@ -481,7 +490,7 @@ export default function DashboardPage() {
     // 自分の担当のstaffActivitiesのみ（staffフィールドを確実にセット）
     const myStaffActs = staffActivities
       .map(s => ({ ...s, staff: s.staff || currentStaffName || "" }))
-      .filter(s => s.staff && (s.interviewSetups || s.interviewsConducted || s.appointmentAcquisitions || s.ordersRA || s.ordersCA));
+      .filter(s => s.staff && (s.interviewSetups || s.interviewsConducted || s.appointmentAcquisitions || s.ordersRA || s.ordersCA || s.raPriceUpCount || s.caPriceUpCount));
 
     const data: DayData = {
       proper: { target: parseNum(inp.properTarget), progress: 0, forecast: parseNum(inp.properForecast), standby: parseNum(inp.properStandby) },
@@ -787,6 +796,79 @@ export default function DashboardPage() {
               <AmountRankCard title="CA受注金額" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ca" color="#9b59b6" />
             </div>
 
+            {/* 単価UPセクション */}
+            {(() => {
+              const raPUData = dStaffActivities.filter(s => (s.raPriceUpEntries || []).length > 0);
+              const caPUData = dStaffActivities.filter(s => (s.caPriceUpEntries || []).length > 0);
+              if (raPUData.length === 0 && caPUData.length === 0) return null;
+              const fmtVal = (v: number) => `${Math.round(v * 10) / 10}万円`;
+              // RA単価UP: 担当別集計（件数降順）
+              const raRanked = raPUData.map(s => ({
+                staff: s.staff,
+                count: (s.raPriceUpEntries || []).length,
+                amount: (s.raPriceUpEntries || []).reduce((sum, e) => sum + (e.amount || 0), 0),
+                entries: s.raPriceUpEntries || [],
+              })).sort((a, b) => b.count - a.count);
+              // CA単価UP: 担当別集計（件数降順）
+              const caRanked = caPUData.map(s => ({
+                staff: s.staff,
+                count: (s.caPriceUpEntries || []).length,
+                amount: (s.caPriceUpEntries || []).reduce((sum, e) => sum + (e.amount || 0), 0),
+                entries: s.caPriceUpEntries || [],
+              })).sort((a, b) => b.count - a.count);
+              return (<>
+              <h4 style={{ fontSize: 13, fontWeight: 600, color: "#f39c12", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f39c12", display: "inline-block" }} />単価UP（万円）
+              </h4>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: isMobile ? 16 : 24 }} className="focus-grid">
+                {/* RA単価UP カード */}
+                <div style={{ background: tc.bgCard, borderRadius: 14, padding: "20px 16px", boxShadow: tc.shadow, borderTop: "3px solid #e74c3c" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <h3 style={{ fontSize: 15, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>RA単価UP</h3>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: "#e74c3c", lineHeight: 1 }}>{fmtVal(raRanked.reduce((s, r) => s + r.amount, 0))}</span>
+                  </div>
+                  {raRanked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>未入力</p> : raRanked.map((r, i) => (
+                    <div key={i} style={{ padding: "8px 0", borderBottom: `1px solid ${tc.border}` }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: tc.textPrimary }}>{r.staff}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 12, color: tc.textSecondary }}>{r.count}件</span>
+                          <span style={{ fontSize: 16, fontWeight: 700, color: "#e74c3c" }}>{fmtVal(r.amount)}</span>
+                        </div>
+                      </div>
+                      {r.entries.map((e, ei) => {
+                        const details = [e.company, e.affiliation, e.position].filter(Boolean).join(" / ");
+                        return details ? <div key={ei} style={{ fontSize: 11, color: tc.textMuted, marginTop: 2, paddingLeft: 8 }}>{r.entries.length > 1 ? `${ei + 1}件目: ` : ""}{details} (売上{fmtVal(e.revenue || 0)}／粗利{fmtVal(e.amount || 0)})</div> : null;
+                      })}
+                    </div>
+                  ))}
+                </div>
+                {/* CA単価UP カード */}
+                <div style={{ background: tc.bgCard, borderRadius: 14, padding: "20px 16px", boxShadow: tc.shadow, borderTop: "3px solid #9b59b6" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <h3 style={{ fontSize: 15, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>CA単価UP</h3>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: "#9b59b6", lineHeight: 1 }}>{fmtVal(caRanked.reduce((s, r) => s + r.amount, 0))}</span>
+                  </div>
+                  {caRanked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>未入力</p> : caRanked.map((r, i) => (
+                    <div key={i} style={{ padding: "8px 0", borderBottom: `1px solid ${tc.border}` }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: tc.textPrimary }}>{r.staff}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 12, color: tc.textSecondary }}>{r.count}件</span>
+                          <span style={{ fontSize: 16, fontWeight: 700, color: "#9b59b6" }}>{fmtVal(r.amount)}</span>
+                        </div>
+                      </div>
+                      {r.entries.map((e, ei) => {
+                        const details = [e.company, e.affiliation, e.position].filter(Boolean).join(" / ");
+                        return details ? <div key={ei} style={{ fontSize: 11, color: tc.textMuted, marginTop: 2, paddingLeft: 8 }}>{r.entries.length > 1 ? `${ei + 1}件目: ` : ""}{details} (仕入{fmtVal(e.revenue || 0)}／粗利{fmtVal(e.amount || 0)})</div> : null;
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              </>);
+            })()}
+
             {/* 注力セクション */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingBottom: 8, borderBottom: "3px solid #4cc9f0" }}>
               <div style={{ width: 6, height: 24, borderRadius: 3, background: "#4cc9f0" }} />
@@ -881,15 +963,43 @@ export default function DashboardPage() {
                       a[i] = { ...a[i], ordersCA: newCount, caEntries: newEntries };
                       setStaffActivities(a);
                     }} readOnly={!canEditRow} placeholder="0" style={{ ...focusInputStyle, textAlign: "right", ...(canEditRow ? {} : { cursor: "not-allowed" }) }} /></FieldWrap>
+                    <FieldWrap label="RA単価UP" w={100}><input type="text" inputMode="numeric" value={s.raPriceUpCount || ""} onChange={(e) => {
+                      if (!canEditRow) return;
+                      const a = [...staffActivities];
+                      const newCount = parseNum(e.target.value);
+                      const oldEntries = a[i].raPriceUpEntries || [];
+                      let newEntries: OrderEntry[] = [];
+                      if (newCount > oldEntries.length) {
+                        newEntries = [...oldEntries, ...Array(newCount - oldEntries.length).fill(null).map(() => ({ amount: 0, revenue: 0, company: "", affiliation: "", position: "" }))];
+                      } else {
+                        newEntries = oldEntries.slice(0, newCount);
+                      }
+                      a[i] = { ...a[i], raPriceUpCount: newCount, raPriceUpEntries: newEntries };
+                      setStaffActivities(a);
+                    }} readOnly={!canEditRow} placeholder="0" style={{ ...focusInputStyle, textAlign: "right", ...(canEditRow ? {} : { cursor: "not-allowed" }) }} /></FieldWrap>
+                    <FieldWrap label="CA単価UP" w={100}><input type="text" inputMode="numeric" value={s.caPriceUpCount || ""} onChange={(e) => {
+                      if (!canEditRow) return;
+                      const a = [...staffActivities];
+                      const newCount = parseNum(e.target.value);
+                      const oldEntries = a[i].caPriceUpEntries || [];
+                      let newEntries: OrderEntry[] = [];
+                      if (newCount > oldEntries.length) {
+                        newEntries = [...oldEntries, ...Array(newCount - oldEntries.length).fill(null).map(() => ({ amount: 0, revenue: 0, company: "", affiliation: "", position: "" }))];
+                      } else {
+                        newEntries = oldEntries.slice(0, newCount);
+                      }
+                      a[i] = { ...a[i], caPriceUpCount: newCount, caPriceUpEntries: newEntries };
+                      setStaffActivities(a);
+                    }} readOnly={!canEditRow} placeholder="0" style={{ ...focusInputStyle, textAlign: "right", ...(canEditRow ? {} : { cursor: "not-allowed" }) }} /></FieldWrap>
                     {(isAdmin || canEditRow) && <button onClick={() => setStaffActivities(staffActivities.filter((_, j) => j !== i))} style={removeBtnStyle}>×</button>}
                   </div>
                   );
                 })}
-                {isAdmin && <button onClick={() => setStaffActivities([...staffActivities, { staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }])} style={addBtnStyle}>＋ 担当を追加</button>}
+                {isAdmin && <button onClick={() => setStaffActivities([...staffActivities, { staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [], raPriceUpCount: 0, caPriceUpCount: 0, raPriceUpEntries: [], caPriceUpEntries: [] }])} style={addBtnStyle}>＋ 担当を追加</button>}
 
                 <h4 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, marginBottom: 4, marginTop: 20, display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#e74c3c", display: "inline-block" }} />
-                  金額セクター<span style={{ fontSize: 11, fontWeight: 400, color: tc.textSecondary }}>※件数セクターでRA受注数またはCA受注数が1以上の担当者のみ表示されます</span>
+                  金額セクター<span style={{ fontSize: 11, fontWeight: 400, color: tc.textSecondary }}>※件数セクターでRA受注数・CA受注数・RA単価UP・CA単価UPが1以上の担当者のみ表示されます</span>
                 </h4>
                 <p style={{ fontSize: 11, color: tc.textSecondary, margin: "0 0 10px", paddingLeft: 16, lineHeight: 1.8 }}>入力単位：万円（整数4桁・小数1桁まで）<br />複数受注の場合は1件ずつ登録してください</p>
                 {/* RA受注：件数降順 */}
@@ -940,6 +1050,63 @@ export default function DashboardPage() {
                               <FieldWrap label="企業名" grow><CompanySelect value={entry.company || ""} onChange={(v) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], company: v }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} companies={allCompanies} onAddCompany={handleAddCompany} style={focusInputStyle} /></FieldWrap>
                               <FieldWrap label="所属" className="fw-select" w={110}><select disabled={!canEdit} value={entry.affiliation || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
                               <FieldWrap label="ポジション" className="fw-select" w={120}><select disabled={!canEdit} value={entry.position || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], position: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
+                            </div>
+                          ))}
+                        </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+
+                {/* RA単価UP：件数降順 */}
+                {(() => {
+                  const raPUEntries = staffActivities.map((s, i) => ({ s, i })).filter(({ s }) => (s.raPriceUpCount || 0) > 0).sort((a, b) => (b.s.raPriceUpCount || 0) - (a.s.raPriceUpCount || 0));
+                  return raPUEntries.length > 0 && (
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#e74c3c", marginBottom: 8 }}>RA単価UP　<span style={{ fontSize: 11, fontWeight: 400, color: tc.textSecondary }}>※UP分のみ記入</span></div>
+                      {raPUEntries.map(({ s, i }) => {
+                        const effStaff = (!isAdmin && currentStaffName && !s.staff) ? currentStaffName : s.staff;
+                        const canEdit = isAdmin || !currentStaffName || effStaff === currentStaffName || effStaff === subStaffName;
+                        return (
+                        <div key={`rapu-${i}`} style={{ marginBottom: 8, padding: "10px 12px", background: "#fef2f0", borderRadius: 8, borderLeft: "3px solid #e74c3c", opacity: canEdit ? 1 : 0.5 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: tc.textPrimary, marginBottom: 6 }}>{s.staff}（{s.raPriceUpCount}件）</div>
+                          {(s.raPriceUpEntries || []).map((entry, j) => (
+                            <div key={`rapu-${i}-${j}`} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: isMobile ? "wrap" : "nowrap", marginBottom: j < (s.raPriceUpEntries || []).length - 1 ? 6 : 0 }}>
+                              <span style={{ fontSize: 11, color: "#e74c3c", fontWeight: 600, minWidth: 30, alignSelf: "center" }}>{j + 1}件目</span>
+                              <FieldWrap label="売上（万円）" w={130}><AmountInput readOnly={!canEdit} value={entry.revenue || 0} onChange={(v) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...(a[i].raPriceUpEntries || [])]; entries[j] = { ...entries[j], revenue: v }; a[i] = { ...a[i], raPriceUpEntries: entries }; setStaffActivities(a); }} style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                              <FieldWrap label="粗利（万円）" w={130}><AmountInput readOnly={!canEdit} value={entry.amount} onChange={(v) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...(a[i].raPriceUpEntries || [])]; entries[j] = { ...entries[j], amount: v }; a[i] = { ...a[i], raPriceUpEntries: entries }; setStaffActivities(a); }} style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                              <FieldWrap label="企業名" grow><CompanySelect value={entry.company || ""} onChange={(v) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...(a[i].raPriceUpEntries || [])]; entries[j] = { ...entries[j], company: v }; a[i] = { ...a[i], raPriceUpEntries: entries }; setStaffActivities(a); }} companies={allCompanies} onAddCompany={handleAddCompany} style={focusInputStyle} /></FieldWrap>
+                              <FieldWrap label="所属" className="fw-select" w={110}><select disabled={!canEdit} value={entry.affiliation || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...(a[i].raPriceUpEntries || [])]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], raPriceUpEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
+                              <FieldWrap label="ポジション" className="fw-select" w={120}><select disabled={!canEdit} value={entry.position || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...(a[i].raPriceUpEntries || [])]; entries[j] = { ...entries[j], position: e.target.value }; a[i] = { ...a[i], raPriceUpEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
+                            </div>
+                          ))}
+                        </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+                {/* CA単価UP：件数降順 */}
+                {(() => {
+                  const caPUEntries = staffActivities.map((s, i) => ({ s, i })).filter(({ s }) => (s.caPriceUpCount || 0) > 0).sort((a, b) => (b.s.caPriceUpCount || 0) - (a.s.caPriceUpCount || 0));
+                  return caPUEntries.length > 0 && (
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#9b59b6", marginBottom: 8 }}>CA単価UP　<span style={{ fontSize: 11, fontWeight: 400, color: tc.textSecondary }}>※UP分のみ記入</span></div>
+                      {caPUEntries.map(({ s, i }) => {
+                        const effStaff = (!isAdmin && currentStaffName && !s.staff) ? currentStaffName : s.staff;
+                        const canEdit = isAdmin || !currentStaffName || effStaff === currentStaffName || effStaff === subStaffName;
+                        return (
+                        <div key={`capu-${i}`} style={{ marginBottom: 8, padding: "10px 12px", background: "#f9f5fc", borderRadius: 8, borderLeft: "3px solid #9b59b6", opacity: canEdit ? 1 : 0.5 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: tc.textPrimary, marginBottom: 6 }}>{s.staff}（{s.caPriceUpCount}件）</div>
+                          {(s.caPriceUpEntries || []).map((entry, j) => (
+                            <div key={`capu-${i}-${j}`} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: isMobile ? "wrap" : "nowrap", marginBottom: j < (s.caPriceUpEntries || []).length - 1 ? 6 : 0 }}>
+                              <span style={{ fontSize: 11, color: "#9b59b6", fontWeight: 600, minWidth: 30, alignSelf: "center" }}>{j + 1}件目</span>
+                              <FieldWrap label="仕入（万円）" w={130}><AmountInput readOnly={!canEdit} value={entry.revenue || 0} onChange={(v) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...(a[i].caPriceUpEntries || [])]; entries[j] = { ...entries[j], revenue: v }; a[i] = { ...a[i], caPriceUpEntries: entries }; setStaffActivities(a); }} style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                              <FieldWrap label="粗利（万円）" w={130}><AmountInput readOnly={!canEdit} value={entry.amount} onChange={(v) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...(a[i].caPriceUpEntries || [])]; entries[j] = { ...entries[j], amount: v }; a[i] = { ...a[i], caPriceUpEntries: entries }; setStaffActivities(a); }} style={{ ...focusInputStyle, textAlign: "right" }} /></FieldWrap>
+                              <FieldWrap label="企業名" grow><CompanySelect value={entry.company || ""} onChange={(v) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...(a[i].caPriceUpEntries || [])]; entries[j] = { ...entries[j], company: v }; a[i] = { ...a[i], caPriceUpEntries: entries }; setStaffActivities(a); }} companies={allCompanies} onAddCompany={handleAddCompany} style={focusInputStyle} /></FieldWrap>
+                              <FieldWrap label="所属" className="fw-select" w={110}><select disabled={!canEdit} value={entry.affiliation || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...(a[i].caPriceUpEntries || [])]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], caPriceUpEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
+                              <FieldWrap label="ポジション" className="fw-select" w={120}><select disabled={!canEdit} value={entry.position || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...(a[i].caPriceUpEntries || [])]; entries[j] = { ...entries[j], position: e.target.value }; a[i] = { ...a[i], caPriceUpEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
                             </div>
                           ))}
                         </div>
