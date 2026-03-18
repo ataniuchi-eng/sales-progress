@@ -295,7 +295,7 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
               onChange={(e) => setSelectedRole(e.target.value as UserRole)}
               style={{ ...inputStyle, cursor: "pointer" }}
             >
-              {(["A", "B", "C"] as UserRole[]).map(r => (
+              {(["A", "B", "C", "D"] as UserRole[]).map(r => (
                 <option key={r} value={r}>{ROLE_LABELS[r]}</option>
               ))}
             </select>
@@ -415,7 +415,7 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
                           outline: "none",
                         }}
                       >
-                        {(["A", "B", "C"] as UserRole[]).map(r => (
+                        {(["A", "B", "C", "D"] as UserRole[]).map(r => (
                           <option key={r} value={r}>{r}</option>
                         ))}
                       </select>
