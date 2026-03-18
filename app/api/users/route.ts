@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "メールアドレス、担当、パスワードは必須です" }, { status: 400 });
     }
 
-    const validRoles: UserRole[] = ["A", "B", "C"];
+    const validRoles: UserRole[] = ["A", "B", "C", "D"];
     const userRole: UserRole = validRoles.includes(role) ? role : "C";
 
     const passwordHash = await sha256(password);
@@ -80,7 +80,7 @@ export async function PATCH(request: Request) {
 
     // 権限更新
     if (role !== undefined) {
-      const validRoles: UserRole[] = ["A", "B", "C"];
+      const validRoles: UserRole[] = ["A", "B", "C", "D"];
       if (!validRoles.includes(role)) {
         return NextResponse.json({ error: "無効な権限です" }, { status: 400 });
       }

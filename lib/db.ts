@@ -70,7 +70,7 @@ export async function deleteData(dateKey: string): Promise<void> {
 
 // ===== ユーザー管理 =====
 
-export type UserRole = "A" | "B" | "C";
+export type UserRole = "A" | "B" | "C" | "D";
 
 export interface AppUser {
   id: number;
