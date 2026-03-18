@@ -48,6 +48,8 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
   const [caAmountTotalOnly, setCaAmountTotalOnly] = useState(false);
   const [countCarryovers, setCountCarryovers] = useState<Record<string, Record<string, number>>>({});
   const [editingCellValue, setEditingCellValue] = useState("");
+  const [showAllRevenue, setShowAllRevenue] = useState(false);
+  const [showAllProfit, setShowAllProfit] = useState(false);
   // その他
   const [miscItems, setMiscItems] = useState<{ staff: string; content: string; deadline: string; status: string; createdAt: string }[]>([]);
   const [miscInput, setMiscInput] = useState<{ staff: string; content: string; deadline: string; status: string }>({ staff: "", content: "", deadline: "", status: "" });
@@ -370,6 +372,20 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
     return days.reduce((sum, day) => sum + getStaffDayCACountByAffiliation(staff, day.key, affiliation), 0);
   };
 
+  // 単価UP entries の担当別月間金額合計
+  const getStaffMonthPriceUpTotal = (staff: string, entryType: "ra" | "ca"): number => {
+    let total = 0;
+    days.forEach(day => {
+      const dayData = allData[day.key];
+      if (!dayData || !Array.isArray(dayData.staffActivities)) return;
+      const entry = dayData.staffActivities.find((s: any) => s.staff === staff);
+      if (!entry) return;
+      const puEntries = entryType === "ra" ? ((entry as any).raPriceUpEntries || []) : ((entry as any).caPriceUpEntries || []);
+      total += puEntries.reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
+    });
+    return Math.round(total * 10) / 10;
+  };
+
   // 3桁カンマ区切り（小数点以下あり対応）
   const fmtAmount = (v: number): string => {
     if (v === 0) return "—";
@@ -408,8 +424,8 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
     const all = Object.entries(companyMap).map(([company, data]) => ({
       company, revenue: Math.round(data.revenue * 10) / 10, profit: Math.round(data.profit * 10) / 10,
     }));
-    const byRevenue = [...all].filter(c => c.revenue > 0).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
-    const byProfit = [...all].filter(c => c.profit > 0).sort((a, b) => b.profit - a.profit).slice(0, 5);
+    const byRevenue = [...all].filter(c => c.revenue > 0).sort((a, b) => b.revenue - a.revenue);
+    const byProfit = [...all].filter(c => c.profit > 0).sort((a, b) => b.profit - a.profit);
     return { byRevenue, byProfit };
   };
 
@@ -541,7 +557,9 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
         const medals = ["🥇", "🥈", "🥉"];
         const totalRevenue = Math.round(byRevenue.reduce((sum, c) => sum + c.revenue, 0) * 10) / 10;
         const totalProfit = Math.round(byProfit.reduce((sum, c) => sum + c.profit, 0) * 10) / 10;
-        const renderCard = (title: string, ranked: { company: string; revenue: number; profit: number }[], total: number, color: string, valueKey: "revenue" | "profit") => (
+        const renderCard = (title: string, allRanked: { company: string; revenue: number; profit: number }[], total: number, color: string, valueKey: "revenue" | "profit", showAll: boolean, setShowAll: (v: boolean) => void) => {
+          const ranked = showAll ? allRanked : allRanked.slice(0, 5);
+          return (
           <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, borderTop: `3px solid ${color}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{title}</h3>
@@ -560,18 +578,24 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                 </div>
               ))
             )}
+            {allRanked.length > 5 && (
+              <button onClick={() => setShowAll(!showAll)} style={{ display: "block", width: "100%", marginTop: 8, padding: "6px 0", fontSize: 12, fontWeight: 600, color: tc.accent || color, background: "transparent", border: `1px solid ${tc.border}`, borderRadius: 6, cursor: "pointer" }}>
+                {showAll ? "上位5件のみ表示" : `全${allRanked.length}件を表示`}
+              </button>
+            )}
           </div>
-        );
+          );
+        };
         return (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: 24 }} className="focus-grid">
-            {renderCard("当月受注企業売上", byRevenue, totalRevenue, "#e74c3c", "revenue")}
-            {renderCard("当月受注企業粗利", byProfit, totalProfit, "#2ecc71", "profit")}
+            {renderCard("当月受注企業売上", byRevenue, totalRevenue, "#e74c3c", "revenue", showAllRevenue, setShowAllRevenue)}
+            {renderCard("当月受注企業粗利", byProfit, totalProfit, "#2ecc71", "profit", showAllProfit, setShowAllProfit)}
           </div>
         );
       })()}
 
       {monthlyMode === "amount" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }} className="focus-grid">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }} className="focus-grid">
           {ACTIVITY_AMOUNT_FIELDS.map(af => {
             const medals = ["🥇", "🥈", "🥉"];
             const isCAField = af.key === "amountCA";
@@ -610,9 +634,17 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
             const grandTotal = isCAField
               ? Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffMonthAmountTotal(s, "ca"), 0) * 10) / 10
               : Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffMonthAmountTotal(s, "ra"), 0) * 10) / 10;
-            return (<>
+            // 単価UPランキング
+            const puType = isCAField ? "ca" as const : "ra" as const;
+            const puRanked = STAFF_LIST
+              .map(staff => ({ staff, total: getStaffMonthPriceUpTotal(staff, puType) }))
+              .filter(s => s.total > 0)
+              .sort((a, b) => b.total - a.total)
+              .slice(0, 5);
+            const puGrandTotal = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffMonthPriceUpTotal(s, puType), 0) * 10) / 10;
+            return (<Fragment key={af.key}>
               {/* 達成率カード */}
-              <div key={af.key + "_rate"} style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow }}>
+              <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{af.key === "amountRA" ? "RA達成率" : "CA達成率"}</h3>
                   <span style={{ fontSize: 18, fontWeight: 700, color: allBudget > 0 ? getAchievementColor(allRate) : "#ccc" }}>{allBudget > 0 ? `${allRate.toFixed(1)}%` : "—"}</span>
@@ -630,7 +662,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                 )}
               </div>
               {/* 金額カード */}
-              <div key={af.key + "_amount"} style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow }}>
+              <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{af.rankLabel}</h3>
                   <span style={{ fontSize: 18, fontWeight: 700, color: af.color }}>{grandTotal > 0 ? fmtAmount(grandTotal) : "0"}万円</span>
@@ -647,7 +679,25 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                   ))
                 )}
               </div>
-            </>);
+              {/* 単価UPカード */}
+              <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, borderTop: `3px solid ${isCAField ? "#9b59b6" : "#e74c3c"}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{isCAField ? "今月CA単価UP" : "今月RA単価UP"}</h3>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: isCAField ? "#9b59b6" : "#e74c3c" }}>{puGrandTotal > 0 ? fmtAmount(puGrandTotal) : "0"}万円</span>
+                </div>
+                {puRanked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
+                  puRanked.map((r, i) => (
+                    <div key={r.staff} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid #f0f2f5" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {i < 3 ? <span style={{ fontSize: 16 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center" }}>{i + 1}</span>}
+                        <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary }}>{r.staff}</span>
+                      </div>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: isCAField ? "#9b59b6" : "#e74c3c" }}>{r.total > 0 ? fmtAmount(r.total) : "0"}万円</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Fragment>);
           })}
         </div>
       )}
