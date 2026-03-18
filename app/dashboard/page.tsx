@@ -792,8 +792,8 @@ export default function DashboardPage() {
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#e74c3c", display: "inline-block" }} />金額（万円）
             </h4>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: isMobile ? 16 : 24 }} className="focus-grid">
-              <AmountRankCard title="RA受注金額" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ra" color="#e74c3c" />
-              <AmountRankCard title="CA受注金額" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ca" color="#9b59b6" />
+              <AmountRankCard title="RA受注粗利" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ra" color="#e74c3c" />
+              <AmountRankCard title="CA受注粗利" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ca" color="#9b59b6" />
             </div>
 
             {/* 単価UPセクション */}
