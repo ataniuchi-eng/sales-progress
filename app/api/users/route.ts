@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession, isAdmin, sha256 } from "@/lib/auth";
-import { getAllUsers, createUser, deleteUser, updateUserRole } from "@/lib/db";
+import { getAllUsers, createUser, deleteUser, updateUserRole, updateUserSubStaff } from "@/lib/db";
 import type { UserRole } from "@/lib/db";
 
 // GET: 全ユーザー取得（管理者のみ）
@@ -17,6 +17,7 @@ export async function GET() {
       email: u.email,
       staffName: u.staff_name,
       role: u.role || "C",
+      subStaff: u.sub_staff || null,
       createdAt: u.created_at,
     }));
     return NextResponse.json(safeUsers);
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { email, staffName, password, role } = await request.json();
+    const { email, staffName, password, role, subStaff } = await request.json();
 
     if (!email || !staffName || !password) {
       return NextResponse.json({ error: "メールアドレス、担当、パスワードは必須です" }, { status: 400 });
@@ -44,13 +45,14 @@ export async function POST(request: Request) {
     const userRole: UserRole = validRoles.includes(role) ? role : "C";
 
     const passwordHash = await sha256(password);
-    const user = await createUser(email, passwordHash, staffName, userRole);
+    const user = await createUser(email, passwordHash, staffName, userRole, subStaff || null);
 
     return NextResponse.json({
       id: user.id,
       email: user.email,
       staffName: user.staff_name,
       role: user.role,
+      subStaff: user.sub_staff || null,
       password, // 作成直後のみ平文パスワードを返す
       createdAt: user.created_at,
     });
@@ -71,17 +73,25 @@ export async function PATCH(request: Request) {
   }
 
   try {
-    const { id, role } = await request.json();
-    if (!id || !role) {
-      return NextResponse.json({ error: "IDと権限は必須です" }, { status: 400 });
+    const { id, role, subStaff } = await request.json();
+    if (!id) {
+      return NextResponse.json({ error: "IDは必須です" }, { status: 400 });
     }
 
-    const validRoles: UserRole[] = ["A", "B", "C"];
-    if (!validRoles.includes(role)) {
-      return NextResponse.json({ error: "無効な権限です" }, { status: 400 });
+    // 権限更新
+    if (role !== undefined) {
+      const validRoles: UserRole[] = ["A", "B", "C"];
+      if (!validRoles.includes(role)) {
+        return NextResponse.json({ error: "無効な権限です" }, { status: 400 });
+      }
+      await updateUserRole(id, role);
     }
 
-    await updateUserRole(id, role);
+    // サブ担当更新
+    if (subStaff !== undefined) {
+      await updateUserSubStaff(id, subStaff || null);
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("User role update error:", error);

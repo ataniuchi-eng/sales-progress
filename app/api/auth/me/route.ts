@@ -11,11 +11,13 @@ export async function GET() {
   const admin = isAdmin(session.email);
   let staffName: string | null = null;
   let role: string = "A"; // admin default
+  let subStaff: string | null = null;
 
   if (!admin) {
     const user = await getUserByEmail(session.email);
     staffName = user?.staff_name || null;
     role = user?.role || "C";
+    subStaff = user?.sub_staff || null;
   }
 
   return NextResponse.json({
@@ -23,5 +25,6 @@ export async function GET() {
     isAdmin: admin,
     staffName, // null for admin (can edit all), string for regular users
     role, // A=admin-like, B=budget all staff, C=no budget
+    subStaff, // サブ担当（この人のデータも入力可能）
   });
 }

@@ -78,6 +78,7 @@ export interface AppUser {
   password_hash: string;
   staff_name: string;
   role: UserRole;
+  sub_staff: string | null;
   created_at: string;
 }
 
@@ -99,6 +100,12 @@ export async function ensureUsersTable() {
   } catch (e) {
     // 既にある場合は無視
   }
+  // サブ担当カラム追加
+  try {
+    await sql`ALTER TABLE app_users ADD COLUMN IF NOT EXISTS sub_staff VARCHAR(255) DEFAULT NULL`;
+  } catch (e) {
+    // 既にある場合は無視
+  }
 }
 
 // 担当者テーブル作成
@@ -116,7 +123,7 @@ export async function ensureStaffTable() {
 export async function getAllUsers(): Promise<AppUser[]> {
   await ensureUsersTable();
   const { rows } = await sql`
-    SELECT id, email, password_hash, staff_name, role, created_at FROM app_users ORDER BY created_at DESC
+    SELECT id, email, password_hash, staff_name, role, sub_staff, created_at FROM app_users ORDER BY created_at DESC
   `;
   return rows as AppUser[];
 }
@@ -125,18 +132,18 @@ export async function getAllUsers(): Promise<AppUser[]> {
 export async function getUserByEmail(email: string): Promise<AppUser | null> {
   await ensureUsersTable();
   const { rows } = await sql`
-    SELECT id, email, password_hash, staff_name, role, created_at FROM app_users WHERE email = ${email}
+    SELECT id, email, password_hash, staff_name, role, sub_staff, created_at FROM app_users WHERE email = ${email}
   `;
   return rows.length > 0 ? (rows[0] as AppUser) : null;
 }
 
 // ユーザー追加
-export async function createUser(email: string, passwordHash: string, staffName: string, role: UserRole = "C"): Promise<AppUser> {
+export async function createUser(email: string, passwordHash: string, staffName: string, role: UserRole = "C", subStaff: string | null = null): Promise<AppUser> {
   await ensureUsersTable();
   const { rows } = await sql`
-    INSERT INTO app_users (email, password_hash, staff_name, role)
-    VALUES (${email}, ${passwordHash}, ${staffName}, ${role})
-    RETURNING id, email, password_hash, staff_name, role, created_at
+    INSERT INTO app_users (email, password_hash, staff_name, role, sub_staff)
+    VALUES (${email}, ${passwordHash}, ${staffName}, ${role}, ${subStaff})
+    RETURNING id, email, password_hash, staff_name, role, sub_staff, created_at
   `;
   return rows[0] as AppUser;
 }
@@ -145,6 +152,12 @@ export async function createUser(email: string, passwordHash: string, staffName:
 export async function updateUserRole(id: number, role: UserRole): Promise<void> {
   await ensureUsersTable();
   await sql`UPDATE app_users SET role = ${role} WHERE id = ${id}`;
+}
+
+// サブ担当更新
+export async function updateUserSubStaff(id: number, subStaff: string | null): Promise<void> {
+  await ensureUsersTable();
+  await sql`UPDATE app_users SET sub_staff = ${subStaff} WHERE id = ${id}`;
 }
 
 // ユーザー削除

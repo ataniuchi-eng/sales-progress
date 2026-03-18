@@ -29,6 +29,7 @@ interface UserEntry {
   email: string;
   staffName: string;
   role: UserRole;
+  subStaff: string | null;
   password?: string; // 作成直後のみ表示
   createdAt: string;
 }
@@ -40,6 +41,7 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
   const [email, setEmail] = useState("");
   const [selectedStaff, setSelectedStaff] = useState("");
   const [selectedRole, setSelectedRole] = useState<UserRole>("C");
+  const [selectedSubStaff, setSelectedSubStaff] = useState("");
   const [newStaffName, setNewStaffName] = useState("");
   const [showNewStaff, setShowNewStaff] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -67,7 +69,7 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
         const data = await res.json();
         setUsers(prev => {
           const pwMap = new Map(prev.filter(u => u.password).map(u => [u.id, u.password]));
-          return data.map((u: UserEntry) => ({ ...u, role: u.role || "C", password: pwMap.get(u.id) || undefined }));
+          return data.map((u: UserEntry) => ({ ...u, role: u.role || "C", subStaff: u.subStaff || null, password: pwMap.get(u.id) || undefined }));
         });
       }
     } catch {}
@@ -103,7 +105,7 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
       const res = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), staffName: selectedStaff, password, role: selectedRole }),
+        body: JSON.stringify({ email: email.trim(), staffName: selectedStaff, password, role: selectedRole, subStaff: selectedSubStaff || null }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -114,6 +116,7 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
         setEmail("");
         setSelectedStaff("");
         setSelectedRole("C");
+        setSelectedSubStaff("");
       }
     } catch {
       setError("ユーザー作成に失敗しました");
@@ -151,6 +154,20 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
       });
       if (res.ok) {
         setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+      }
+    } catch {}
+  };
+
+  // サブ担当変更
+  const handleSubStaffChange = async (userId: number, newSubStaff: string) => {
+    try {
+      const res = await fetch("/api/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: userId, subStaff: newSubStaff || null }),
+      });
+      if (res.ok) {
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, subStaff: newSubStaff || null } : u));
       }
     } catch {}
   };
@@ -281,6 +298,23 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
             </select>
           </div>
 
+          {/* サブ担当選択 */}
+          <div style={{ flex: 0.8 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: tc.textSecondary, marginBottom: 4, display: "block" }}>
+              サブ担当
+            </label>
+            <select
+              value={selectedSubStaff}
+              onChange={(e) => setSelectedSubStaff(e.target.value)}
+              style={{ ...inputStyle, cursor: "pointer" }}
+            >
+              <option value="">なし</option>
+              {allStaff.filter(s => s !== selectedStaff).map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+
           {/* 追加ボタン */}
           <button
             onClick={handleAddUser}
@@ -321,7 +355,8 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
           <b>権限の説明:</b><br />
           <span style={{ color: ROLE_COLORS.A, fontWeight: 700 }}>A</span> … {ROLE_DESCRIPTIONS.A}<br />
           <span style={{ color: ROLE_COLORS.B, fontWeight: 700 }}>B</span> … {ROLE_DESCRIPTIONS.B}<br />
-          <span style={{ color: ROLE_COLORS.C, fontWeight: 700 }}>C</span> … {ROLE_DESCRIPTIONS.C}
+          <span style={{ color: ROLE_COLORS.C, fontWeight: 700 }}>C</span> … {ROLE_DESCRIPTIONS.C}<br />
+          <span style={{ color: "#27ae60", fontWeight: 700 }}>サブ担当</span> … 自分以外の担当を1人選択可。その人のデータも入力可能になります
         </div>
       </div>
 
@@ -351,6 +386,7 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
                   <th style={{ textAlign: "left", padding: "10px 12px", color: tc.textSecondary, fontWeight: 600, whiteSpace: "nowrap" }}>メールアドレス</th>
                   <th style={{ textAlign: "left", padding: "10px 12px", color: tc.textSecondary, fontWeight: 600, whiteSpace: "nowrap" }}>担当</th>
                   <th style={{ textAlign: "center", padding: "10px 12px", color: tc.textSecondary, fontWeight: 600, whiteSpace: "nowrap" }}>権限</th>
+                  <th style={{ textAlign: "center", padding: "10px 12px", color: tc.textSecondary, fontWeight: 600, whiteSpace: "nowrap" }}>サブ担当</th>
                   <th style={{ textAlign: "left", padding: "10px 12px", color: tc.textSecondary, fontWeight: 600, whiteSpace: "nowrap" }}>パスワード</th>
                   <th style={{ textAlign: "center", padding: "10px 12px", color: tc.textSecondary, fontWeight: 600, whiteSpace: "nowrap" }}>操作</th>
                 </tr>
@@ -378,6 +414,28 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
                       >
                         {(["A", "B", "C"] as UserRole[]).map(r => (
                           <option key={r} value={r}>{r}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td style={{ padding: "12px", textAlign: "center" }}>
+                      <select
+                        value={user.subStaff || ""}
+                        onChange={(e) => handleSubStaffChange(user.id, e.target.value)}
+                        style={{
+                          padding: "4px 8px",
+                          borderRadius: 6,
+                          border: `2px solid ${user.subStaff ? "#27ae60" : tc.borderLight}`,
+                          background: tc.bgInput,
+                          color: user.subStaff ? "#27ae60" : tc.textMuted,
+                          fontSize: 13,
+                          fontWeight: user.subStaff ? 700 : 400,
+                          cursor: "pointer",
+                          outline: "none",
+                        }}
+                      >
+                        <option value="">なし</option>
+                        {allStaff.filter(s => s !== user.staffName).map(s => (
+                          <option key={s} value={s}>{s}</option>
                         ))}
                       </select>
                     </td>

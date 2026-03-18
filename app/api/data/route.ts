@@ -33,32 +33,36 @@ export async function POST(request: Request) {
 
     // 単一日保存
     if (body.dateKey && body.data) {
-      // 担当別部分保存: staffName が指定された場合、その担当のデータのみ差し替え
+      // 担当別部分保存: staffName が指定された場合、その担当（+サブ担当）のデータのみ差し替え
       if (body.staffName) {
+        const editableStaff = [body.staffName];
+        if (body.subStaffName) editableStaff.push(body.subStaffName);
+        const isEditable = (staff: string) => editableStaff.includes(staff);
+
         const existing = await getDataByDate(body.dateKey);
         if (existing) {
           // staffActivities: 担当別マージ
           const otherStaffActs = (existing.staffActivities || []).filter(
-            (s: any) => s.staff !== body.staffName
+            (s: any) => !isEditable(s.staff)
           );
           const myStaffActs = (body.data.staffActivities || []).filter(
-            (s: any) => s.staff === body.staffName
+            (s: any) => isEditable(s.staff)
           );
 
           // focusPeople: 担当別マージ
           const otherFocusPeople = (existing.focusPeople || []).filter(
-            (p: any) => p.staff !== body.staffName
+            (p: any) => !isEditable(p.staff)
           );
           const myFocusPeople = (body.data.focusPeople || []).filter(
-            (p: any) => p.staff === body.staffName
+            (p: any) => isEditable(p.staff)
           );
 
           // focusProjects: 担当別マージ
           const otherFocusProjects = (existing.focusProjects || []).filter(
-            (p: any) => p.staff !== body.staffName
+            (p: any) => !isEditable(p.staff)
           );
           const myFocusProjects = (body.data.focusProjects || []).filter(
-            (p: any) => p.staff === body.staffName
+            (p: any) => isEditable(p.staff)
           );
 
           // staffActivities・注力以外のフィールドは既存データを維持（管理者が入力した売上数値等）

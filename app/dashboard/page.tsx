@@ -51,6 +51,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<"main" | "monthly" | "users">("main");
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentStaffName, setCurrentStaffName] = useState<string | null>(null); // null = admin (全担当編集可)
+  const [subStaffName, setSubStaffName] = useState<string | null>(null); // サブ担当
   const [userRole, setUserRole] = useState<"A" | "B" | "C">("C");
   const [monthlyYM, setMonthlyYM] = useState(`${new Date().getFullYear()}-${("0" + (new Date().getMonth() + 1)).slice(-2)}`);
 
@@ -99,6 +100,7 @@ export default function DashboardPage() {
       .then(data => {
         if (data?.isAdmin || data?.role === "A") { setIsAdmin(true); setUserRole("A"); }
         if (data?.staffName) setCurrentStaffName(data.staffName);
+        if (data?.subStaff) setSubStaffName(data.subStaff);
         if (data?.role) setUserRole(data.role);
         // admin / role A の場合は全担当編集可
       })
@@ -391,9 +393,9 @@ export default function DashboardPage() {
         const allPeople = d.focusPeople?.length ? d.focusPeople.map((p: any) => ({ ...p, staff: p.staff || "", position: p.position || "", skill: p.skill || "" })) : [];
         const allProjects = d.focusProjects?.length ? d.focusProjects.map((p: any) => ({ ...p, staff: p.staff || "", position: p.position || "", location: p.location || "" })) : [];
         if (!isAdmin && currentStaffName) {
-          const myPeople = allPeople.filter((p: any) => p.staff === currentStaffName);
+          const myPeople = allPeople.filter((p: any) => p.staff === currentStaffName || p.staff === subStaffName);
           setFocusPeople(myPeople.length > 0 ? myPeople : []);
-          const myProjects = allProjects.filter((p: any) => p.staff === currentStaffName);
+          const myProjects = allProjects.filter((p: any) => p.staff === currentStaffName || p.staff === subStaffName);
           setFocusProjects(myProjects.length > 0 ? myProjects : []);
         } else {
           setFocusPeople(allPeople.length > 0 ? allPeople : [{ name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }]);
@@ -419,7 +421,7 @@ export default function DashboardPage() {
         })) : [];
         // 非管理者は自分の担当行のみ、管理者は全行
         if (!isAdmin && currentStaffName) {
-          const own = allActs.filter((s: StaffActivity) => s.staff === currentStaffName);
+          const own = allActs.filter((s: StaffActivity) => s.staff === currentStaffName || s.staff === subStaffName);
           setStaffActivities(own.length > 0 ? own : [{ staff: currentStaffName, interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }]);
         } else {
           setStaffActivities(allActs.length > 0 ? allActs : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [] }]);
@@ -441,9 +443,9 @@ export default function DashboardPage() {
           const allPeople = d.focusPeople?.length ? d.focusPeople.map((p: any) => ({ ...p, staff: p.staff || "", position: p.position || "", skill: p.skill || "" })) : [];
           const allProjects = d.focusProjects?.length ? d.focusProjects.map((p: any) => ({ ...p, staff: p.staff || "", position: p.position || "", location: p.location || "" })) : [];
           if (!isAdmin && currentStaffName) {
-            const myPeople = allPeople.filter((p: any) => p.staff === currentStaffName);
+            const myPeople = allPeople.filter((p: any) => p.staff === currentStaffName || p.staff === subStaffName);
             setFocusPeople(myPeople.length > 0 ? myPeople : []);
-            const myProjects = allProjects.filter((p: any) => p.staff === currentStaffName);
+            const myProjects = allProjects.filter((p: any) => p.staff === currentStaffName || p.staff === subStaffName);
             setFocusProjects(myProjects.length > 0 ? myProjects : []);
           } else {
             setFocusPeople(allPeople.length > 0 ? allPeople : [{ name: "", affiliation: "プロパー", cost: 0, staff: "", position: "", skill: "" }]);
@@ -503,6 +505,7 @@ export default function DashboardPage() {
       const payload: any = { dateKey: saveDate, data };
       if (!isAdmin && currentStaffName) {
         payload.staffName = currentStaffName;
+        if (subStaffName) payload.subStaffName = subStaffName;
       }
       const res = await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       if (!res.ok) throw new Error();
@@ -512,11 +515,13 @@ export default function DashboardPage() {
         if (!isAdmin && currentStaffName && prev[saveDate]) {
           // 既存データの他担当分を維持し、自分の分だけ差し替え（サーバーサイドマージと同じロジック）
           const existing = prev[saveDate];
-          const otherActs = (existing.staffActivities || []).filter(s => s.staff !== currentStaffName);
-          const otherFocusPeople = (existing.focusPeople || []).filter((p: any) => p.staff !== currentStaffName);
-          const myFocusPeople = (data.focusPeople || []).filter((p: any) => p.staff === currentStaffName);
-          const otherFocusProjects = (existing.focusProjects || []).filter((p: any) => p.staff !== currentStaffName);
-          const myFocusProjects = (data.focusProjects || []).filter((p: any) => p.staff === currentStaffName);
+          const editableStaff = [currentStaffName, ...(subStaffName ? [subStaffName] : [])];
+          const isEditable = (staff: string) => editableStaff.includes(staff);
+          const otherActs = (existing.staffActivities || []).filter(s => !isEditable(s.staff));
+          const otherFocusPeople = (existing.focusPeople || []).filter((p: any) => !isEditable(p.staff));
+          const myFocusPeople = (data.focusPeople || []).filter((p: any) => isEditable(p.staff));
+          const otherFocusProjects = (existing.focusProjects || []).filter((p: any) => !isEditable(p.staff));
+          const myFocusProjects = (data.focusProjects || []).filter((p: any) => isEditable(p.staff));
           return {
             ...prev,
             [saveDate]: {
@@ -833,14 +838,16 @@ export default function DashboardPage() {
                 </h4>
                 {staffActivities.map((s, i) => {
                   const effectiveStaff = (!isAdmin && currentStaffName && !s.staff) ? currentStaffName : s.staff;
-                  const isOwnStaff = !currentStaffName || effectiveStaff === currentStaffName;
+                  const isOwnStaff = !currentStaffName || effectiveStaff === currentStaffName || effectiveStaff === subStaffName;
                   const canEditRow = isAdmin || isOwnStaff;
                   return (
                   <div key={`count-${i}`} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "10px 12px", background: "#f8f9fa", borderRadius: 8, flexWrap: isMobile ? "wrap" : "nowrap", opacity: canEditRow ? 1 : 0.5 }}>
-                    <FieldWrap label="担当" className="fw-select" w={120}>{!isAdmin ? (
-                      <div style={{ ...focusSelectStyle, background: tc.bgSection, display: "flex", alignItems: "center", fontWeight: 700 }}>{effectiveStaff || currentStaffName || ""}</div>
-                    ) : (
+                    <FieldWrap label="担当" className="fw-select" w={120}>{isAdmin ? (
                       <select value={s.staff} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], staff: e.target.value }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{STAFF_LIST.map(n => <option key={n}>{n}</option>)}</select>
+                    ) : subStaffName ? (
+                      <select value={effectiveStaff} onChange={(e) => { if (!canEditRow) return; const a = [...staffActivities]; a[i] = { ...a[i], staff: e.target.value }; setStaffActivities(a); }} style={focusSelectStyle}><option value={currentStaffName || ""}>{currentStaffName}</option><option value={subStaffName}>{subStaffName}</option></select>
+                    ) : (
+                      <div style={{ ...focusSelectStyle, background: tc.bgSection, display: "flex", alignItems: "center", fontWeight: 700 }}>{effectiveStaff || currentStaffName || ""}</div>
                     )}</FieldWrap>
                     <FieldWrap label="面談設定数" w={100}><input type="text" inputMode="numeric" value={s.interviewSetups || ""} onChange={(e) => { if (!canEditRow) return; const a = [...staffActivities]; a[i] = { ...a[i], interviewSetups: parseNum(e.target.value) }; setStaffActivities(a); }} readOnly={!canEditRow} placeholder="0" style={{ ...focusInputStyle, textAlign: "right", ...(canEditRow ? {} : { cursor: "not-allowed" }) }} /></FieldWrap>
                     <FieldWrap label="面談実施数" w={100}><input type="text" inputMode="numeric" value={s.interviewsConducted || ""} onChange={(e) => { if (!canEditRow) return; const a = [...staffActivities]; a[i] = { ...a[i], interviewsConducted: parseNum(e.target.value) }; setStaffActivities(a); }} readOnly={!canEditRow} placeholder="0" style={{ ...focusInputStyle, textAlign: "right", ...(canEditRow ? {} : { cursor: "not-allowed" }) }} /></FieldWrap>
@@ -892,7 +899,7 @@ export default function DashboardPage() {
                       <div style={{ fontSize: 13, fontWeight: 700, color: "#e74c3c", marginBottom: 8 }}>RA受注</div>
                       {raEntries.map(({ s, i }) => {
                         const effStaff = (!isAdmin && currentStaffName && !s.staff) ? currentStaffName : s.staff;
-                        const canEdit = isAdmin || !currentStaffName || effStaff === currentStaffName;
+                        const canEdit = isAdmin || !currentStaffName || effStaff === currentStaffName || effStaff === subStaffName;
                         return (
                         <div key={`ra-${i}`} style={{ marginBottom: 8, padding: "10px 12px", background: "#fef8f8", borderRadius: 8, borderLeft: "3px solid #e74c3c", opacity: canEdit ? 1 : 0.5 }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: tc.textPrimary, marginBottom: 6 }}>{s.staff}（{s.ordersRA}件）</div>
@@ -920,7 +927,7 @@ export default function DashboardPage() {
                       <div style={{ fontSize: 13, fontWeight: 700, color: "#9b59b6", marginBottom: 8 }}>CA受注</div>
                       {caEntries.map(({ s, i }) => {
                         const effStaff = (!isAdmin && currentStaffName && !s.staff) ? currentStaffName : s.staff;
-                        const canEdit = isAdmin || !currentStaffName || effStaff === currentStaffName;
+                        const canEdit = isAdmin || !currentStaffName || effStaff === currentStaffName || effStaff === subStaffName;
                         return (
                         <div key={`ca-${i}`} style={{ marginBottom: 8, padding: "10px 12px", background: "#f9f5fc", borderRadius: 8, borderLeft: "3px solid #9b59b6", opacity: canEdit ? 1 : 0.5 }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: tc.textPrimary, marginBottom: 6 }}>{s.staff}（{s.ordersCA}件）</div>
@@ -996,6 +1003,8 @@ export default function DashboardPage() {
                       <FieldWrap label="ポジション" className="fw-select" w={120}><select value={p.position} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], position: e.target.value }; setFocusProjects(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(s => <option key={s}>{s}</option>)}</select></FieldWrap>
                       <FieldWrap label="担当" className="fw-select" w={110}>{isAdmin ? (
                         <select value={p.staff} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], staff: e.target.value }; setFocusProjects(a); }} style={focusSelectStyle}><option value="">選択</option>{STAFF_LIST.map(s => <option key={s}>{s}</option>)}</select>
+                      ) : subStaffName ? (
+                        <select value={p.staff} onChange={(e) => { const a = [...focusProjects]; a[i] = { ...a[i], staff: e.target.value }; setFocusProjects(a); }} style={focusSelectStyle}><option value={currentStaffName || ""}>{currentStaffName}</option><option value={subStaffName}>{subStaffName}</option></select>
                       ) : (
                         <div style={{ ...focusInputStyle, background: tc.bgSection, display: "flex", alignItems: "center" }}>{currentStaffName}</div>
                       )}</FieldWrap>
@@ -1015,6 +1024,8 @@ export default function DashboardPage() {
                       <FieldWrap label="ポジション" className="fw-select" w={120}><select value={p.position} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], position: e.target.value }; setFocusPeople(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(s => <option key={s}>{s}</option>)}</select></FieldWrap>
                       <FieldWrap label="担当" className="fw-select" w={110}>{isAdmin ? (
                         <select value={p.staff} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], staff: e.target.value }; setFocusPeople(a); }} style={focusSelectStyle}><option value="">選択</option>{STAFF_LIST.map(s => <option key={s}>{s}</option>)}</select>
+                      ) : subStaffName ? (
+                        <select value={p.staff} onChange={(e) => { const a = [...focusPeople]; a[i] = { ...a[i], staff: e.target.value }; setFocusPeople(a); }} style={focusSelectStyle}><option value={currentStaffName || ""}>{currentStaffName}</option><option value={subStaffName}>{subStaffName}</option></select>
                       ) : (
                         <div style={{ ...focusInputStyle, background: tc.bgSection, display: "flex", alignItems: "center" }}>{currentStaffName}</div>
                       )}</FieldWrap>
