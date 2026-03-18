@@ -65,13 +65,22 @@ export async function POST(request: Request) {
             (p: any) => isEditable(p.staff)
           );
 
-          // staffActivities・注力以外のフィールドは既存データを維持（管理者が入力した売上数値等）
-          const merged = {
+          // staffActivities・注力以外のフィールドはロール別に制御
+          // roleA/B: 予算・見込、全体連絡、RA開拓も反映
+          const merged: any = {
             ...existing,
             staffActivities: [...otherStaffActs, ...myStaffActs],
             focusPeople: [...otherFocusPeople, ...myFocusPeople],
             focusProjects: [...otherFocusProjects, ...myFocusProjects],
           };
+          if (body.userRole === "A" || body.userRole === "B") {
+            if (body.data.proper) merged.proper = body.data.proper;
+            if (body.data.bp) merged.bp = body.data.bp;
+            if (body.data.fl) merged.fl = body.data.fl;
+            if (body.data.co) merged.co = body.data.co;
+            if (body.data.announcements) merged.announcements = body.data.announcements;
+            if (body.data.ra) merged.ra = body.data.ra;
+          }
           await saveData(body.dateKey, merged);
           return NextResponse.json({ success: true, dateKey: body.dateKey, mode: "staff-merge" });
         } else {

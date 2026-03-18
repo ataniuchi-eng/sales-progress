@@ -516,6 +516,7 @@ export default function DashboardPage() {
       if (!isAdmin && currentStaffName) {
         payload.staffName = currentStaffName;
         if (subStaffName) payload.subStaffName = subStaffName;
+        payload.userRole = userRole;
       }
       const res = await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       if (!res.ok) throw new Error();
@@ -532,15 +533,21 @@ export default function DashboardPage() {
           const myFocusPeople = (data.focusPeople || []).filter((p: any) => isEditable(p.staff));
           const otherFocusProjects = (existing.focusProjects || []).filter((p: any) => !isEditable(p.staff));
           const myFocusProjects = (data.focusProjects || []).filter((p: any) => isEditable(p.staff));
-          return {
-            ...prev,
-            [saveDate]: {
-              ...existing,
-              staffActivities: [...otherActs, ...myStaffActs],
-              focusPeople: [...otherFocusPeople, ...myFocusPeople],
-              focusProjects: [...otherFocusProjects, ...myFocusProjects],
-            },
+          const merged: any = {
+            ...existing,
+            staffActivities: [...otherActs, ...myStaffActs],
+            focusPeople: [...otherFocusPeople, ...myFocusPeople],
+            focusProjects: [...otherFocusProjects, ...myFocusProjects],
           };
+          if (userRole === "A" || userRole === "B") {
+            merged.proper = data.proper;
+            merged.bp = data.bp;
+            merged.fl = data.fl;
+            merged.co = data.co;
+            merged.announcements = data.announcements;
+            merged.ra = data.ra;
+          }
+          return { ...prev, [saveDate]: merged };
         }
         return { ...prev, [saveDate]: data };
       });
