@@ -33,6 +33,73 @@ export async function POST(request: Request) {
 
     // 単一日保存
     if (body.dateKey && body.data) {
+      // セクション指定時の処理
+      if (body.section) {
+        const existing = await getDataByDate(body.dateKey);
+        let merged: any = existing || {};
+
+        if (body.staffName) {
+          // 担当別部分保存
+          const editableStaff = [body.staffName];
+          if (body.subStaffName) editableStaff.push(body.subStaffName);
+          const isEditable = (staff: string) => editableStaff.includes(staff);
+
+          if (body.section === "staffActivities") {
+            const otherStaffActs = (merged.staffActivities || []).filter(
+              (s: any) => !isEditable(s.staff)
+            );
+            const myStaffActs = (body.data.staffActivities || []).filter(
+              (s: any) => isEditable(s.staff)
+            );
+            merged.staffActivities = [...otherStaffActs, ...myStaffActs];
+          } else if (body.section === "focus") {
+            const otherFocusPeople = (merged.focusPeople || []).filter(
+              (p: any) => !isEditable(p.staff)
+            );
+            const myFocusPeople = (body.data.focusPeople || []).filter(
+              (p: any) => isEditable(p.staff)
+            );
+            const otherFocusProjects = (merged.focusProjects || []).filter(
+              (p: any) => !isEditable(p.staff)
+            );
+            const myFocusProjects = (body.data.focusProjects || []).filter(
+              (p: any) => isEditable(p.staff)
+            );
+            merged.focusPeople = [...otherFocusPeople, ...myFocusPeople];
+            merged.focusProjects = [...otherFocusProjects, ...myFocusProjects];
+          } else if (body.section === "budget") {
+            if (body.data.proper) merged.proper = body.data.proper;
+            if (body.data.bp) merged.bp = body.data.bp;
+            if (body.data.fl) merged.fl = body.data.fl;
+            if (body.data.co) merged.co = body.data.co;
+          } else if (body.section === "ra") {
+            if (body.data.ra) merged.ra = body.data.ra;
+          } else if (body.section === "announcements") {
+            if (body.data.announcements) merged.announcements = body.data.announcements;
+          }
+        } else {
+          // 管理者: セクション指定時も対応フィールドのみ上書き
+          if (body.section === "staffActivities" && body.data.staffActivities) {
+            merged.staffActivities = body.data.staffActivities;
+          } else if (body.section === "focus") {
+            if (body.data.focusPeople) merged.focusPeople = body.data.focusPeople;
+            if (body.data.focusProjects) merged.focusProjects = body.data.focusProjects;
+          } else if (body.section === "budget") {
+            if (body.data.proper) merged.proper = body.data.proper;
+            if (body.data.bp) merged.bp = body.data.bp;
+            if (body.data.fl) merged.fl = body.data.fl;
+            if (body.data.co) merged.co = body.data.co;
+          } else if (body.section === "ra" && body.data.ra) {
+            merged.ra = body.data.ra;
+          } else if (body.section === "announcements" && body.data.announcements) {
+            merged.announcements = body.data.announcements;
+          }
+        }
+
+        await saveData(body.dateKey, merged);
+        return NextResponse.json({ success: true, dateKey: body.dateKey, mode: "section-merge", section: body.section });
+      }
+
       // 担当別部分保存: staffName が指定された場合、その担当（+サブ担当）のデータのみ差し替え
       if (body.staffName) {
         const editableStaff = [body.staffName];

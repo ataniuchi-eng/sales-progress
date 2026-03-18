@@ -46,7 +46,7 @@ export default function DashboardPage() {
   const [sectionAnnouncementOpen, setSectionAnnouncementOpen] = useState(false);
   const [saveDate, setSaveDate] = useState(selectedDate);
   const [toast, setToast] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [savingSection, setSavingSection] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab] = useState<"main" | "monthly" | "users">("main");
@@ -482,37 +482,12 @@ export default function DashboardPage() {
     }
   };
 
-  // 保存
-  const saveCurrentData = async () => {
+  // セクション別保存関数
+  const saveSectionData = async (section: string, sectionData: any) => {
     if (!saveDate) { showToast("日付を選択してください"); return; }
-    setSaving(true);
-
-    // 自分の担当のstaffActivitiesのみ（staffフィールドを確実にセット）
-    const myStaffActs = staffActivities
-      .map(s => ({ ...s, staff: s.staff || currentStaffName || "" }))
-      .filter(s => s.staff && (s.interviewSetups || s.interviewsConducted || s.appointmentAcquisitions || s.ordersRA || s.ordersCA || s.raPriceUpCount || s.caPriceUpCount));
-
-    const data: DayData = {
-      proper: { target: parseNum(inp.properTarget), progress: 0, forecast: parseNum(inp.properForecast), standby: parseNum(inp.properStandby) },
-      bp: { target: parseNum(inp.bpTarget), progress: 0, forecast: parseNum(inp.bpForecast) },
-      fl: { target: parseNum(inp.flTarget), progress: 0, forecast: parseNum(inp.flForecast) },
-      co: { target: parseNum(inp.coTarget), progress: 0, forecast: parseNum(inp.coForecast) },
-      focusPeople: focusPeople.filter((p) => p.name || p.cost),
-      focusProjects: focusProjects.filter((p) => p.company || p.title || p.price),
-      announcements: announcements.filter((a) => a.trim()),
-      staffActivities: myStaffActs,
-      ra: {
-        acquisitionTarget: parseNum(raInp.acquisitionTarget), acquisitionProgress: parseNum(raInp.acquisitionProgress),
-        acquisitionCompanies: raAcqCompanies.filter(c => c.name),
-        joinTarget: parseNum(raInp.joinTarget), joinProgress: parseNum(raInp.joinProgress),
-        joinCompanies: raJoinCompanies.filter(c => c.name),
-      },
-    };
-
+    setSavingSection(section);
     try {
-      // 非管理者: staffName を送信 → API側でサーバーサイドマージ（他担当に干渉しない）
-      // 管理者: staffName なし → 全データそのまま保存
-      const payload: any = { dateKey: saveDate, data };
+      const payload: any = { dateKey: saveDate, data: sectionData, section };
       if (!isAdmin && currentStaffName) {
         payload.staffName = currentStaffName;
         if (subStaffName) payload.subStaffName = subStaffName;
@@ -523,37 +498,89 @@ export default function DashboardPage() {
 
       // ローカルの allData も更新（表示用）
       setAllData((prev) => {
-        if (!isAdmin && currentStaffName && prev[saveDate]) {
-          // 既存データの他担当分を維持し、自分の分だけ差し替え（サーバーサイドマージと同じロジック）
-          const existing = prev[saveDate];
-          const editableStaff = [currentStaffName, ...(subStaffName ? [subStaffName] : [])];
-          const isEditable = (staff: string) => editableStaff.includes(staff);
-          const otherActs = (existing.staffActivities || []).filter(s => !isEditable(s.staff));
-          const otherFocusPeople = (existing.focusPeople || []).filter((p: any) => !isEditable(p.staff));
-          const myFocusPeople = (data.focusPeople || []).filter((p: any) => isEditable(p.staff));
-          const otherFocusProjects = (existing.focusProjects || []).filter((p: any) => !isEditable(p.staff));
-          const myFocusProjects = (data.focusProjects || []).filter((p: any) => isEditable(p.staff));
-          const merged: any = {
-            ...existing,
-            staffActivities: [...otherActs, ...myStaffActs],
-            focusPeople: [...otherFocusPeople, ...myFocusPeople],
-            focusProjects: [...otherFocusProjects, ...myFocusProjects],
-          };
-          if (userRole === "A" || userRole === "B") {
-            merged.proper = data.proper;
-            merged.bp = data.bp;
-            merged.fl = data.fl;
-            merged.co = data.co;
-            merged.announcements = data.announcements;
-            merged.ra = data.ra;
+        const existing = prev[saveDate] || {};
+        let merged: any = { ...existing };
+
+        if (section === "staffActivities") {
+          if (!isAdmin && currentStaffName) {
+            const editableStaff = [currentStaffName, ...(subStaffName ? [subStaffName] : [])];
+            const isEditable = (staff: string) => editableStaff.includes(staff);
+            const otherActs = (existing.staffActivities || []).filter((s: any) => !isEditable(s.staff));
+            const myActs = sectionData.staffActivities || [];
+            merged.staffActivities = [...otherActs, ...myActs];
+          } else {
+            merged.staffActivities = sectionData.staffActivities;
           }
-          return { ...prev, [saveDate]: merged };
+        } else if (section === "budget") {
+          if (sectionData.proper) merged.proper = sectionData.proper;
+          if (sectionData.bp) merged.bp = sectionData.bp;
+          if (sectionData.fl) merged.fl = sectionData.fl;
+          if (sectionData.co) merged.co = sectionData.co;
+        } else if (section === "focus") {
+          if (!isAdmin && currentStaffName) {
+            const editableStaff = [currentStaffName, ...(subStaffName ? [subStaffName] : [])];
+            const isEditable = (staff: string) => editableStaff.includes(staff);
+            const otherFocusPeople = (existing.focusPeople || []).filter((p: any) => !isEditable(p.staff));
+            const myFocusPeople = sectionData.focusPeople || [];
+            const otherFocusProjects = (existing.focusProjects || []).filter((p: any) => !isEditable(p.staff));
+            const myFocusProjects = sectionData.focusProjects || [];
+            merged.focusPeople = [...otherFocusPeople, ...myFocusPeople];
+            merged.focusProjects = [...otherFocusProjects, ...myFocusProjects];
+          } else {
+            if (sectionData.focusPeople) merged.focusPeople = sectionData.focusPeople;
+            if (sectionData.focusProjects) merged.focusProjects = sectionData.focusProjects;
+          }
+        } else if (section === "ra") {
+          if (sectionData.ra) merged.ra = sectionData.ra;
+        } else if (section === "announcements") {
+          if (sectionData.announcements) merged.announcements = sectionData.announcements;
         }
-        return { ...prev, [saveDate]: data };
+
+        return { ...prev, [saveDate]: merged };
       });
-      showToast(`${formatDateJP(saveDate)} に保存しました`);
+      showToast("保存しました");
     } catch { showToast("保存に失敗しました"); }
-    setSaving(false);
+    setSavingSection(null);
+  };
+
+  const saveStaffActivities = () => {
+    const myStaffActs = staffActivities
+      .map(s => ({ ...s, staff: s.staff || currentStaffName || "" }))
+      .filter(s => s.staff && (s.interviewSetups || s.interviewsConducted || s.appointmentAcquisitions || s.ordersRA || s.ordersCA || s.raPriceUpCount || s.caPriceUpCount));
+    saveSectionData("staffActivities", { staffActivities: myStaffActs });
+  };
+
+  const saveBudget = () => {
+    saveSectionData("budget", {
+      proper: { target: parseNum(inp.properTarget), progress: 0, forecast: parseNum(inp.properForecast), standby: parseNum(inp.properStandby) },
+      bp: { target: parseNum(inp.bpTarget), progress: 0, forecast: parseNum(inp.bpForecast) },
+      fl: { target: parseNum(inp.flTarget), progress: 0, forecast: parseNum(inp.flForecast) },
+      co: { target: parseNum(inp.coTarget), progress: 0, forecast: parseNum(inp.coForecast) },
+    });
+  };
+
+  const saveFocus = () => {
+    saveSectionData("focus", {
+      focusPeople: focusPeople.filter(p => p.name || p.cost),
+      focusProjects: focusProjects.filter(p => p.company || p.title || p.price),
+    });
+  };
+
+  const saveRA = () => {
+    saveSectionData("ra", {
+      ra: {
+        acquisitionTarget: parseNum(raInp.acquisitionTarget), acquisitionProgress: parseNum(raInp.acquisitionProgress),
+        acquisitionCompanies: raAcqCompanies.filter(c => c.name),
+        joinTarget: parseNum(raInp.joinTarget), joinProgress: parseNum(raInp.joinProgress),
+        joinCompanies: raJoinCompanies.filter(c => c.name),
+      },
+    });
+  };
+
+  const saveAnnouncements = () => {
+    saveSectionData("announcements", {
+      announcements: announcements.filter(a => a.trim()),
+    });
   };
 
   const handleLogout = async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/login"); };
@@ -911,12 +938,6 @@ export default function DashboardPage() {
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 24 }}>
                   <label style={{ fontSize: 14, color: tc.textSecondary }}>保存日付：</label>
                   <input type="date" value={saveDate} onChange={(e) => setSaveDate(e.target.value)} style={{ padding: "8px 12px", border: "1px solid " + tc.inputBorder, borderRadius: 8, fontSize: 14 }} />
-                  <button onClick={saveCurrentData} disabled={saving} style={{
-                    padding: "10px 24px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
-                    border: "none", borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1,
-                  }}>
-                    {saving ? "保存中..." : "保存"}
-                  </button>
                 </div>
 
                 {/* 営業活動入力 */}
@@ -1123,6 +1144,16 @@ export default function DashboardPage() {
                   );
                 })()}
 
+                {/* 営業活動セクション保存ボタン */}
+                <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+                  <button onClick={saveStaffActivities} disabled={savingSection === "staffActivities"} style={{
+                    padding: "8px 20px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
+                    border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: savingSection === "staffActivities" ? "not-allowed" : "pointer", opacity: savingSection === "staffActivities" ? 0.7 : 1,
+                  }}>
+                    {savingSection === "staffActivities" ? "保存中..." : "保存"}
+                  </button>
+                </div>
+
                 {/* 予算・見込セクション（権限A/Bのみ入力可） */}
                 {(isAdmin || userRole === "A" || userRole === "B") && (
                 <div style={{ marginTop: 24, borderTop: "3px solid " + tc.textPrimary }}>
@@ -1135,7 +1166,7 @@ export default function DashboardPage() {
                   </div>
                   {sectionSalesOpen && (
                     <div style={{ padding: "16px", background: tc.bgSection, borderRadius: "0 0 10px 10px", border: "1px solid " + tc.border, borderTop: "none" }}>
-                      <div className="input-4col" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+                      <div className="input-4col" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 16 }}>
                         <InputGroup title="プロパー" fields={[
                           { label: "予算", value: inp.properTarget, key: "properTarget" },
                           { label: "見込", value: inp.properForecast, key: "properForecast" },
@@ -1153,6 +1184,14 @@ export default function DashboardPage() {
                           { label: "予算", value: inp.coTarget, key: "coTarget" },
                           { label: "見込", value: inp.coForecast, key: "coForecast" },
                         ]} onChange={handleNumInput} />
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                        <button onClick={saveBudget} disabled={savingSection === "budget"} style={{
+                          padding: "8px 20px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
+                          border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: savingSection === "budget" ? "not-allowed" : "pointer", opacity: savingSection === "budget" ? 0.7 : 1,
+                        }}>
+                          {savingSection === "budget" ? "保存中..." : "保存"}
+                        </button>
                       </div>
                     </div>
                   )}
@@ -1212,6 +1251,15 @@ export default function DashboardPage() {
                     </div>
                   ))}
                   <button onClick={() => setFocusPeople([...focusPeople, { name: "", affiliation: "プロパー", cost: 0, staff: (!isAdmin && currentStaffName) ? currentStaffName : "", position: "", skill: "" }])} style={addBtnStyle}>＋ 人材を追加</button>
+
+                  <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+                    <button onClick={saveFocus} disabled={savingSection === "focus"} style={{
+                      padding: "8px 20px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
+                      border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: savingSection === "focus" ? "not-allowed" : "pointer", opacity: savingSection === "focus" ? 0.7 : 1,
+                    }}>
+                      {savingSection === "focus" ? "保存中..." : "保存"}
+                    </button>
+                  </div>
 
                     </div>
                   )}
@@ -1280,6 +1328,15 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
+                  <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+                    <button onClick={saveRA} disabled={savingSection === "ra"} style={{
+                      padding: "8px 20px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
+                      border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: savingSection === "ra" ? "not-allowed" : "pointer", opacity: savingSection === "ra" ? 0.7 : 1,
+                    }}>
+                      {savingSection === "ra" ? "保存中..." : "保存"}
+                    </button>
+                  </div>
+
                     </div>
                   )}
                 </div>
@@ -1304,18 +1361,17 @@ export default function DashboardPage() {
                   ))}
                   <button onClick={() => setAnnouncements([...announcements, ""])} style={addBtnStyle}>＋ 連絡事項を追加</button>
 
+                  <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+                    <button onClick={saveAnnouncements} disabled={savingSection === "announcements"} style={{
+                      padding: "8px 20px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
+                      border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: savingSection === "announcements" ? "not-allowed" : "pointer", opacity: savingSection === "announcements" ? 0.7 : 1,
+                    }}>
+                      {savingSection === "announcements" ? "保存中..." : "保存"}
+                    </button>
+                  </div>
+
                     </div>
                   )}
-                </div>
-
-                {/* 下部の保存ボタン */}
-                <div style={{ marginTop: 24, paddingTop: 20, borderTop: "2px solid #e0e0e0" }}>
-                  <button onClick={saveCurrentData} disabled={saving} style={{
-                    width: "100%", padding: "14px 24px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
-                    border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1,
-                  }}>
-                    {saving ? "保存中..." : "保存"}
-                  </button>
                 </div>
               </div>
             )}
