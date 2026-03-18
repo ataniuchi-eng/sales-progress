@@ -443,9 +443,43 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
         </div>
       </div>
 
-      {/* ベスト5 */}
-      {monthlyMode === "count" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginBottom: 24 }} className="focus-grid">
+      {/* 稼働進捗 + ベスト5 */}
+      {monthlyMode === "count" && (() => {
+        const caSubs = ["プロパー", "BP", "フリーランス", "協業"];
+        const subColors: Record<string, string> = { "プロパー": "#0077b6", "BP": "#e67e22", "フリーランス": "#2ecc71", "協業": "#9b59b6" };
+        const progressRows = caSubs.map(sub => {
+          const progress = STAFF_LIST.reduce((sum, s) => sum + getStaffMonthCACountByAffiliation(s, sub) + getCountCarryover(s, `ordersCA_${sub}`), 0);
+          const target = STAFF_LIST.reduce((sum, s) => sum + getCountTarget(s, `ordersCA_${sub}`), 0);
+          const rate = target > 0 ? Math.round((progress / target) * 1000) / 10 : 0;
+          return { label: sub, progress, target, rate, color: subColors[sub] || "#666" };
+        });
+        const totalProgress = progressRows.reduce((s, r) => s + r.progress, 0);
+        const totalTarget = progressRows.reduce((s, r) => s + r.target, 0);
+        const totalRate = totalTarget > 0 ? Math.round((totalProgress / totalTarget) * 1000) / 10 : 0;
+        return (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 5fr", gap: 16, marginBottom: 24 }} className="focus-grid">
+            {/* 稼働進捗カード */}
+            <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, borderTop: "3px solid #3498db" }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: "0 0 12px" }}>稼働進捗</h3>
+              {progressRows.map(r => (
+                <div key={r.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${tc.borderLight || "#f0f2f5"}` }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: r.color }}>{r.label}</span>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: tc.textPrimary }}>{r.progress}<span style={{ fontSize: 11, color: tc.textSecondary }}>/{r.target}</span></span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: r.target > 0 ? (r.rate >= 100 ? "#2ecc71" : r.rate >= 50 ? "#f39c12" : "#e74c3c") : tc.textDisabled, minWidth: 48, textAlign: "right" }}>{r.target > 0 ? `${r.rate}%` : "—"}</span>
+                  </div>
+                </div>
+              ))}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0 0", marginTop: 4 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: tc.textPrimary }}>全体</span>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: tc.textPrimary }}>{totalProgress}<span style={{ fontSize: 12, color: tc.textSecondary }}>/{totalTarget}</span></span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: totalTarget > 0 ? (totalRate >= 100 ? "#2ecc71" : totalRate >= 50 ? "#f39c12" : "#e74c3c") : tc.textDisabled, minWidth: 48, textAlign: "right" }}>{totalTarget > 0 ? `${totalRate}%` : "—"}</span>
+                </div>
+              </div>
+            </div>
+            {/* ランキングカード */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16 }} className="focus-grid">
           {ACTIVITY_FIELDS.map(af => {
             const ranked = STAFF_LIST
               .map(staff => ({ staff, total: getStaffMonthTotal(staff, af.key) }))
@@ -473,8 +507,10 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
               </div>
             );
           })}
-        </div>
-      )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 当月受注企業 売上・粗利（金額タブ） */}
       {monthlyMode === "amount" && (() => {
