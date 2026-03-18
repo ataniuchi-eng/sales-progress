@@ -359,6 +359,7 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
           <span style={{ color: ROLE_COLORS.A, fontWeight: 700 }}>A</span> … {ROLE_DESCRIPTIONS.A}<br />
           <span style={{ color: ROLE_COLORS.B, fontWeight: 700 }}>B</span> … {ROLE_DESCRIPTIONS.B}<br />
           <span style={{ color: ROLE_COLORS.C, fontWeight: 700 }}>C</span> … {ROLE_DESCRIPTIONS.C}<br />
+          <span style={{ color: ROLE_COLORS.D, fontWeight: 700 }}>D</span> … {ROLE_DESCRIPTIONS.D}<br />
           <span style={{ color: "#27ae60", fontWeight: 700 }}>サブ担当</span> … 自分以外の担当を1人選択可。その人のデータも入力可能になります
         </div>
       </div>
