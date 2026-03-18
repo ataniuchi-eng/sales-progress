@@ -4,24 +4,27 @@ import { useState, useEffect, useCallback } from "react";
 import { useTheme } from "../../theme-provider";
 import { STAFF_LIST } from "../constants/data";
 
-type UserRole = "A" | "B" | "C";
+type UserRole = "A" | "B" | "C" | "D";
 
 const ROLE_LABELS: Record<UserRole, string> = {
   A: "A（管理者相当）",
   B: "B（予算入力可）",
   C: "C（予算入力不可）",
+  D: "D（閲覧専用）",
 };
 
 const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
   A: "全担当の全操作が可能",
   B: "自担当のみ編集可、予算は全担当入力可",
   C: "自担当のみ編集可、予算入力は不可",
+  D: "閲覧のみ、全体連絡の入力のみ可",
 };
 
 const ROLE_COLORS: Record<UserRole, string> = {
   A: "#e74c3c",
   B: "#f39c12",
   C: "#3498db",
+  D: "#95a5a6",
 };
 
 interface UserEntry {

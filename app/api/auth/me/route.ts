@@ -24,7 +24,7 @@ export async function GET() {
     email: session.email,
     isAdmin: admin,
     staffName, // null for admin (can edit all), string for regular users
-    role, // A=admin-like, B=budget all staff, C=no budget
+    role, // A=admin-like, B=budget all staff, C=no budget, D=read-only (announcements only)
     subStaff, // サブ担当（この人のデータも入力可能）
   });
 }

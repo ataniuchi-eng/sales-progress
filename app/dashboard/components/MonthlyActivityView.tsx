@@ -7,19 +7,23 @@ import { STAFF_LIST, ACTIVITY_FIELDS, ACTIVITY_AMOUNT_FIELDS, JAPAN_HOLIDAYS } f
 import { parseNum, parseAmount, formatAmount, formatNumStr, calcRate, emptyData } from "../utils/numbers";
 import { dateKey, parseDate, formatDateJP, isBusinessDay } from "../utils/dates";
 
-export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isMobile, currentStaffName, isAdmin, userRole = "C", subStaffName = null }: { allData: AllData; setAllData: React.Dispatch<React.SetStateAction<AllData>>; monthlyYM: string; setMonthlyYM: (v: string) => void; isMobile: boolean; currentStaffName: string | null; isAdmin: boolean; userRole?: "A" | "B" | "C"; subStaffName?: string | null }) {
-  // 編集可能判定: admin/roleA は全員、一般ユーザーは自分の担当またはサブ担当のみ
-  const canEditStaff = (staff: string) => isAdmin || !currentStaffName || staff === currentStaffName || staff === subStaffName;
+export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isMobile, currentStaffName, isAdmin, userRole = "C", subStaffName = null }: { allData: AllData; setAllData: React.Dispatch<React.SetStateAction<AllData>>; monthlyYM: string; setMonthlyYM: (v: string) => void; isMobile: boolean; currentStaffName: string | null; isAdmin: boolean; userRole?: "A" | "B" | "C" | "D"; subStaffName?: string | null }) {
+  // 編集可能判定: admin/roleA は全員、一般ユーザーは自分の担当またはサブ担当のみ、D は不可
+  const canEditStaff = (staff: string) => {
+    if (userRole === "D") return false;
+    return isAdmin || !currentStaffName || staff === currentStaffName || staff === subStaffName;
+  };
   // 予算の編集可能判定:
-  // A: 全担当OK / B: 全担当OK / C: 不可
+  // A: 全担当OK / B: 全担当OK / C,D: 不可
   const canEditBudget = (_staff: string) => {
-    if (userRole === "C") return false;
+    if (userRole === "C" || userRole === "D") return false;
     if (userRole === "A" || userRole === "B") return true;
     return isAdmin;
   };
   // 繰越粗利の編集可能判定:
-  // A: 全担当OK / B: 全担当OK / C: 自担当のみOK
+  // A: 全担当OK / B: 全担当OK / C: 自担当のみOK / D: 不可
   const canEditCarryover = (staff: string) => {
+    if (userRole === "D") return false;
     if (userRole === "A" || userRole === "B") return true;
     if (userRole === "C") return canEditStaff(staff); // 自担当のみ
     return isAdmin;

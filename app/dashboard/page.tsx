@@ -53,7 +53,7 @@ export default function DashboardPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentStaffName, setCurrentStaffName] = useState<string | null>(null); // null = admin (全担当編集可)
   const [subStaffName, setSubStaffName] = useState<string | null>(null); // サブ担当
-  const [userRole, setUserRole] = useState<"A" | "B" | "C">("C");
+  const [userRole, setUserRole] = useState<"A" | "B" | "C" | "D">("C");
   const [monthlyYM, setMonthlyYM] = useState(`${new Date().getFullYear()}-${("0" + (new Date().getMonth() + 1)).slice(-2)}`);
 
   const [inp, setInp] = useState({
@@ -940,8 +940,8 @@ export default function DashboardPage() {
                   <input type="date" value={saveDate} onChange={(e) => setSaveDate(e.target.value)} style={{ padding: "8px 12px", border: "1px solid " + tc.inputBorder, borderRadius: 8, fontSize: 14 }} />
                 </div>
 
-                {/* 営業活動入力 */}
-                <h2 style={{ fontSize: 20, fontWeight: 700, color: tc.textPrimary, marginBottom: 16 }}>営業活動</h2>
+                {/* 営業活動入力（権限D以外） */}
+                {userRole !== "D" && <><h2 style={{ fontSize: 20, fontWeight: 700, color: tc.textPrimary, marginBottom: 16 }}>営業活動</h2>
 
                 <h4 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#0077b6", display: "inline-block" }} />
@@ -1153,6 +1153,7 @@ export default function DashboardPage() {
                     {savingSection === "staffActivities" ? "保存中..." : "営業活動を保存"}
                   </button>
                 </div>
+                </>}
 
                 {/* 予算・見込セクション（権限A/Bのみ入力可） */}
                 {(isAdmin || userRole === "A" || userRole === "B") && (
@@ -1199,8 +1200,8 @@ export default function DashboardPage() {
                 )}
 
 
-                {/* 注力セクション */}
-                <div style={{ marginTop: 24, borderTop: "3px solid #1a1a2e" }}>
+                {/* 注力セクション（権限D以外） */}
+                {userRole !== "D" && <div style={{ marginTop: 24, borderTop: "3px solid #1a1a2e" }}>
                   <div onClick={() => setSectionFocusOpen(!sectionFocusOpen)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "linear-gradient(135deg, #1a1a2e, #16213e)", borderRadius: sectionFocusOpen ? "0" : "0 0 10px 10px", cursor: "pointer", userSelect: "none" as const }}>
                     <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
@@ -1263,10 +1264,10 @@ export default function DashboardPage() {
 
                     </div>
                   )}
-                </div>
+                </div>}
 
-                {/* RA開拓セクション */}
-                <div style={{ marginTop: 24, borderTop: "3px solid " + tc.textPrimary }}>
+                {/* RA開拓セクション（権限D以外） */}
+                {userRole !== "D" && <div style={{ marginTop: 24, borderTop: "3px solid " + tc.textPrimary }}>
                   <div onClick={() => setSectionRAOpen(!sectionRAOpen)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "linear-gradient(135deg, #1a1a2e, #16213e)", borderRadius: sectionRAOpen ? "0" : "0 0 10px 10px", cursor: "pointer", userSelect: "none" as const }}>
                     <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
@@ -1339,9 +1340,9 @@ export default function DashboardPage() {
 
                     </div>
                   )}
-                </div>
+                </div>}
 
-                {/* 全体連絡セクション */}
+                {/* 全体連絡セクション（全権限で入力可） */}
                 <div style={{ marginTop: 24, borderTop: "3px solid #1a1a2e" }}>
                   <div onClick={() => setSectionAnnouncementOpen(!sectionAnnouncementOpen)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "linear-gradient(135deg, #1a1a2e, #16213e)", borderRadius: sectionAnnouncementOpen ? "0" : "0 0 10px 10px", cursor: "pointer", userSelect: "none" as const }}>
                     <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
