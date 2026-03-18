@@ -50,6 +50,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
   const [editingCellValue, setEditingCellValue] = useState("");
   const [showAllRevenue, setShowAllRevenue] = useState(false);
   const [showAllProfit, setShowAllProfit] = useState(false);
+  const [puDetailOpen, setPuDetailOpen] = useState<Record<string, boolean>>({});
   // その他
   const [miscItems, setMiscItems] = useState<{ staff: string; content: string; deadline: string; status: string; createdAt: string }[]>([]);
   const [miscInput, setMiscInput] = useState<{ staff: string; content: string; deadline: string; status: string }>({ staff: "", content: "", deadline: "", status: "" });
@@ -386,6 +387,24 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
     return Math.round(total * 10) / 10;
   };
 
+  // 単価UP entries の担当別月間明細一覧
+  const getStaffMonthPriceUpDetails = (staff: string, entryType: "ra" | "ca"): { date: string; revenue: number; amount: number; company: string; affiliation: string; position: string }[] => {
+    const details: { date: string; revenue: number; amount: number; company: string; affiliation: string; position: string }[] = [];
+    days.forEach(day => {
+      const dayData = allData[day.key];
+      if (!dayData || !Array.isArray(dayData.staffActivities)) return;
+      const entry = dayData.staffActivities.find((s: any) => s.staff === staff);
+      if (!entry) return;
+      const puEntries = entryType === "ra" ? ((entry as any).raPriceUpEntries || []) : ((entry as any).caPriceUpEntries || []);
+      puEntries.forEach((e: any) => {
+        if ((e.amount || 0) > 0 || (e.revenue || 0) > 0) {
+          details.push({ date: `${day.d}日`, revenue: e.revenue || 0, amount: e.amount || 0, company: e.company || "", affiliation: e.affiliation || "", position: e.position || "" });
+        }
+      });
+    });
+    return details;
+  };
+
   // 3桁カンマ区切り（小数点以下あり対応）
   const fmtAmount = (v: number): string => {
     if (v === 0) return "—";
@@ -686,15 +705,45 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                   <span style={{ fontSize: 18, fontWeight: 700, color: isCAField ? "#9b59b6" : "#e74c3c" }}>{puGrandTotal > 0 ? fmtAmount(puGrandTotal) : "0"}万円</span>
                 </div>
                 {puRanked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
-                  puRanked.map((r, i) => (
-                    <div key={r.staff} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid #f0f2f5" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {i < 3 ? <span style={{ fontSize: 16 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center" }}>{i + 1}</span>}
-                        <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary }}>{r.staff}</span>
+                  puRanked.map((r, i) => {
+                    const detailKey = `${puType}_${r.staff}`;
+                    const isOpen = puDetailOpen[detailKey] || false;
+                    const puColor = isCAField ? "#9b59b6" : "#e74c3c";
+                    return (
+                    <div key={r.staff} style={{ borderBottom: "1px solid #f0f2f5" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          {i < 3 ? <span style={{ fontSize: 16 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center" }}>{i + 1}</span>}
+                          <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary }}>{r.staff}</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ fontSize: 15, fontWeight: 700, color: puColor }}>{r.total > 0 ? fmtAmount(r.total) : "0"}万円</span>
+                          <button onClick={() => setPuDetailOpen(prev => ({ ...prev, [detailKey]: !prev[detailKey] }))} style={{ padding: "2px 8px", fontSize: 11, fontWeight: 600, color: puColor, background: "transparent", border: `1px solid ${puColor}`, borderRadius: 4, cursor: "pointer", lineHeight: 1.4 }}>
+                            {isOpen ? "閉じる" : "詳細"}
+                          </button>
+                        </div>
                       </div>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: isCAField ? "#9b59b6" : "#e74c3c" }}>{r.total > 0 ? fmtAmount(r.total) : "0"}万円</span>
+                      {isOpen && (() => {
+                        const details = getStaffMonthPriceUpDetails(r.staff, puType);
+                        return details.length > 0 ? (
+                          <div style={{ padding: "4px 0 8px 28px" }}>
+                            {details.map((d, di) => (
+                              <div key={di} style={{ fontSize: 11, color: tc.textSecondary, lineHeight: 1.8, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                <span style={{ color: tc.textMuted, minWidth: 28 }}>{d.date}</span>
+                                {d.company && <span style={{ fontWeight: 600, color: tc.textPrimary }}>{d.company}</span>}
+                                {d.affiliation && <span style={{ color: puColor }}>{d.affiliation}</span>}
+                                {d.position && <span>{d.position}</span>}
+                                <span style={{ marginLeft: "auto", fontWeight: 600 }}>
+                                  {isCAField ? "仕入" : "売上"}{fmtAmount(d.revenue)}／粗利{fmtAmount(d.amount)}万円
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : <div style={{ padding: "4px 0 8px 28px", fontSize: 11, color: tc.textDisabled }}>明細なし</div>;
+                      })()}
                     </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </Fragment>);
