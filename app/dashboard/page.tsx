@@ -210,7 +210,7 @@ export default function DashboardPage() {
     setTimeout(() => setToast(""), 2500);
   }, []);
 
-  // データが実質空かどうか判定（全セクション: 売上数値・注力・RA開拓・全体連絡）
+  // データが実質空かどうか判定（全セクション: 予算・見込・注力・RA開拓・全体連絡）
   const isDataEmpty = useCallback((d: DayData): boolean => {
     const p = d.proper || { target: 0, progress: 0, forecast: 0 };
     const b = d.bp || { target: 0, progress: 0, forecast: 0 };
@@ -948,12 +948,13 @@ export default function DashboardPage() {
                   );
                 })()}
 
-                {/* 売上数値セクション */}
+                {/* 予算・見込セクション（権限A/Bのみ入力可） */}
+                {(isAdmin || userRole === "A" || userRole === "B") && (
                 <div style={{ marginTop: 24, borderTop: "3px solid " + tc.textPrimary }}>
                   <div onClick={() => setSectionSalesOpen(!sectionSalesOpen)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "linear-gradient(135deg, #1a1a2e, #16213e)", borderRadius: sectionSalesOpen ? "0" : "0 0 10px 10px", cursor: "pointer", userSelect: "none" as const }}>
                     <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-                      売上数値 <span style={{ fontSize: 12, color: "#ff4444", fontWeight: 600 }}>※追加・更新は本日日付選択後、保存</span>
+                      予算・見込 <span style={{ fontSize: 12, color: "#ff4444", fontWeight: 600 }}>※追加・更新は本日日付選択後、保存</span>
                     </h2>
                     <span style={{ fontSize: 18, color: "#fff", transform: sectionSalesOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
                   </div>
@@ -981,6 +982,7 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
+                )}
 
 
                 {/* 注力セクション */}
