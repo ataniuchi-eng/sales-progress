@@ -293,7 +293,10 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
     }
     if (field === "amountRA") {
       const entries = (entry as any).raEntries || [];
-      return entries.reduce((sum: number, e: any) => sum + (e.amount || 0), 0) || ((entry as any).amountRA || 0);
+      const base = entries.reduce((sum: number, e: any) => sum + (e.amount || 0), 0) || ((entry as any).amountRA || 0);
+      const puEntries = (entry as any).raPriceUpEntries || [];
+      const puAmount = puEntries.reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
+      return base + puAmount;
     }
     return ((entry as any)[field] as number) || 0;
   };
@@ -581,7 +584,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
               : getStaffCarryover(staff, af.key);
             const getMonthForField = (staff: string) => isCAField
               ? Math.round(getStaffMonthAmountTotal(staff, "ca") * 10) / 10
-              : Math.round(getStaffMonthTotal(staff, af.key) * 10) / 10;
+              : Math.round(getStaffMonthAmountTotal(staff, "ra") * 10) / 10;
             // 達成率ランキング
             const rateRanked = STAFF_LIST
               .map(staff => {
@@ -606,7 +609,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
               .slice(0, 5);
             const grandTotal = isCAField
               ? Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffMonthAmountTotal(s, "ca"), 0) * 10) / 10
-              : Math.round(getMonthGrandTotal(af.key) * 10) / 10;
+              : Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffMonthAmountTotal(s, "ra"), 0) * 10) / 10;
             return (<>
               {/* 達成率カード */}
               <div key={af.key + "_rate"} style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow }}>
