@@ -8,9 +8,10 @@ import { parseNum, parseAmount, formatAmount, formatNumStr, calcRate, emptyData 
 import { dateKey, parseDate, formatDateJP, isBusinessDay } from "../utils/dates";
 
 export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isMobile, currentStaffName, isAdmin, userRole = "C", subStaffName = null, onAffiliationProgress }: { allData: AllData; setAllData: React.Dispatch<React.SetStateAction<AllData>>; monthlyYM: string; setMonthlyYM: (v: string) => void; isMobile: boolean; currentStaffName: string | null; isAdmin: boolean; userRole?: "A" | "B" | "C" | "D"; subStaffName?: string | null; onAffiliationProgress?: (data: Record<string, { progress: number; target: number }>) => void }) {
-  // 編集可能判定: admin/roleA は全員、一般ユーザーは自分の担当またはサブ担当のみ、D は不可
+  // 編集可能判定: admin/roleA/roleB は全員、一般ユーザーは自分の担当またはサブ担当のみ、D は不可
   const canEditStaff = (staff: string) => {
     if (userRole === "D") return false;
+    if (userRole === "A" || userRole === "B") return true;
     return isAdmin || !currentStaffName || staff === currentStaffName || staff === subStaffName;
   };
   // 予算の編集可能判定:
@@ -319,6 +320,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
     });
     result["全体"] = { progress: totalProgress, target: totalTarget };
     onAffiliationProgress(result);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allData, monthlyYM, countTargets, countCarryovers, onAffiliationProgress]);
 
   // 各担当×各日×各指標のデータを集計
