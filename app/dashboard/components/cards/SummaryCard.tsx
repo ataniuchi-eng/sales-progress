@@ -5,10 +5,11 @@ import { formatYen } from "../../utils/numbers";
 import { DonutChart } from "../ui/DonutChart";
 import { Row } from "../ui/Row";
 
-export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, supportCost, countInfo }: {
+export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, supportCost, countInfo, grossProfitTotal }: {
   title: string; data: { target: number; progress: number; forecast: number };
   rate: number; isTotal?: boolean; standby?: number; standbyCost?: number; supportCost?: number;
   countInfo?: { progress: number; target: number };
+  grossProfitTotal?: number;
 }) {
   const { t: tc } = useTheme();
   const bg = isTotal ? "linear-gradient(135deg, #0c4a6e, #0284c7)" : tc.bgCard;
@@ -30,7 +31,11 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
         )}
       </div>
       <Row label="予算" value={formatYen(data.target)} labelColor={labelColor} valueColor={isTotal ? "#fff" : tc.textPrimary} />
-      <Row label="現在粗利" value={formatYen(data.progress)} labelColor={labelColor} valueColor={isTotal ? "#4cc9f0" : tc.accentText} />
+      {grossProfitTotal !== undefined ? (
+        <Row label="粗利計" value={formatYen(grossProfitTotal)} labelColor={labelColor} valueColor={isTotal ? "#4cc9f0" : tc.accentText} />
+      ) : (
+        <Row label="現在粗利" value={formatYen(data.progress)} labelColor={labelColor} valueColor={isTotal ? "#4cc9f0" : tc.accentText} />
+      )}
       {standbyCost !== undefined && <Row label="待機費用" value={formatYen(standbyCost)} labelColor={labelColor} valueColor={isTotal ? "#ffb3b3" : "#e74c3c"} />}
       {supportCost !== undefined && <Row label="支援費等" value={formatYen(supportCost)} labelColor={labelColor} valueColor={isTotal ? "#ffb3b3" : "#e74c3c"} />}
       {(standbyCost !== undefined || supportCost !== undefined) && <Row label="粗利計" value={formatYen(adjustedProgress)} labelColor={labelColor} valueColor={isTotal ? "#4cc9f0" : tc.accentText} />}
