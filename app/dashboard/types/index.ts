@@ -3,6 +3,8 @@ export interface CategoryData {
   progress: number;
   forecast: number;
   standby?: number;
+  standbyCost?: number;    // 待機費用（プロパー用）
+  supportCost?: number;    // 支援費等（BP・フリーランス・協業用）
 }
 
 export interface FocusPerson {

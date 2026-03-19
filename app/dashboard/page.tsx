@@ -57,10 +57,10 @@ export default function DashboardPage() {
   const [monthlyYM, setMonthlyYM] = useState(`${new Date().getFullYear()}-${("0" + (new Date().getMonth() + 1)).slice(-2)}`);
 
   const [inp, setInp] = useState({
-    properTarget: "", properForecast: "", properStandby: "",
-    bpTarget: "", bpForecast: "",
-    flTarget: "", flForecast: "",
-    coTarget: "", coForecast: "",
+    properTarget: "", properForecast: "", properStandby: "", properStandbyCost: "",
+    bpTarget: "", bpForecast: "", bpSupportCost: "",
+    flTarget: "", flForecast: "", flSupportCost: "",
+    coTarget: "", coForecast: "", coSupportCost: "",
   });
   const [focusPeople, setFocusPeople] = useState<FocusPerson[]>([]);
   const [focusProjects, setFocusProjects] = useState<FocusProject[]>([]);
@@ -349,15 +349,21 @@ export default function DashboardPage() {
   const flProgress = Math.floor(flProgressMan * 10000);
   const coProgress = Math.floor(coProgressMan * 10000);
 
-  const proper = { ...(displayData.proper || { target: 0, progress: 0, forecast: 0, standby: 0 }), progress: properProgress };
-  const bp = { ...(displayData.bp || { target: 0, progress: 0, forecast: 0 }), progress: bpProgress };
-  const fl = { ...(displayData.fl || { target: 0, progress: 0, forecast: 0 }), progress: flProgress };
-  const co = { ...(displayData.co || { target: 0, progress: 0, forecast: 0 }), progress: coProgress };
+  const proper = { ...(displayData.proper || { target: 0, progress: 0, forecast: 0, standby: 0, standbyCost: 0 }), progress: properProgress };
+  const bp = { ...(displayData.bp || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: bpProgress };
+  const fl = { ...(displayData.fl || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: flProgress };
+  const co = { ...(displayData.co || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: coProgress };
+  // 進捗計から待機費用・支援費等を引いた調整後進捗
+  const properAdjusted = properProgress - (proper.standbyCost || 0);
+  const bpAdjusted = bpProgress - (bp.supportCost || 0);
+  const flAdjusted = flProgress - (fl.supportCost || 0);
+  const coAdjusted = coProgress - (co.supportCost || 0);
   const total = {
     target: proper.target + bp.target + fl.target + co.target,
     progress: properProgress + bpProgress + flProgress + coProgress,
     forecast: proper.forecast + bp.forecast + fl.forecast + co.forecast,
   };
+  const totalAdjusted = properAdjusted + bpAdjusted + flAdjusted + coAdjusted;
   const dPeople = Array.isArray(displayData.focusPeople) ? displayData.focusPeople : [];
   const dProjects = Array.isArray(displayData.focusProjects) ? displayData.focusProjects : [];
   const dAnnouncements = Array.isArray(displayData.announcements) ? displayData.announcements.filter(a => a) : [];
@@ -390,9 +396,13 @@ export default function DashboardPage() {
       setInp({
         properTarget: formatNumStr(d.proper?.target || 0),
         properForecast: formatNumStr(d.proper?.forecast || 0), properStandby: formatNumStr(d.proper?.standby || 0),
+        properStandbyCost: formatNumStr(d.proper?.standbyCost || 0),
         bpTarget: formatNumStr(d.bp?.target || 0), bpForecast: formatNumStr(d.bp?.forecast || 0),
+        bpSupportCost: formatNumStr(d.bp?.supportCost || 0),
         flTarget: formatNumStr(d.fl?.target || 0), flForecast: formatNumStr(d.fl?.forecast || 0),
+        flSupportCost: formatNumStr(d.fl?.supportCost || 0),
         coTarget: formatNumStr(d.co?.target || 0), coForecast: formatNumStr(d.co?.forecast || 0),
+        coSupportCost: formatNumStr(d.co?.supportCost || 0),
       });
       {
         // 注力データ: 非管理者は自担当のみロード（API側マージで他担当に干渉しないため安全）
@@ -445,9 +455,13 @@ export default function DashboardPage() {
         setInp({
           properTarget: formatNumStr(d.proper?.target || 0),
           properForecast: formatNumStr(d.proper?.forecast || 0), properStandby: formatNumStr(d.proper?.standby || 0),
+          properStandbyCost: formatNumStr(d.proper?.standbyCost || 0),
           bpTarget: formatNumStr(d.bp?.target || 0), bpForecast: formatNumStr(d.bp?.forecast || 0),
+          bpSupportCost: formatNumStr(d.bp?.supportCost || 0),
           flTarget: formatNumStr(d.fl?.target || 0), flForecast: formatNumStr(d.fl?.forecast || 0),
+          flSupportCost: formatNumStr(d.fl?.supportCost || 0),
           coTarget: formatNumStr(d.co?.target || 0), coForecast: formatNumStr(d.co?.forecast || 0),
+          coSupportCost: formatNumStr(d.co?.supportCost || 0),
         });
         {
           const allPeople = d.focusPeople?.length ? d.focusPeople.map((p: any) => ({ ...p, staff: p.staff || "", position: p.position || "", skill: p.skill || "" })) : [];
@@ -552,10 +566,10 @@ export default function DashboardPage() {
 
   const saveBudget = () => {
     saveSectionData("budget", {
-      proper: { target: parseNum(inp.properTarget), progress: 0, forecast: parseNum(inp.properForecast), standby: parseNum(inp.properStandby) },
-      bp: { target: parseNum(inp.bpTarget), progress: 0, forecast: parseNum(inp.bpForecast) },
-      fl: { target: parseNum(inp.flTarget), progress: 0, forecast: parseNum(inp.flForecast) },
-      co: { target: parseNum(inp.coTarget), progress: 0, forecast: parseNum(inp.coForecast) },
+      proper: { target: parseNum(inp.properTarget), progress: 0, forecast: parseNum(inp.properForecast), standby: parseNum(inp.properStandby), standbyCost: parseNum(inp.properStandbyCost) },
+      bp: { target: parseNum(inp.bpTarget), progress: 0, forecast: parseNum(inp.bpForecast), supportCost: parseNum(inp.bpSupportCost) },
+      fl: { target: parseNum(inp.flTarget), progress: 0, forecast: parseNum(inp.flForecast), supportCost: parseNum(inp.flSupportCost) },
+      co: { target: parseNum(inp.coTarget), progress: 0, forecast: parseNum(inp.coForecast), supportCost: parseNum(inp.coSupportCost) },
     });
   };
 
@@ -800,11 +814,11 @@ export default function DashboardPage() {
           <div style={{ flex: 1, minWidth: 0 }}>
             {/* カード4枚 */}
             <div className="card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: isMobile ? 8 : 12, marginBottom: isMobile ? 16 : 24 }}>
-              <SummaryCard title="全体" data={total} rate={calcRate(total.progress, total.target)} isTotal />
-              <SummaryCard title="プロパー" data={proper} rate={calcRate(proper.progress, proper.target)} standby={proper.standby} />
-              <SummaryCard title="BP" data={bp} rate={calcRate(bp.progress, bp.target)} />
-              <SummaryCard title="フリーランス" data={fl} rate={calcRate(fl.progress, fl.target)} />
-              <SummaryCard title="協業" data={co} rate={calcRate(co.progress, co.target)} />
+              <SummaryCard title="全体" data={total} rate={calcRate(totalAdjusted, total.target)} isTotal />
+              <SummaryCard title="プロパー" data={proper} rate={calcRate(properAdjusted, proper.target)} standby={proper.standby} standbyCost={proper.standbyCost} />
+              <SummaryCard title="BP" data={bp} rate={calcRate(bpAdjusted, bp.target)} supportCost={bp.supportCost} />
+              <SummaryCard title="フリーランス" data={fl} rate={calcRate(flAdjusted, fl.target)} supportCost={fl.supportCost} />
+              <SummaryCard title="協業" data={co} rate={calcRate(coAdjusted, co.target)} supportCost={co.supportCost} />
             </div>
 
             {/* 前日営業活動成績（件数5カード + 金額2カード） */}
@@ -1172,18 +1186,22 @@ export default function DashboardPage() {
                           { label: "予算", value: inp.properTarget, key: "properTarget" },
                           { label: "見込", value: inp.properForecast, key: "properForecast" },
                           { label: "待機（人数）", value: inp.properStandby, key: "properStandby" },
+                          { label: "待機費用", value: inp.properStandbyCost, key: "properStandbyCost" },
                         ]} onChange={handleNumInput} />
                         <InputGroup title="BP" fields={[
                           { label: "予算", value: inp.bpTarget, key: "bpTarget" },
                           { label: "見込", value: inp.bpForecast, key: "bpForecast" },
+                          { label: "支援費等", value: inp.bpSupportCost, key: "bpSupportCost" },
                         ]} onChange={handleNumInput} />
                         <InputGroup title="フリーランス" fields={[
                           { label: "予算", value: inp.flTarget, key: "flTarget" },
                           { label: "見込", value: inp.flForecast, key: "flForecast" },
+                          { label: "支援費等", value: inp.flSupportCost, key: "flSupportCost" },
                         ]} onChange={handleNumInput} />
                         <InputGroup title="協業" fields={[
                           { label: "予算", value: inp.coTarget, key: "coTarget" },
                           { label: "見込", value: inp.coForecast, key: "coForecast" },
+                          { label: "支援費等", value: inp.coSupportCost, key: "coSupportCost" },
                         ]} onChange={handleNumInput} />
                       </div>
                       <div style={{ marginTop: 16 }}>
