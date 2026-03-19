@@ -130,9 +130,9 @@ export default function DashboardPage() {
   // モバイルではカレンダー非表示がデフォルト
   useEffect(() => { if (isMobile) setCalendarOpen(false); }, [isMobile]);
 
-  // 天気取得（Open-Meteo API、渋谷・新宿、9時/14時/18時の3時間帯）
+  // 天気取得（Open-Meteo API、渋谷・新宿、9時/19時の2時間帯）
   useEffect(() => {
-    const cacheKey = `weather3_${todayKey()}`;
+    const cacheKey = `weather2_${todayKey()}`;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) { setWeatherInfo(JSON.parse(cached)); return; }
     const weatherCode: Record<number, string> = {
@@ -141,7 +141,7 @@ export default function DashboardPage() {
       61: "🌧️", 63: "🌧️", 65: "🌧️", 71: "🌨️", 73: "🌨️", 75: "❄️",
       80: "🌦️", 81: "🌧️", 82: "⛈️", 95: "⛈️", 96: "⛈️", 99: "⛈️",
     };
-    const timeSlots = [{ hour: 9, label: "9時" }, { hour: 14, label: "14時" }, { hour: 18, label: "18時" }];
+    const timeSlots = [{ hour: 9, label: "9時" }, { hour: 19, label: "19時" }];
     const fetchW = async (lat: number, lon: number): Promise<AreaWeather> => {
       const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weather_code&timezone=Asia%2FTokyo&forecast_days=1`);
       const d = await res.json();
