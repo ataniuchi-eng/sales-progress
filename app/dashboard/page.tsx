@@ -69,6 +69,7 @@ export default function DashboardPage() {
   const [raAcqCompanies, setRaAcqCompanies] = useState<RACompany[]>([]);
   const [raJoinCompanies, setRaJoinCompanies] = useState<RACompany[]>([]);
   const [staffActivities, setStaffActivities] = useState<StaffActivity[]>([]);
+  const [affiliationProgress, setAffiliationProgress] = useState<Record<string, { progress: number; target: number }>>({});
 
   // カスタム企業リスト（ユーザーが追加した企業）
   const [customCompanies, setCustomCompanies] = useState<string[]>(() => {
@@ -691,7 +692,7 @@ export default function DashboardPage() {
         </div>
 
         {activeTab === "monthly" && (
-          <MonthlyActivityView allData={allData} setAllData={setAllData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} currentStaffName={currentStaffName} isAdmin={isAdmin} userRole={userRole} subStaffName={subStaffName} />
+          <MonthlyActivityView allData={allData} setAllData={setAllData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} currentStaffName={currentStaffName} isAdmin={isAdmin} userRole={userRole} subStaffName={subStaffName} onAffiliationProgress={setAffiliationProgress} />
         )}
 
         {activeTab === "users" && isAdmin && (
@@ -814,11 +815,11 @@ export default function DashboardPage() {
           <div style={{ flex: 1, minWidth: 0 }}>
             {/* カード4枚 */}
             <div className="card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: isMobile ? 8 : 12, marginBottom: isMobile ? 16 : 24 }}>
-              <SummaryCard title="全体" data={total} rate={calcRate(totalAdjusted, total.target)} isTotal />
-              <SummaryCard title="プロパー" data={proper} rate={calcRate(properAdjusted, proper.target)} standby={proper.standby} standbyCost={proper.standbyCost} />
-              <SummaryCard title="BP" data={bp} rate={calcRate(bpAdjusted, bp.target)} supportCost={bp.supportCost} />
-              <SummaryCard title="フリーランス" data={fl} rate={calcRate(flAdjusted, fl.target)} supportCost={fl.supportCost} />
-              <SummaryCard title="協業" data={co} rate={calcRate(coAdjusted, co.target)} supportCost={co.supportCost} />
+              <SummaryCard title="全体" data={total} rate={calcRate(totalAdjusted, total.target)} isTotal countInfo={affiliationProgress["全体"]} />
+              <SummaryCard title="プロパー" data={proper} rate={calcRate(properAdjusted, proper.target)} standby={proper.standby} standbyCost={proper.standbyCost} countInfo={affiliationProgress["プロパー"]} />
+              <SummaryCard title="BP" data={bp} rate={calcRate(bpAdjusted, bp.target)} supportCost={bp.supportCost} countInfo={affiliationProgress["BP"]} />
+              <SummaryCard title="フリーランス" data={fl} rate={calcRate(flAdjusted, fl.target)} supportCost={fl.supportCost} countInfo={affiliationProgress["フリーランス"]} />
+              <SummaryCard title="協業" data={co} rate={calcRate(coAdjusted, co.target)} supportCost={co.supportCost} countInfo={affiliationProgress["協業"]} />
             </div>
 
             {/* 前日営業活動成績（件数5カード + 金額2カード） */}

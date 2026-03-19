@@ -7,7 +7,7 @@ import { STAFF_LIST, ACTIVITY_FIELDS, ACTIVITY_AMOUNT_FIELDS, JAPAN_HOLIDAYS } f
 import { parseNum, parseAmount, formatAmount, formatNumStr, calcRate, emptyData } from "../utils/numbers";
 import { dateKey, parseDate, formatDateJP, isBusinessDay } from "../utils/dates";
 
-export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isMobile, currentStaffName, isAdmin, userRole = "C", subStaffName = null }: { allData: AllData; setAllData: React.Dispatch<React.SetStateAction<AllData>>; monthlyYM: string; setMonthlyYM: (v: string) => void; isMobile: boolean; currentStaffName: string | null; isAdmin: boolean; userRole?: "A" | "B" | "C" | "D"; subStaffName?: string | null }) {
+export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthlyYM, isMobile, currentStaffName, isAdmin, userRole = "C", subStaffName = null, onAffiliationProgress }: { allData: AllData; setAllData: React.Dispatch<React.SetStateAction<AllData>>; monthlyYM: string; setMonthlyYM: (v: string) => void; isMobile: boolean; currentStaffName: string | null; isAdmin: boolean; userRole?: "A" | "B" | "C" | "D"; subStaffName?: string | null; onAffiliationProgress?: (data: Record<string, { progress: number; target: number }>) => void }) {
   // 編集可能判定: admin/roleA は全員、一般ユーザーは自分の担当またはサブ担当のみ、D は不可
   const canEditStaff = (staff: string) => {
     if (userRole === "D") return false;
@@ -286,6 +286,40 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
     const isRed = dow === 0 || dow === 6 || !!holiday;
     return { d, key, dow, holiday, isRed, dowLabel: DOW[dow] };
   });
+
+  // 所属別稼働進捗を親コンポーネントに通知
+  useEffect(() => {
+    if (!onAffiliationProgress) return;
+    const caSubs = ["プロパー", "BP", "フリーランス", "協業"];
+    const result: Record<string, { progress: number; target: number }> = {};
+    let totalProgress = 0, totalTarget = 0;
+    caSubs.forEach(sub => {
+      const progress = STAFF_LIST.reduce((sum, s) => {
+        // 月間CA件数
+        const monthCount = days.reduce((daySum, day) => {
+          const dayData = allData[day.key];
+          if (!dayData || !Array.isArray(dayData.staffActivities)) return daySum;
+          const entry = dayData.staffActivities.find((st: any) => st.staff === s);
+          if (!entry) return daySum;
+          const entries = (entry as any).caEntries || [];
+          return daySum + entries.filter((e: any) => e.affiliation === sub).length;
+        }, 0);
+        // 繰越件数
+        const carryKey = `countCarryover-ordersCA_${sub}-${monthlyYM}`;
+        const carry = countCarryovers[carryKey]?.[s] || 0;
+        return sum + monthCount + carry;
+      }, 0);
+      const target = STAFF_LIST.reduce((sum, s) => {
+        const key = `countTarget-ordersCA_${sub}-${monthlyYM}`;
+        return sum + (countTargets[key]?.[s] || 0);
+      }, 0);
+      result[sub] = { progress, target };
+      totalProgress += progress;
+      totalTarget += target;
+    });
+    result["全体"] = { progress: totalProgress, target: totalTarget };
+    onAffiliationProgress(result);
+  }, [allData, monthlyYM, countTargets, countCarryovers, onAffiliationProgress]);
 
   // 各担当×各日×各指標のデータを集計
   const getStaffDayValue = (staff: string, dayKey: string, field: keyof StaffActivity | string): number => {

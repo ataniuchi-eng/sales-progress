@@ -5,9 +5,10 @@ import { formatYen } from "../../utils/numbers";
 import { DonutChart } from "../ui/DonutChart";
 import { Row } from "../ui/Row";
 
-export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, supportCost }: {
+export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, supportCost, countInfo }: {
   title: string; data: { target: number; progress: number; forecast: number };
   rate: number; isTotal?: boolean; standby?: number; standbyCost?: number; supportCost?: number;
+  countInfo?: { progress: number; target: number };
 }) {
   const { t: tc } = useTheme();
   const bg = isTotal ? "linear-gradient(135deg, #0c4a6e, #0284c7)" : tc.bgCard;
@@ -20,7 +21,14 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
   const trackColor = isTotal ? "rgba(255,255,255,0.15)" : tc.border;
   return (
     <div style={{ background: bg, borderRadius: 14, padding: "20px 16px", boxShadow: tc.shadow, color }}>
-      <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, paddingBottom: 6, borderBottom: `1px solid ${trackColor}` }}>{title}</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, paddingBottom: 6, borderBottom: `1px solid ${trackColor}` }}>
+        <span style={{ fontSize: 16, fontWeight: 700 }}>{title}</span>
+        {countInfo && countInfo.target > 0 && (
+          <span style={{ fontSize: 13, fontWeight: 700, color: isTotal ? "#4cc9f0" : tc.accentText }}>
+            {countInfo.progress}<span style={{ fontSize: 11, fontWeight: 400, color: labelColor }}>/{countInfo.target}</span>
+          </span>
+        )}
+      </div>
       <Row label="予算" value={formatYen(data.target)} labelColor={labelColor} valueColor={isTotal ? "#fff" : tc.textPrimary} />
       <Row label="現在粗利" value={formatYen(data.progress)} labelColor={labelColor} valueColor={isTotal ? "#4cc9f0" : tc.accentText} />
       {standbyCost !== undefined && <Row label="待機費用" value={formatYen(standbyCost)} labelColor={labelColor} valueColor={isTotal ? "#ffb3b3" : "#e74c3c"} />}
