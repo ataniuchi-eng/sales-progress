@@ -484,7 +484,7 @@ export default function DashboardPage() {
         // 営業活動は日次入力のため常に空で開始（非管理者は自分の担当名で初期化）
         setStaffActivities([{ staff: currentStaffName || "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [], raPriceUpCount: 0, caPriceUpCount: 0, raPriceUpEntries: [], caPriceUpEntries: [] } as StaffActivity]);
       } else {
-        setInp({ properTarget: "", properForecast: "", properStandby: "", bpTarget: "", bpForecast: "", flTarget: "", flForecast: "", coTarget: "", coForecast: "" });
+        setInp({ properTarget: "", properForecast: "", properStandby: "", properStandbyCost: "", bpTarget: "", bpForecast: "", bpSupportCost: "", flTarget: "", flForecast: "", flSupportCost: "", coTarget: "", coForecast: "", coSupportCost: "" });
         setFocusPeople([{ name: "", affiliation: "プロパー", cost: 0, staff: (!isAdmin && currentStaffName) ? currentStaffName : "", position: "", skill: "" }]);
         setFocusProjects([{ company: "", title: "", price: 0, contract: "派遣", staff: (!isAdmin && currentStaffName) ? currentStaffName : "", position: "", location: "" }]);
         setAnnouncements([""]);
