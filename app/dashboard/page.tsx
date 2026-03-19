@@ -1185,8 +1185,8 @@ export default function DashboardPage() {
                         <InputGroup title="プロパー" fields={[
                           { label: "予算", value: inp.properTarget, key: "properTarget" },
                           { label: "見込", value: inp.properForecast, key: "properForecast" },
-                          { label: "待機（人数）", value: inp.properStandby, key: "properStandby" },
                           { label: "待機費用", value: inp.properStandbyCost, key: "properStandbyCost" },
+                          { label: "待機（人数）", value: inp.properStandby, key: "properStandby" },
                         ]} onChange={handleNumInput} />
                         <InputGroup title="BP" fields={[
                           { label: "予算", value: inp.bpTarget, key: "bpTarget" },
