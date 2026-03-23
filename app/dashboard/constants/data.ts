@@ -52,8 +52,8 @@ export type ActivityAmountFieldType = {
 };
 
 export const ACTIVITY_AMOUNT_FIELDS: ActivityAmountFieldType[] = [
-  { key: "amountRA", label: "RA受注金額", rankLabel: "今月RA受注", tableLabel: "RA粗利", color: "#e74c3c" },
-  { key: "amountCA", label: "CA受注金額", rankLabel: "今月CA受注", tableLabel: "CA粗利", color: "#9b59b6" },
+  { key: "amountRA", label: "RA受注金額", rankLabel: "今月RA粗利", tableLabel: "RA粗利", color: "#e74c3c" },
+  { key: "amountCA", label: "CA受注金額", rankLabel: "今月CA粗利", tableLabel: "CA粗利", color: "#9b59b6" },
 ];
 
 // ===== 勤務場所リスト =====
