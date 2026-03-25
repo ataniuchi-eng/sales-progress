@@ -31,7 +31,17 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
   };
   const { theme, t: tc } = useTheme();
   const [monthlyMode, setMonthlyMode] = useState<"count" | "amount" | "other">("amount");
-  const [sortState, setSortState] = useState<Record<string, "asc" | "desc" | "none">>({});
+  const [sortState, setSortState] = useState<Record<string, "asc" | "desc" | "none">>({
+    // 金額タブ: 達成率降順
+    amountRA_rate: "desc",
+    amountCA_rate: "desc",
+    // 件数タブ: 達成率降順（面談設定数は日次のため達成率なし→月計降順）
+    ordersRA_cRate: "desc",
+    ordersCA_cRate: "desc",
+    interviewSetups_cMonth: "desc",
+    interviewsConducted_cRate: "desc",
+    appointmentAcquisitions_cRate: "desc",
+  });
   const [budgets, setBudgets] = useState<Record<string, Record<string, number>>>({});
   const [carryovers, setCarryovers] = useState<Record<string, Record<string, number>>>({});
   const [countTargets, setCountTargets] = useState<Record<string, Record<string, number>>>({});
