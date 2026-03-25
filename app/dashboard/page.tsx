@@ -445,15 +445,12 @@ export default function DashboardPage() {
           const own = allActs.filter((s: StaffActivity) => s.staff === currentStaffName || s.staff === subStaffName);
           const emptyRow = (name: string): StaffActivity => ({ staff: name, interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [], raPriceUpCount: 0, caPriceUpCount: 0, raPriceUpEntries: [], caPriceUpEntries: [] });
           if (subStaffName) {
-            // サブ担当がいる場合: 各担当2行ずつ（計4行）
+            // サブ担当がいる場合: 各担当1行ずつ（計2行）
             const mainRows = own.filter(s => s.staff === currentStaffName);
             const subRows = own.filter(s => s.staff === subStaffName);
-            const ensureTwo = (rows: StaffActivity[], name: string) => {
-              if (rows.length >= 2) return rows.slice(0, 2);
-              if (rows.length === 1) return [rows[0], emptyRow(name)];
-              return [emptyRow(name), emptyRow(name)];
-            };
-            setStaffActivities([...ensureTwo(mainRows, currentStaffName), ...ensureTwo(subRows, subStaffName)]);
+            const mainRow = mainRows.length > 0 ? mainRows[0] : emptyRow(currentStaffName);
+            const subRow = subRows.length > 0 ? subRows[0] : emptyRow(subStaffName);
+            setStaffActivities([mainRow, subRow]);
           } else {
             setStaffActivities(own.length > 0 ? own : [emptyRow(currentStaffName)]);
           }
@@ -499,7 +496,7 @@ export default function DashboardPage() {
         {
           const emptyAct = (name: string): StaffActivity => ({ staff: name, interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [], raPriceUpCount: 0, caPriceUpCount: 0, raPriceUpEntries: [], caPriceUpEntries: [] });
           if (subStaffName && currentStaffName) {
-            setStaffActivities([emptyAct(currentStaffName), emptyAct(currentStaffName), emptyAct(subStaffName), emptyAct(subStaffName)]);
+            setStaffActivities([emptyAct(currentStaffName), emptyAct(subStaffName)]);
           } else {
             setStaffActivities([emptyAct(currentStaffName || "")]);
           }
@@ -515,7 +512,7 @@ export default function DashboardPage() {
         {
           const emptyAct2 = (name: string): StaffActivity => ({ staff: name, interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [], raPriceUpCount: 0, caPriceUpCount: 0, raPriceUpEntries: [], caPriceUpEntries: [] });
           if (subStaffName && currentStaffName) {
-            setStaffActivities([emptyAct2(currentStaffName), emptyAct2(currentStaffName), emptyAct2(subStaffName), emptyAct2(subStaffName)]);
+            setStaffActivities([emptyAct2(currentStaffName), emptyAct2(subStaffName)]);
           } else {
             setStaffActivities([emptyAct2(currentStaffName || "")]);
           }
@@ -763,7 +760,7 @@ export default function DashboardPage() {
                   </div>
                 )}
                 {dailyQuote && (
-                  <div style={{ fontSize: 10, color: "#888", marginBottom: 10, lineHeight: 1.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingBottom: 10, borderBottom: "1px solid #eee" }} title={dailyQuote}>
+                  <div style={{ fontSize: 10, color: "#888", marginBottom: 10, lineHeight: 1.5, wordBreak: "break-word", whiteSpace: "normal", paddingBottom: 10, borderBottom: "1px solid #eee" }}>
                     💡 {dailyQuote}
                   </div>
                 )}
