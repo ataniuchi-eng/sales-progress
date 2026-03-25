@@ -1371,7 +1371,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                 <th style={{ ...headerCellStyle, position: "sticky", left: 0, zIndex: 4, minWidth: 70 }}>担当</th>
                 {isCATable && !caAmountTotalOnly && <th style={{ ...headerCellStyle, minWidth: 70 }}>所属</th>}
                 <th style={{ ...headerCellStyle, background: hdrYellow, minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortBudget}>
-                  予算 {sortIcon(currentSortBudget)}
+                  目標 {sortIcon(currentSortBudget)}
                 </th>
                 <th style={{ ...headerCellStyle, background: hdrBlueAlt, minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortProgress}>
                   進捗 {sortIcon(currentSortProgress)}

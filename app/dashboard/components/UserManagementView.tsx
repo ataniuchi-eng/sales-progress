@@ -8,15 +8,15 @@ type UserRole = "A" | "B" | "C" | "D";
 
 const ROLE_LABELS: Record<UserRole, string> = {
   A: "A（管理者相当）",
-  B: "B（予算入力可）",
-  C: "C（予算入力不可）",
+  B: "B（目標入力可）",
+  C: "C（目標入力不可）",
   D: "D（閲覧専用）",
 };
 
 const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
   A: "全担当の全操作が可能",
-  B: "自担当のみ編集可、予算は全担当入力可",
-  C: "自担当のみ編集可、予算入力は不可",
+  B: "自担当のみ編集可、目標は全担当入力可",
+  C: "自担当のみ編集可、目標入力は不可",
   D: "閲覧のみ、全体連絡の入力のみ可",
 };
 

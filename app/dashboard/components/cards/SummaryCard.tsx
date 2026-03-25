@@ -30,7 +30,7 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
           </span>
         )}
       </div>
-      <Row label="予算" value={formatYen(data.target)} labelColor={labelColor} valueColor={isTotal ? "#fff" : tc.textPrimary} />
+      <Row label="目標" value={formatYen(data.target)} labelColor={labelColor} valueColor={isTotal ? "#fff" : tc.textPrimary} />
       {grossProfitTotal !== undefined ? (
         <Row label="粗利計" value={formatYen(grossProfitTotal)} labelColor={labelColor} valueColor={isTotal ? "#4cc9f0" : tc.accentText} />
       ) : (

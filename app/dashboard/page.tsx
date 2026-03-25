@@ -443,7 +443,20 @@ export default function DashboardPage() {
         // 非管理者は自分の担当行のみ、管理者は全行
         if (!isAdmin && currentStaffName) {
           const own = allActs.filter((s: StaffActivity) => s.staff === currentStaffName || s.staff === subStaffName);
-          setStaffActivities(own.length > 0 ? own : [{ staff: currentStaffName, interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [], raPriceUpCount: 0, caPriceUpCount: 0, raPriceUpEntries: [], caPriceUpEntries: [] }]);
+          const emptyRow = (name: string): StaffActivity => ({ staff: name, interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [], raPriceUpCount: 0, caPriceUpCount: 0, raPriceUpEntries: [], caPriceUpEntries: [] });
+          if (subStaffName) {
+            // サブ担当がいる場合: 各担当2行ずつ（計4行）
+            const mainRows = own.filter(s => s.staff === currentStaffName);
+            const subRows = own.filter(s => s.staff === subStaffName);
+            const ensureTwo = (rows: StaffActivity[], name: string) => {
+              if (rows.length >= 2) return rows.slice(0, 2);
+              if (rows.length === 1) return [rows[0], emptyRow(name)];
+              return [emptyRow(name), emptyRow(name)];
+            };
+            setStaffActivities([...ensureTwo(mainRows, currentStaffName), ...ensureTwo(subRows, subStaffName)]);
+          } else {
+            setStaffActivities(own.length > 0 ? own : [emptyRow(currentStaffName)]);
+          }
         } else {
           setStaffActivities(allActs.length > 0 ? allActs : [{ staff: "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [], raPriceUpCount: 0, caPriceUpCount: 0, raPriceUpEntries: [], caPriceUpEntries: [] }]);
         }
@@ -483,7 +496,14 @@ export default function DashboardPage() {
         setRaAcqCompanies(ra.acquisitionCompanies?.length ? ra.acquisitionCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
         setRaJoinCompanies(ra.joinCompanies?.length ? ra.joinCompanies.map(c => ({ ...c, staff: c.staff || "" })) : [{ name: "", staff: "" }]);
         // 営業活動は日次入力のため常に空で開始（非管理者は自分の担当名で初期化）
-        setStaffActivities([{ staff: currentStaffName || "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [], raPriceUpCount: 0, caPriceUpCount: 0, raPriceUpEntries: [], caPriceUpEntries: [] } as StaffActivity]);
+        {
+          const emptyAct = (name: string): StaffActivity => ({ staff: name, interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [], raPriceUpCount: 0, caPriceUpCount: 0, raPriceUpEntries: [], caPriceUpEntries: [] });
+          if (subStaffName && currentStaffName) {
+            setStaffActivities([emptyAct(currentStaffName), emptyAct(currentStaffName), emptyAct(subStaffName), emptyAct(subStaffName)]);
+          } else {
+            setStaffActivities([emptyAct(currentStaffName || "")]);
+          }
+        }
       } else {
         setInp({ properTarget: "", properForecast: "", properStandby: "", properStandbyCost: "", bpTarget: "", bpForecast: "", bpSupportCost: "", flTarget: "", flForecast: "", flSupportCost: "", coTarget: "", coForecast: "", coSupportCost: "" });
         setFocusPeople([{ name: "", affiliation: "プロパー", cost: 0, staff: (!isAdmin && currentStaffName) ? currentStaffName : "", position: "", skill: "" }]);
@@ -492,7 +512,14 @@ export default function DashboardPage() {
         setRaInp({ acquisitionTarget: "", acquisitionProgress: "", joinTarget: "", joinProgress: "" });
         setRaAcqCompanies([{ name: "", staff: "" }]);
         setRaJoinCompanies([{ name: "", staff: "" }]);
-        setStaffActivities([{ staff: currentStaffName || "", interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [], raPriceUpCount: 0, caPriceUpCount: 0, raPriceUpEntries: [], caPriceUpEntries: [] } as StaffActivity]);
+        {
+          const emptyAct2 = (name: string): StaffActivity => ({ staff: name, interviewSetups: 0, interviewsConducted: 0, appointmentAcquisitions: 0, ordersRA: 0, ordersCA: 0, raEntries: [], caEntries: [], raPriceUpCount: 0, caPriceUpCount: 0, raPriceUpEntries: [], caPriceUpEntries: [] });
+          if (subStaffName && currentStaffName) {
+            setStaffActivities([emptyAct2(currentStaffName), emptyAct2(currentStaffName), emptyAct2(subStaffName), emptyAct2(subStaffName)]);
+          } else {
+            setStaffActivities([emptyAct2(currentStaffName || "")]);
+          }
+        }
       }
     }
   };
@@ -970,8 +997,6 @@ export default function DashboardPage() {
                   <div key={`count-${i}`} className="focus-row-flex" style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8, padding: "10px 12px", background: "#f8f9fa", borderRadius: 8, flexWrap: isMobile ? "wrap" : "nowrap", opacity: canEditRow ? 1 : 0.5 }}>
                     <FieldWrap label="担当" className="fw-select" w={120}>{isAdmin ? (
                       <select value={s.staff} onChange={(e) => { const a = [...staffActivities]; a[i] = { ...a[i], staff: e.target.value }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{STAFF_LIST.map(n => <option key={n}>{n}</option>)}</select>
-                    ) : subStaffName ? (
-                      <select value={effectiveStaff} onChange={(e) => { if (!canEditRow) return; const a = [...staffActivities]; a[i] = { ...a[i], staff: e.target.value }; setStaffActivities(a); }} style={focusSelectStyle}><option value={currentStaffName || ""}>{currentStaffName}</option><option value={subStaffName}>{subStaffName}</option></select>
                     ) : (
                       <div style={{ ...focusSelectStyle, background: tc.bgSection, display: "flex", alignItems: "center", fontWeight: 700 }}>{effectiveStaff || currentStaffName || ""}</div>
                     )}</FieldWrap>
@@ -1176,7 +1201,7 @@ export default function DashboardPage() {
                   <div onClick={() => setSectionSalesOpen(!sectionSalesOpen)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "linear-gradient(135deg, #1a1a2e, #16213e)", borderRadius: sectionSalesOpen ? "0" : "0 0 10px 10px", cursor: "pointer", userSelect: "none" as const }}>
                     <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-                      予算・見込 <span style={{ fontSize: 12, color: "#ff4444", fontWeight: 600 }}>※追加・更新は本日日付選択後、保存</span>
+                      目標・見込 <span style={{ fontSize: 12, color: "#ff4444", fontWeight: 600 }}>※追加・更新は本日日付選択後、保存</span>
                     </h2>
                     <span style={{ fontSize: 18, color: "#fff", transform: sectionSalesOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
                   </div>
@@ -1184,23 +1209,23 @@ export default function DashboardPage() {
                     <div style={{ padding: "16px", background: tc.bgSection, borderRadius: "0 0 10px 10px", border: "1px solid " + tc.border, borderTop: "none" }}>
                       <div className="input-4col" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 16 }}>
                         <InputGroup title="プロパー" fields={[
-                          { label: "予算", value: inp.properTarget, key: "properTarget" },
+                          { label: "目標", value: inp.properTarget, key: "properTarget" },
                           { label: "見込", value: inp.properForecast, key: "properForecast" },
                           { label: "待機費用", value: inp.properStandbyCost, key: "properStandbyCost" },
                           { label: "待機（人数）", value: inp.properStandby, key: "properStandby" },
                         ]} onChange={handleNumInput} />
                         <InputGroup title="BP" fields={[
-                          { label: "予算", value: inp.bpTarget, key: "bpTarget" },
+                          { label: "目標", value: inp.bpTarget, key: "bpTarget" },
                           { label: "見込", value: inp.bpForecast, key: "bpForecast" },
                           { label: "支援費等", value: inp.bpSupportCost, key: "bpSupportCost" },
                         ]} onChange={handleNumInput} />
                         <InputGroup title="フリーランス" fields={[
-                          { label: "予算", value: inp.flTarget, key: "flTarget" },
+                          { label: "目標", value: inp.flTarget, key: "flTarget" },
                           { label: "見込", value: inp.flForecast, key: "flForecast" },
                           { label: "支援費等", value: inp.flSupportCost, key: "flSupportCost" },
                         ]} onChange={handleNumInput} />
                         <InputGroup title="協業" fields={[
-                          { label: "予算", value: inp.coTarget, key: "coTarget" },
+                          { label: "目標", value: inp.coTarget, key: "coTarget" },
                           { label: "見込", value: inp.coForecast, key: "coForecast" },
                           { label: "支援費等", value: inp.coSupportCost, key: "coSupportCost" },
                         ]} onChange={handleNumInput} />
@@ -1210,7 +1235,7 @@ export default function DashboardPage() {
                           width: "100%", padding: "14px 24px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
                           border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: savingSection === "budget" ? "not-allowed" : "pointer", opacity: savingSection === "budget" ? 0.7 : 1,
                         }}>
-                          {savingSection === "budget" ? "保存中..." : "予算・見込を保存"}
+                          {savingSection === "budget" ? "保存中..." : "目標・見込を保存"}
                         </button>
                       </div>
                     </div>
