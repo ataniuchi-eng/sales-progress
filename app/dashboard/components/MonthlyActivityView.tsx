@@ -298,6 +298,15 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
     return { d, key, dow, holiday, isRed, dowLabel: DOW[dow] };
   });
 
+  // 今月の経過営業日数を算出（当月なら今日まで、過去月なら月末まで）
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${("0" + (today.getMonth() + 1)).slice(-2)}-${("0" + today.getDate()).slice(-2)}`;
+  const isCurrentMonth = ymYear === today.getFullYear() && ymMonth === today.getMonth() + 1;
+  const businessDaysElapsed = days.filter(day => {
+    if (isCurrentMonth && day.key > todayStr) return false;
+    return isBusinessDay(day.key);
+  }).length;
+
   // 所属別稼働進捗を親コンポーネントに通知
   useEffect(() => {
     if (!onAffiliationProgress) return;
@@ -599,7 +608,10 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
               <div key={af.key} style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{af.label}</h3>
-                  <span style={{ fontSize: 18, fontWeight: 700, color: af.color }}>{getMonthGrandTotal(af.key)}</span>
+                  <div style={{ textAlign: "right" }}>
+                    <span style={{ fontSize: 18, fontWeight: 700, color: af.color }}>{getMonthGrandTotal(af.key)}</span>
+                    {businessDaysElapsed > 0 && <div style={{ fontSize: 10, color: tc.textMuted, marginTop: 2 }}>{(getMonthGrandTotal(af.key) / businessDaysElapsed).toFixed(1)}件／日</div>}
+                  </div>
                 </div>
                 {ranked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
                   ranked.map((r, i) => (
