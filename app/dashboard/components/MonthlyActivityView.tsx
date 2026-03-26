@@ -474,7 +474,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
 
   // 月間の企業別集計（RA受注+RA単価UPのrevenue/amountを企業ごとに集計）
   const getMonthlyCompanyAggregates = () => {
-    const companyMap: Record<string, { revenue: number; profit: number }> = {};
+    const companyMap: Record<string, { revenue: number; profit: number; orderCount: number; priceUpCount: number }> = {};
     days.forEach(day => {
       const dayData = allData[day.key];
       if (!dayData || !Array.isArray(dayData.staffActivities)) return;
@@ -483,24 +483,27 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
         const entries = s.raEntries || [];
         entries.forEach((e: any) => {
           if (e.company) {
-            if (!companyMap[e.company]) companyMap[e.company] = { revenue: 0, profit: 0 };
+            if (!companyMap[e.company]) companyMap[e.company] = { revenue: 0, profit: 0, orderCount: 0, priceUpCount: 0 };
             companyMap[e.company].revenue += (e.revenue || 0);
             companyMap[e.company].profit += (e.amount || 0);
+            companyMap[e.company].orderCount += 1;
           }
         });
         // RA単価UP分も加算
         const raPUEntries = s.raPriceUpEntries || [];
         raPUEntries.forEach((e: any) => {
           if (e.company) {
-            if (!companyMap[e.company]) companyMap[e.company] = { revenue: 0, profit: 0 };
+            if (!companyMap[e.company]) companyMap[e.company] = { revenue: 0, profit: 0, orderCount: 0, priceUpCount: 0 };
             companyMap[e.company].revenue += (e.revenue || 0);
             companyMap[e.company].profit += (e.amount || 0);
+            companyMap[e.company].priceUpCount += 1;
           }
         });
       });
     });
     const all = Object.entries(companyMap).map(([company, data]) => ({
       company, revenue: Math.round(data.revenue * 10) / 10, profit: Math.round(data.profit * 10) / 10,
+      orderCount: data.orderCount, priceUpCount: data.priceUpCount,
     }));
     const byRevenue = [...all].filter(c => c.revenue > 0).sort((a, b) => b.revenue - a.revenue);
     const byProfit = [...all].filter(c => c.profit > 0).sort((a, b) => b.profit - a.profit);
@@ -638,13 +641,18 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
         const medals = ["🥇", "🥈", "🥉"];
         const totalRevenue = Math.round(byRevenue.reduce((sum, c) => sum + c.revenue, 0) * 10) / 10;
         const totalProfit = Math.round(byProfit.reduce((sum, c) => sum + c.profit, 0) * 10) / 10;
-        const renderCard = (title: string, allRanked: { company: string; revenue: number; profit: number }[], total: number, color: string, valueKey: "revenue" | "profit", showAll: boolean, setShowAll: (v: boolean) => void) => {
+        const totalOrderCount = byRevenue.reduce((sum, c) => sum + c.orderCount, 0);
+        const totalPriceUpCount = byRevenue.reduce((sum, c) => sum + c.priceUpCount, 0);
+        const renderCard = (title: string, allRanked: { company: string; revenue: number; profit: number; orderCount: number; priceUpCount: number }[], total: number, color: string, valueKey: "revenue" | "profit", showAll: boolean, setShowAll: (v: boolean) => void) => {
           const ranked = showAll ? allRanked : allRanked.slice(0, 5);
           return (
           <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, borderTop: `3px solid ${color}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{title}</h3>
-              <span style={{ fontSize: 18, fontWeight: 700, color }}>{total > 0 ? fmtAmount(total) : "0"}万円</span>
+              <div style={{ textAlign: "right" }}>
+                <span style={{ fontSize: 18, fontWeight: 700, color }}>{total > 0 ? fmtAmount(total) : "0"}<span style={{ fontSize: 13 }}>万円</span></span>
+                <div style={{ fontSize: 10, color: tc.textMuted, marginTop: 1 }}>（受：{totalOrderCount}件　単UP：{totalPriceUpCount}件）</div>
+              </div>
             </div>
             {ranked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
               ranked.map((r, i) => (
@@ -654,7 +662,10 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                       {i < 3 ? <span style={{ fontSize: 16, flexShrink: 0 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center", flexShrink: 0 }}>{i + 1}</span>}
                       <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.company}</span>
                     </div>
-                    <span style={{ fontSize: 15, fontWeight: 700, color, flexShrink: 0, marginLeft: 8 }}>{fmtAmount(r[valueKey])}万円</span>
+                    <div style={{ flexShrink: 0, marginLeft: 8, textAlign: "right" }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color, display: "inline-block", minWidth: 90, textAlign: "right" }}>{fmtAmount(r[valueKey])}<span style={{ fontSize: 11 }}>万円</span></span>
+                      <span style={{ fontSize: 9, color: tc.textMuted, marginLeft: 4 }}>（受：{r.orderCount}件 単UP：{r.priceUpCount}件）</span>
+                    </div>
                   </div>
                 </div>
               ))
