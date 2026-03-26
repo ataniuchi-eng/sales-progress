@@ -238,7 +238,15 @@ export default function DashboardPage() {
   // 初回ロード時のみ当日データを前営業日から継承（1回だけ実行）
   const inheritOnce = useCallback(async (targetKey: string, currentAllData: AllData) => {
     const existing = currentAllData[targetKey];
-    if (existing && !isDataEmpty(existing)) return; // 既にデータがあれば何もしない
+    // RAデータが既にあるか判定
+    const hasRA = existing?.ra && (
+      (existing.ra.acquisitionTarget || 0) > 0 || (existing.ra.acquisitionProgress || 0) > 0
+      || (existing.ra.joinTarget || 0) > 0 || (existing.ra.joinProgress || 0) > 0
+      || (existing.ra.acquisitionCompanies?.length || 0) > 0
+      || (existing.ra.joinCompanies?.length || 0) > 0
+    );
+    // 既にデータがあり、かつRAも揃っていれば何もしない
+    if (existing && !isDataEmpty(existing) && hasRA) return;
     // 前営業日から遡って最新の実データを探す
     const prevBizDay = getPrevBusinessDay(targetKey);
     let prevData: DayData | null = null;
@@ -250,6 +258,21 @@ export default function DashboardPage() {
       }
     }
     if (!prevData) return;
+    // 既にデータがある場合（RAだけ欠けている）はRAのみ補完
+    if (existing && !isDataEmpty(existing) && !hasRA) {
+      const merged: DayData = JSON.parse(JSON.stringify(existing));
+      if (prevData.ra) {
+        merged.ra = JSON.parse(JSON.stringify(prevData.ra));
+      }
+      try {
+        const res = await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dateKey: targetKey, data: merged }) });
+        if (res.ok) {
+          setAllData((prev) => ({ ...prev, [targetKey]: merged }));
+        }
+      } catch { /* サイレント */ }
+      return;
+    }
+    // 完全に空の場合：全データを継承（営業活動は除く）
     const merged: DayData = JSON.parse(JSON.stringify(prevData));
     merged.staffActivities = []; // 営業活動は日次入力のため継承しない
     if (existing) {
@@ -276,9 +299,17 @@ export default function DashboardPage() {
       .then((data) => {
         if (data) {
           setAllData(data);
-          // 初回ロード時のみ：当日データがなければ前営業日から継承してDBに保存
+          // 初回ロード時のみ：当日データがないか、RAデータが欠けていれば前営業日から継承
           const today = todayKey();
-          if (!data[today] || isDataEmpty(data[today])) {
+          const todayData = data[today];
+          const todayRA = todayData?.ra;
+          const hasRAData = todayRA && (
+            (todayRA.acquisitionTarget || 0) > 0 || (todayRA.acquisitionProgress || 0) > 0
+            || (todayRA.joinTarget || 0) > 0 || (todayRA.joinProgress || 0) > 0
+            || (todayRA.acquisitionCompanies?.length || 0) > 0
+            || (todayRA.joinCompanies?.length || 0) > 0
+          );
+          if (!todayData || isDataEmpty(todayData) || !hasRAData) {
             inheritOnce(today, data);
           }
         }
