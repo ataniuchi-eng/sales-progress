@@ -35,10 +35,10 @@ export type ActivityFieldType = {
 };
 
 export const ACTIVITY_FIELDS: ActivityFieldType[] = [
-  { key: "ordersRA", label: "RA受注数", color: "#e74c3c", targetType: "monthly" },
-  { key: "ordersCA", label: "CA受注数", color: "#9b59b6", targetType: "monthly" },
   { key: "interviewSetups", label: "面談設定数", color: "#0077b6", targetType: "daily" },
   { key: "interviewsConducted", label: "面談実施数", color: "#e67e22", targetType: "monthly" },
+  { key: "ordersRA", label: "RA受注数", color: "#e74c3c", targetType: "monthly" },
+  { key: "ordersCA", label: "CA受注数", color: "#9b59b6", targetType: "monthly" },
   { key: "appointmentAcquisitions", label: "RA開拓アポ獲得", color: "#2ecc71", targetType: "monthly" },
 ];
 

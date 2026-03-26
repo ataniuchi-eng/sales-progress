@@ -39,7 +39,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
     ordersRA_cRate: "desc",
     ordersCA_cRate: "desc",
     interviewSetups_cMonth: "desc",
-    interviewsConducted_cRate: "desc",
+    interviewsConducted_cMonth: "desc",
     appointmentAcquisitions_cRate: "desc",
   });
   const [budgets, setBudgets] = useState<Record<string, Record<string, number>>>({});
@@ -802,7 +802,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
       )}
 
       {/* 各指標ごとにテーブル（件数）— 面談設定数を先頭に */}
-      {monthlyMode === "count" && [...ACTIVITY_FIELDS].sort((a, b) => a.targetType === "daily" ? -1 : b.targetType === "daily" ? 1 : 0).map(af => {
+      {monthlyMode === "count" && ACTIVITY_FIELDS.map(af => {
         const isDaily = af.targetType === "daily";
         const sortKeyMonth = af.key + "_cMonth";
         const sortKeyTarget = af.key + "_cTarget";
