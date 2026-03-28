@@ -73,7 +73,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
   const [miscItems, setMiscItems] = useState<{ staff: string; content: string; deadline: string; status: string; createdAt: string }[]>([]);
   const [miscInput, setMiscInput] = useState<{ staff: string; content: string; deadline: string; status: string }>({ staff: "", content: "", deadline: "", status: "" });
   const [miscSortKey, setMiscSortKey] = useState<"staff" | "status">("status");
-  const [miscSortDir, setMiscSortDir] = useState<"asc" | "desc">("desc");
+  const [miscSortDir, setMiscSortDir] = useState<"asc" | "desc">("asc");
   const [ymYear, ymMonth] = monthlyYM.split("-").map(Number);
   const daysInMonth = new Date(ymYear, ymMonth, 0).getDate();
   const DOW = ["日", "月", "火", "水", "木", "金", "土"];
