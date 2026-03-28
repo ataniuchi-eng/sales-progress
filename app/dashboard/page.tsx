@@ -397,7 +397,7 @@ export default function DashboardPage() {
   };
   const totalAdjusted = properAdjusted + bpAdjusted + flAdjusted + coAdjusted;
 
-  // 所属別 企業粗利ランキング集計
+  // 所属別 企業粗利ランキング集計（RA受注ベース）
   const getCompanyProfitByAffiliation = useCallback((affiliation: string): { company: string; profit: number }[] => {
     const ym = selectedDate.substring(0, 7);
     const [y, m] = ym.split("-").map(Number);
@@ -408,12 +408,12 @@ export default function DashboardPage() {
       const dayData = allData[dk];
       if (!dayData || !Array.isArray(dayData.staffActivities)) continue;
       dayData.staffActivities.forEach((s: any) => {
-        (s.caEntries || []).forEach((e: any) => {
+        (s.raEntries || []).forEach((e: any) => {
           if (e.affiliation === affiliation && e.company) {
             compMap[e.company] = (compMap[e.company] || 0) + (e.amount || 0);
           }
         });
-        (s.caPriceUpEntries || []).forEach((e: any) => {
+        (s.raPriceUpEntries || []).forEach((e: any) => {
           if (e.affiliation === affiliation && e.company) {
             compMap[e.company] = (compMap[e.company] || 0) + (e.amount || 0);
           }
@@ -426,7 +426,7 @@ export default function DashboardPage() {
       .sort((a, b) => b.profit - a.profit);
   }, [allData, selectedDate]);
 
-  // 全体用：全所属の企業粗利ランキング
+  // 全体用：全所属の企業粗利ランキング（RA受注ベース）
   const getCompanyProfitAll = useCallback((): { company: string; profit: number }[] => {
     const ym = selectedDate.substring(0, 7);
     const [y, m] = ym.split("-").map(Number);
@@ -437,10 +437,10 @@ export default function DashboardPage() {
       const dayData = allData[dk];
       if (!dayData || !Array.isArray(dayData.staffActivities)) continue;
       dayData.staffActivities.forEach((s: any) => {
-        (s.caEntries || []).forEach((e: any) => {
+        (s.raEntries || []).forEach((e: any) => {
           if (e.company) compMap[e.company] = (compMap[e.company] || 0) + (e.amount || 0);
         });
-        (s.caPriceUpEntries || []).forEach((e: any) => {
+        (s.raPriceUpEntries || []).forEach((e: any) => {
           if (e.company) compMap[e.company] = (compMap[e.company] || 0) + (e.amount || 0);
         });
       });
