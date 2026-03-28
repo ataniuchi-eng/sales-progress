@@ -13,7 +13,7 @@ export function RADisplay({ ra }: { ra: RAData }) {
   return (
     <div style={{ background: tc.bgCard, borderRadius: 14, padding: "20px 16px", boxShadow: tc.shadow, overflowX: "auto" }}>
       {!hasData ? <p style={{ color: tc.textDisabled, fontSize: 14 }}>未入力</p> : (
-        <div className="focus-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
           {/* 案件獲得 */}
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#0077b6", marginBottom: 10, paddingBottom: 6, borderBottom: "2px solid #e8f4fd" }}>案件獲得</div>

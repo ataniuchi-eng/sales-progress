@@ -958,20 +958,10 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* 金額エリア - ダークレッド/パープル */}
-            <div style={{ background: "linear-gradient(135deg, #2d1b2e, #1a1a2e)", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.15)", color: "#fff", marginBottom: 16 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f9a8d4", marginBottom: 14 }}>受注粗利（万円）</h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }} className="focus-grid">
-                <AmountRankCard title="RA受注粗利" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ra" color="#ff6b6b" darkMode />
-                <AmountRankCard title="CA受注粗利" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ca" color="#c084fc" darkMode />
-              </div>
-            </div>
-
-            {/* 単価UPエリア - ダークグリーン/ゴールド */}
+            {/* 金額エリア（受注粗利 + 単価UP横並び） - ダークパープル */}
             {(() => {
               const raPUData = dStaffActivities.filter(s => (s.raPriceUpEntries || []).length > 0);
               const caPUData = dStaffActivities.filter(s => (s.caPriceUpEntries || []).length > 0);
-              if (raPUData.length === 0 && caPUData.length === 0) return null;
               const fmtVal = (v: number) => `${Math.round(v * 10) / 10}万円`;
               const raRanked = raPUData.map(s => ({
                 staff: s.staff,
@@ -985,54 +975,38 @@ export default function DashboardPage() {
                 amount: (s.caPriceUpEntries || []).reduce((sum, e) => sum + (e.amount || 0), 0),
                 entries: s.caPriceUpEntries || [],
               })).sort((a, b) => b.count - a.count);
+              const hasPU = raPUData.length > 0 || caPUData.length > 0;
+              const renderPUCard = (puTitle: string, ranked: typeof raRanked, puColor: string, revLabel: string) => (
+                <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 10, padding: "16px 14px", borderLeft: `3px solid ${puColor}` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                    <h4 style={{ fontSize: 13, fontWeight: 700, color: puColor, margin: 0 }}>{puTitle}</h4>
+                    <span style={{ fontSize: 20, fontWeight: 800, color: puColor, lineHeight: 1 }}>{fmtVal(ranked.reduce((s, r) => s + r.amount, 0))}</span>
+                  </div>
+                  {ranked.length === 0 ? <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, margin: 0 }}>未入力</p> : ranked.map((r, i) => (
+                    <div key={i} style={{ padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>{r.staff}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{r.count}件</span>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: puColor }}>{fmtVal(r.amount)}</span>
+                        </div>
+                      </div>
+                      {r.entries.map((e, ei) => {
+                        const details = [e.company, e.affiliation, e.position].filter(Boolean).join(" / ");
+                        return details ? <div key={ei} style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 2, paddingLeft: 4 }}>{r.entries.length > 1 ? `${ei + 1}件目: ` : ""}{details} ({revLabel}{fmtVal(e.revenue || 0)}／粗利{fmtVal(e.amount || 0)})</div> : null;
+                      })}
+                    </div>
+                  ))}
+                </div>
+              );
               return (
-              <div style={{ background: "linear-gradient(135deg, #1a2e1a, #2d3a1a)", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.15)", color: "#fff", marginBottom: isMobile ? 16 : 24 }}>
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: "#fbbf24", marginBottom: 14 }}>単価UP（万円）</h3>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }} className="focus-grid">
-                  {/* RA単価UP */}
-                  <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 10, padding: "16px 14px", borderLeft: "3px solid #ff6b6b" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                      <h4 style={{ fontSize: 14, fontWeight: 700, color: "#ff6b6b", margin: 0 }}>RA単価UP</h4>
-                      <span style={{ fontSize: 20, fontWeight: 800, color: "#ff6b6b", lineHeight: 1 }}>{fmtVal(raRanked.reduce((s, r) => s + r.amount, 0))}</span>
-                    </div>
-                    {raRanked.length === 0 ? <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, margin: 0 }}>未入力</p> : raRanked.map((r, i) => (
-                      <div key={i} style={{ padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{r.staff}</span>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{r.count}件</span>
-                            <span style={{ fontSize: 14, fontWeight: 700, color: "#ff6b6b" }}>{fmtVal(r.amount)}</span>
-                          </div>
-                        </div>
-                        {r.entries.map((e, ei) => {
-                          const details = [e.company, e.affiliation, e.position].filter(Boolean).join(" / ");
-                          return details ? <div key={ei} style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 2, paddingLeft: 4 }}>{r.entries.length > 1 ? `${ei + 1}件目: ` : ""}{details} (売上{fmtVal(e.revenue || 0)}／粗利{fmtVal(e.amount || 0)})</div> : null;
-                        })}
-                      </div>
-                    ))}
-                  </div>
-                  {/* CA単価UP */}
-                  <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 10, padding: "16px 14px", borderLeft: "3px solid #c084fc" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                      <h4 style={{ fontSize: 14, fontWeight: 700, color: "#c084fc", margin: 0 }}>CA単価UP</h4>
-                      <span style={{ fontSize: 20, fontWeight: 800, color: "#c084fc", lineHeight: 1 }}>{fmtVal(caRanked.reduce((s, r) => s + r.amount, 0))}</span>
-                    </div>
-                    {caRanked.length === 0 ? <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, margin: 0 }}>未入力</p> : caRanked.map((r, i) => (
-                      <div key={i} style={{ padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{r.staff}</span>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{r.count}件</span>
-                            <span style={{ fontSize: 14, fontWeight: 700, color: "#c084fc" }}>{fmtVal(r.amount)}</span>
-                          </div>
-                        </div>
-                        {r.entries.map((e, ei) => {
-                          const details = [e.company, e.affiliation, e.position].filter(Boolean).join(" / ");
-                          return details ? <div key={ei} style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 2, paddingLeft: 4 }}>{r.entries.length > 1 ? `${ei + 1}件目: ` : ""}{details} (仕入{fmtVal(e.revenue || 0)}／粗利{fmtVal(e.amount || 0)})</div> : null;
-                        })}
-                      </div>
-                    ))}
-                  </div>
+              <div style={{ background: "linear-gradient(135deg, #2d1b2e, #1a1a2e)", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.15)", color: "#fff", marginBottom: isMobile ? 16 : 24 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f9a8d4", marginBottom: 14 }}>金額（万円）</h3>
+                <div style={{ display: "grid", gridTemplateColumns: hasPU ? "repeat(4, 1fr)" : "repeat(2, 1fr)", gap: 12 }} className="focus-grid">
+                  <AmountRankCard title="RA受注粗利" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ra" color="#ff6b6b" darkMode />
+                  <AmountRankCard title="CA受注粗利" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ca" color="#c084fc" darkMode />
+                  {hasPU && renderPUCard("RA単価UP", raRanked, "#ff6b6b", "売上")}
+                  {hasPU && renderPUCard("CA単価UP", caRanked, "#c084fc", "仕入")}
                 </div>
               </div>
               );
