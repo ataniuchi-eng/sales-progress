@@ -2046,7 +2046,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
           return `${d.getMonth() + 1}/${d.getDate()} ${("0" + d.getHours()).slice(-2)}:${("0" + d.getMinutes()).slice(-2)}`;
         };
         return (
-        <div style={{ maxWidth: 900 }}>
+        <div style={{ maxWidth: isMobile ? "100%" : 900 }}>
           {/* 入力欄（上） */}
           <div style={{ background: tc.bgCard, borderRadius: 14, padding: "20px", boxShadow: tc.shadow, marginBottom: 20 }}>
             <h3 style={{ fontSize: 15, fontWeight: 700, color: tc.textPrimary, margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8 }}>
@@ -2104,7 +2104,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
           </div>
 
           {/* 一覧（下） */}
-          <div style={{ background: tc.bgCard, borderRadius: 14, padding: "20px", boxShadow: tc.shadow }}>
+          <div style={{ background: tc.bgCard, borderRadius: 14, padding: isMobile ? "14px 10px" : "20px", boxShadow: tc.shadow }}>
             <h3 style={{ fontSize: 15, fontWeight: 700, color: tc.textHeading, margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#6c757d", display: "inline-block" }} />
               登録一覧
@@ -2113,7 +2113,8 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
             {miscItems.length === 0 ? (
               <p style={{ color: tc.textMuted, fontSize: 13, margin: 0 }}>データなし</p>
             ) : (
-              <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
+            <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+              <table style={{ borderCollapse: "collapse", width: "max-content", minWidth: "100%", fontSize: isMobile ? 12 : 13 }}>
                 <thead>
                   <tr>
                     <th style={{ padding: "8px 12px", textAlign: "left", borderBottom: "2px solid " + tc.border, fontWeight: 700, color: tc.textHeading, width: 80, cursor: "pointer", userSelect: "none" }}
@@ -2174,6 +2175,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                   })}
                 </tbody>
               </table>
+            </div>
             )}
           </div>
         </div>
