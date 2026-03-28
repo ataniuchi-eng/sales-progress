@@ -71,20 +71,23 @@ export default function DashboardPage() {
   const [staffActivities, setStaffActivities] = useState<StaffActivity[]>([]);
   const [affiliationProgress, setAffiliationProgress] = useState<Record<string, { progress: number; target: number }>>({});
 
-  // カスタム企業リスト（ユーザーが追加した企業）
-  const [customCompanies, setCustomCompanies] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("customCompanies");
-      return saved ? JSON.parse(saved) : [];
-    }
-    return [];
-  });
+  // カスタム企業リスト（DBから取得・DB保存）
+  const [customCompanies, setCustomCompanies] = useState<string[]>([]);
+  useEffect(() => {
+    fetch("/api/companies")
+      .then(r => r.ok ? r.json() : [])
+      .then(data => { if (Array.isArray(data)) setCustomCompanies(data); })
+      .catch(() => {});
+  }, []);
   const allCompanies = [...COMPANY_LIST, ...customCompanies].sort((a, b) => a.localeCompare(b, "ja"));
-  const handleAddCompany = useCallback((name: string) => {
+  const handleAddCompany = useCallback(async (name: string) => {
     if (!COMPANY_LIST.includes(name) && !customCompanies.includes(name)) {
-      const updated = [...customCompanies, name];
-      setCustomCompanies(updated);
-      localStorage.setItem("customCompanies", JSON.stringify(updated));
+      try {
+        const res = await fetch("/api/companies", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
+        if (res.ok) {
+          setCustomCompanies(prev => [...prev, name]);
+        }
+      } catch { /* サイレント */ }
     }
   }, [customCompanies]);
 
@@ -697,6 +700,15 @@ export default function DashboardPage() {
     const myStaffActs = staffActivities
       .map(s => ({ ...s, staff: s.staff || currentStaffName || "" }))
       .filter(s => s.staff && (s.interviewSetups || s.interviewsConducted || s.appointmentAcquisitions || s.ordersRA || s.ordersCA || s.raPriceUpCount || s.caPriceUpCount));
+    // 受注・単価UPエントリーで企業名が未入力のものがないかチェック
+    for (const s of myStaffActs) {
+      const entries = [...(s.raEntries || []), ...(s.caEntries || []), ...(s.raPriceUpEntries || []), ...(s.caPriceUpEntries || [])];
+      const missing = entries.find(e => (e.amount || e.revenue) && !e.company);
+      if (missing) {
+        showToast(`${s.staff}の受注/単価UPに企業名が未入力です`);
+        return;
+      }
+    }
     saveSectionData("staffActivities", { staffActivities: myStaffActs });
   };
 

@@ -44,16 +44,23 @@ export function CompanySelect({ value, onChange, companies, onAddCompany, style 
     setSearch("");
   }, [onChange]);
 
+  const [addError, setAddError] = useState("");
   const handleAdd = useCallback(() => {
     const trimmed = newName.trim();
-    if (trimmed) {
-      onAddCompany(trimmed);
-      onChange(trimmed);
-      setNewName("");
-      setAdding(false);
-      setOpen(false);
-      setSearch("");
+    if (!trimmed) return;
+    // 正式名称チェック: 「株式会社」「有限会社」等の法人格を含むか
+    const hasCorpSuffix = /株式会社|有限会社|合同会社|合名会社|合資会社|事業組合|一般社団|一般財団/.test(trimmed);
+    if (!hasCorpSuffix) {
+      setAddError("正式名称（株式会社等を含む）で入力してください");
+      return;
     }
+    setAddError("");
+    onAddCompany(trimmed);
+    onChange(trimmed);
+    setNewName("");
+    setAdding(false);
+    setOpen(false);
+    setSearch("");
   }, [newName, onAddCompany, onChange]);
 
   const baseInput: React.CSSProperties = {
@@ -184,33 +191,39 @@ export function CompanySelect({ value, onChange, companies, onAddCompany, style 
                 ＋ 新しい企業を追加
               </button>
             ) : (
-              <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                <input
-                  type="text"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); if (e.key === "Escape") setAdding(false); }}
-                  placeholder="正式名称を入力"
-                  autoFocus
-                  style={{ ...baseInput, flex: 1, fontSize: 12 }}
-                />
-                <button
-                  onClick={handleAdd}
-                  disabled={!newName.trim()}
-                  style={{
-                    padding: "5px 10px",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    background: newName.trim() ? "#0077b6" : "#ccc",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 6,
-                    cursor: newName.trim() ? "pointer" : "default",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  追加
-                </button>
+              <div>
+                <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                  <input
+                    type="text"
+                    value={newName}
+                    onChange={(e) => { setNewName(e.target.value); setAddError(""); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); if (e.key === "Escape") { setAdding(false); setAddError(""); } }}
+                    placeholder="正式名称を入力"
+                    autoFocus
+                    style={{ ...baseInput, flex: 1, fontSize: 12 }}
+                  />
+                  <button
+                    onClick={handleAdd}
+                    disabled={!newName.trim()}
+                    style={{
+                      padding: "5px 10px",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      background: newName.trim() ? "#0077b6" : "#ccc",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: 6,
+                      cursor: newName.trim() ? "pointer" : "default",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    追加
+                  </button>
+                </div>
+                {addError && <div style={{ fontSize: 10, color: "#e74c3c", marginTop: 3, padding: "0 2px" }}>{addError}</div>}
+                <div style={{ fontSize: 9, color: tc.textMuted, marginTop: 3, padding: "0 2px", lineHeight: 1.5 }}>
+                  ※正式名称以外は入力不可。売上先企業を入力、BP等の仕入れ元企業は入力しないでください。
+                </div>
               </div>
             )}
           </div>

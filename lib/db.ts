@@ -183,3 +183,32 @@ export async function addCustomStaff(name: string): Promise<void> {
     ON CONFLICT (name) DO NOTHING
   `;
 }
+
+// ===== カスタム企業管理 =====
+async function ensureCompanyTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS custom_companies (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) UNIQUE NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
+}
+
+// カスタム企業全取得
+export async function getCustomCompanies(): Promise<string[]> {
+  await ensureCompanyTable();
+  const { rows } = await sql`
+    SELECT name FROM custom_companies ORDER BY name
+  `;
+  return rows.map(r => r.name);
+}
+
+// カスタム企業追加
+export async function addCustomCompany(name: string): Promise<void> {
+  await ensureCompanyTable();
+  await sql`
+    INSERT INTO custom_companies (name) VALUES (${name})
+    ON CONFLICT (name) DO NOTHING
+  `;
+}
