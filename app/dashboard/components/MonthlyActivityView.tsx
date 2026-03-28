@@ -1440,12 +1440,14 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
       {monthlyMode === "amount" && ACTIVITY_AMOUNT_FIELDS.map(af => {
         const sortKeyBudget = af.key + "_budget";
         const sortKeyProgress = af.key + "_progress";
+        const sortKeyGap = af.key + "_gap";
         const sortKeyRate = af.key + "_rate";
         const sortKeyCarryover = af.key + "_carryover";
         const sortKeyMonth = af.key + "_month";
-        const allAmountSortKeys = [sortKeyBudget, sortKeyProgress, sortKeyRate, sortKeyCarryover, sortKeyMonth];
+        const allAmountSortKeys = [sortKeyBudget, sortKeyProgress, sortKeyGap, sortKeyRate, sortKeyCarryover, sortKeyMonth];
         const currentSortBudget = sortState[sortKeyBudget] || "none";
         const currentSortProgress = sortState[sortKeyProgress] || "none";
+        const currentSortGap = sortState[sortKeyGap] || "none";
         const currentSortRate = sortState[sortKeyRate] || "none";
         const currentSortCarryover = sortState[sortKeyCarryover] || "none";
         const currentSortMonth = sortState[sortKeyMonth] || "none";
@@ -1456,6 +1458,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
         };
         const toggleSortBudget = makeToggle(sortKeyBudget, currentSortBudget);
         const toggleSortProgress = makeToggle(sortKeyProgress, currentSortProgress);
+        const toggleSortGap = makeToggle(sortKeyGap, currentSortGap);
         const toggleSortRate = makeToggle(sortKeyRate, currentSortRate);
         const toggleSortCarryover = makeToggle(sortKeyCarryover, currentSortCarryover);
         const toggleSortMonth = makeToggle(sortKeyMonth, currentSortMonth);
@@ -1479,11 +1482,16 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
           const m = getTableMonth(staff);
           return Math.round((c + m) * 10) / 10;
         };
+        const getGap = (staff: string) => {
+          return Math.round((getProgress(staff) - getTableBudget(staff)) * 10) / 10;
+        };
         const getRate = (staff: string) => {
           const b = getTableBudget(staff);
           return b > 0 ? (getProgress(staff) / b) * 100 : 0;
         };
-        if (currentSortBudget !== "none") {
+        if (currentSortGap !== "none") {
+          sortedStaff.sort((a, b) => currentSortGap === "asc" ? getGap(a) - getGap(b) : getGap(b) - getGap(a));
+        } else if (currentSortBudget !== "none") {
           sortedStaff.sort((a, b) => currentSortBudget === "asc" ? getTableBudget(a) - getTableBudget(b) : getTableBudget(b) - getTableBudget(a));
         } else if (currentSortProgress !== "none") {
           sortedStaff.sort((a, b) => currentSortProgress === "asc" ? getProgress(a) - getProgress(b) : getProgress(b) - getProgress(a));
@@ -1533,6 +1541,9 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                 <th style={{ ...headerCellStyle, background: hdrBlueAlt, minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortProgress}>
                   進捗 {sortIcon(currentSortProgress)}
                 </th>
+                <th style={{ ...headerCellStyle, background: isDark ? "#4a2020" : "#fde8e8", minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortGap}>
+                  GAP {sortIcon(currentSortGap)}
+                </th>
                 <th style={{ ...headerCellStyle, background: hdrGreen, minWidth: 70, cursor: "pointer", userSelect: "none" }} onClick={toggleSortRate}>
                   達成率 {sortIcon(currentSortRate)}
                 </th>
@@ -1553,6 +1564,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                 {isCATable && !caAmountTotalOnly && <th style={{ ...headerCellStyle, fontSize: 10, padding: "2px 6px" }}></th>}
                 <th style={{ ...headerCellStyle, background: hdrYellow, fontSize: 10, padding: "2px 6px" }}>万円</th>
                 <th style={{ ...headerCellStyle, background: hdrBlueAlt, fontSize: 10, padding: "2px 6px" }}>万円</th>
+                <th style={{ ...headerCellStyle, background: isDark ? "#4a2020" : "#fde8e8", fontSize: 10, padding: "2px 6px" }}>万円</th>
                 <th style={{ ...headerCellStyle, background: hdrGreen, fontSize: 10, padding: "2px 6px" }}>%</th>
                 <th style={{ ...headerCellStyle, background: hdrGray, fontSize: 10, padding: "2px 6px" }}>万円</th>
                 <th style={{ ...headerCellStyle, background: hdrBlue, fontSize: 10, padding: "2px 6px" }}>万円</th>
@@ -1600,6 +1612,11 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                           <td style={{ ...cellStyle, fontWeight: 700, color: totalProgress > 0 ? (isDark ? "#93c5fd" : "#1e40af") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a2540" : "#1e2d4a") : (idx % 2 === 1 ? "#eff6ff" : "#f0f7ff"), textAlign: "right" }}>
                             {fmtAmount(totalProgress)}
                           </td>
+                          {(() => { const gap = Math.round((totalProgress - totalBudget) * 10) / 10; return (
+                            <td style={{ ...cellStyle, fontWeight: 700, color: totalBudget === 0 ? tc.textDisabled : gap >= 0 ? (isDark ? "#34d399" : "#047857") : "#e63946", textAlign: "right" }}>
+                              {totalBudget > 0 || totalProgress > 0 ? (gap >= 0 ? "+" : "") + fmtAmount(gap) : "—"}
+                            </td>
+                          ); })()}
                           <td style={{ ...cellStyle, fontWeight: 700, color: totalBudget > 0 ? getAchievementColor(totalRate) : "#ccc", background: totalBudget > 0 ? getAchievementBg(totalRate) : undefined, textAlign: "right" }}>
                             {totalBudget > 0 ? `${totalRate.toFixed(1)}%` : "—"}
                           </td>
@@ -1658,6 +1675,11 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                                 <td style={{ ...cellStyle, fontWeight: 600, color: subProgress > 0 ? (isDark ? "#93c5fd" : "#1e40af") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a2540" : "#1e2d4a") : (idx % 2 === 1 ? "#eff6ff" : "#f0f7ff"), borderBottom: dashBorder, fontSize: 11, textAlign: "right" }}>
                                   {fmtAmount(subProgress)}
                                 </td>
+                                {(() => { const subGap = Math.round((subProgress - subBudget) * 10) / 10; return (
+                                  <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subBudget === 0 ? tc.textDisabled : subGap >= 0 ? (isDark ? "#34d399" : "#047857") : "#e63946", borderBottom: dashBorder, textAlign: "right" }}>
+                                    {subBudget > 0 || subProgress > 0 ? (subGap >= 0 ? "+" : "") + fmtAmount(subGap) : "—"}
+                                  </td>
+                                ); })()}
                                 <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subBudget > 0 ? getAchievementColor(subRate) : "#ccc", background: subBudget > 0 ? getAchievementBg(subRate) : undefined, borderBottom: dashBorder, textAlign: "right" }}>
                                   {subBudget > 0 ? `${subRate.toFixed(1)}%` : "—"}
                                 </td>
@@ -1711,6 +1733,11 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                       <td style={{ ...cellStyle, fontWeight: 700, color: totalProgress > 0 ? (isDark ? "#93c5fd" : "#1e40af") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a2540" : "#1e2d4a") : (idx % 2 === 1 ? "#eff6ff" : "#f0f7ff"), borderBottom, textAlign: "right" }}>
                         {fmtAmount(totalProgress)}
                       </td>
+                      {(() => { const tGap = Math.round((totalProgress - totalBudget) * 10) / 10; return (
+                        <td style={{ ...cellStyle, fontWeight: 700, color: totalBudget === 0 ? tc.textDisabled : tGap >= 0 ? (isDark ? "#34d399" : "#047857") : "#e63946", borderBottom, textAlign: "right" }}>
+                          {totalBudget > 0 || totalProgress > 0 ? (tGap >= 0 ? "+" : "") + fmtAmount(tGap) : "—"}
+                        </td>
+                      ); })()}
                       <td style={{ ...cellStyle, fontWeight: 700, color: totalBudget > 0 ? getAchievementColor(totalRate) : "#ccc", background: totalBudget > 0 ? getAchievementBg(totalRate) : undefined, borderBottom, textAlign: "right" }}>
                         {totalBudget > 0 ? `${totalRate.toFixed(1)}%` : "—"}
                       </td>
@@ -1759,6 +1786,12 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                     <td style={{ ...cellStyle, fontWeight: 700, color: progress > 0 ? (isDark ? "#93c5fd" : "#1e40af") : tc.textDisabled, background: isDark ? (idx % 2 === 1 ? "#1a2540" : "#1e2d4a") : (idx % 2 === 1 ? "#eff6ff" : "#f0f7ff"), textAlign: "right" }}>
                       {fmtAmount(progress)}
                     </td>
+                    {/* GAP（進捗 - 目標） */}
+                    {(() => { const gap = Math.round((progress - budget) * 10) / 10; return (
+                      <td style={{ ...cellStyle, fontWeight: 700, color: budget === 0 ? tc.textDisabled : gap >= 0 ? (isDark ? "#34d399" : "#047857") : "#e63946", textAlign: "right" }}>
+                        {budget > 0 || progress > 0 ? (gap >= 0 ? "+" : "") + fmtAmount(gap) : "—"}
+                      </td>
+                    ); })()}
                     {/* 達成率 */}
                     <td style={{ ...cellStyle, fontWeight: 700, color: budget > 0 ? getAchievementColor(achievementRate) : "#ccc", background: budget > 0 ? getAchievementBg(achievementRate) : undefined, textAlign: "right" }}>
                       {budget > 0 ? `${achievementRate.toFixed(1)}%` : "—"}
@@ -1820,6 +1853,11 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                         <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#93c5fd" : "#1e40af", background: hdrBlueAlt, textAlign: "right" }}>
                           {fmtAmount(grandProgress)}
                         </td>
+                        {(() => { const gGap = Math.round((grandProgress - grandBudget) * 10) / 10; return (
+                          <td style={{ ...cellStyle, fontWeight: 700, color: grandBudget === 0 ? tc.textDisabled : gGap >= 0 ? (isDark ? "#34d399" : "#047857") : "#e63946", background: isDark ? "#4a2020" : "#fde8e8", textAlign: "right" }}>
+                            {grandBudget > 0 || grandProgress > 0 ? (gGap >= 0 ? "+" : "") + fmtAmount(gGap) : "—"}
+                          </td>
+                        ); })()}
                         <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen, textAlign: "right" }}>
                           {grandBudget > 0 ? <span style={{ color: getAchievementColor(grandRate) }}>{grandRate.toFixed(1)}%</span> : "—"}
                         </td>
@@ -1860,6 +1898,11 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                             <td style={{ ...cellStyle, fontWeight: 600, color: subProgress > 0 ? (isDark ? "#93c5fd" : "#1e40af") : tc.textDisabled, background: hdrBlueAlt, fontSize: 11, borderBottom: dashBorder, textAlign: "right" }}>
                               {fmtAmount(subProgress)}
                             </td>
+                            {(() => { const sGap = Math.round((subProgress - subBudget) * 10) / 10; return (
+                              <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subBudget === 0 ? tc.textDisabled : sGap >= 0 ? (isDark ? "#34d399" : "#047857") : "#e63946", background: isDark ? "#4a2020" : "#fde8e8", borderBottom: dashBorder, textAlign: "right" }}>
+                                {subBudget > 0 || subProgress > 0 ? (sGap >= 0 ? "+" : "") + fmtAmount(sGap) : "—"}
+                              </td>
+                            ); })()}
                             <td style={{ ...cellStyle, fontWeight: 600, fontSize: 11, color: subBudget > 0 ? getAchievementColor(subRate) : "#ccc", background: subBudget > 0 ? getAchievementBg(subRate) : hdrGreen, borderBottom: dashBorder, textAlign: "right" }}>
                               {subBudget > 0 ? `${subRate.toFixed(1)}%` : "—"}
                             </td>
@@ -1898,6 +1941,11 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                             <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#93c5fd" : "#1e40af", background: hdrBlueAlt, borderBottom: totalBorderBottom, textAlign: "right" }}>
                               {fmtAmount(grandProgress)}
                             </td>
+                            {(() => { const gGap2 = Math.round((grandProgress - grandBudget) * 10) / 10; return (
+                              <td style={{ ...cellStyle, fontWeight: 700, color: grandBudget === 0 ? tc.textDisabled : gGap2 >= 0 ? (isDark ? "#34d399" : "#047857") : "#e63946", background: isDark ? "#4a2020" : "#fde8e8", borderBottom: totalBorderBottom, textAlign: "right" }}>
+                                {grandBudget > 0 || grandProgress > 0 ? (gGap2 >= 0 ? "+" : "") + fmtAmount(gGap2) : "—"}
+                              </td>
+                            ); })()}
                             <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen, borderBottom: totalBorderBottom, textAlign: "right" }}>
                               {grandBudget > 0 ? <span style={{ color: getAchievementColor(grandRate) }}>{grandRate.toFixed(1)}%</span> : "—"}
                             </td>
@@ -1934,6 +1982,11 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                       <td style={{ ...cellStyle, fontWeight: 700, color: isDark ? "#93c5fd" : "#1e40af", background: hdrBlueAlt, textAlign: "right" }}>
                         {fmtAmount(grandProgress)}
                       </td>
+                      {(() => { const gGap = Math.round((grandProgress - grandBudget) * 10) / 10; return (
+                        <td style={{ ...cellStyle, fontWeight: 700, color: grandBudget === 0 ? tc.textDisabled : gGap >= 0 ? (isDark ? "#34d399" : "#047857") : "#e63946", background: isDark ? "#4a2020" : "#fde8e8", textAlign: "right" }}>
+                          {grandBudget > 0 || grandProgress > 0 ? (gGap >= 0 ? "+" : "") + fmtAmount(gGap) : "—"}
+                        </td>
+                      ); })()}
                       <td style={{ ...cellStyle, fontWeight: 700, background: hdrGreen, textAlign: "right" }}>
                         {grandBudget > 0 ? <span style={{ color: getAchievementColor(grandRate) }}>{grandRate.toFixed(1)}%</span> : "—"}
                       </td>
