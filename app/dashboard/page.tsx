@@ -748,6 +748,8 @@ export default function DashboardPage() {
         :root { --font: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; }
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; }
+        .card-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important; }
+        .focus-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; }
         @media (max-width: 767px) {
           .layout-flex { flex-direction: column !important; }
           .sidebar { width: 100% !important; }

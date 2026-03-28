@@ -35,7 +35,7 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
   const displayCompanies = showAllCompanies ? companies : companies.slice(0, 3);
 
   return (
-    <div style={{ background: bg, borderRadius: 14, padding: "20px 16px", boxShadow: tc.shadow, color }}>
+    <div style={{ background: bg, borderRadius: 14, padding: "20px 16px", boxShadow: tc.shadow, color, minWidth: 0 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, paddingBottom: 6, borderBottom: `1px solid ${trackColor}` }}>
         <span style={{ fontSize: 16, fontWeight: 700 }}>{title}</span>
         {countInfo && countInfo.target > 0 && (
