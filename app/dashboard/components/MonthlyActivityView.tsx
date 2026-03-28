@@ -66,6 +66,9 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
   const [showAllRevenue, setShowAllRevenue] = useState(false);
   const [showAllProfit, setShowAllProfit] = useState(false);
   const [puDetailOpen, setPuDetailOpen] = useState<Record<string, boolean>>({});
+  const [amountDetailOpen, setAmountDetailOpen] = useState<Record<string, boolean>>({});
+  const [countDetailOpen, setCountDetailOpen] = useState<Record<string, boolean>>({});
+  const [companyDetailOpen, setCompanyDetailOpen] = useState<Record<string, boolean>>({});
   // その他
   const [miscItems, setMiscItems] = useState<{ staff: string; content: string; deadline: string; status: string; createdAt: string }[]>([]);
   const [miscInput, setMiscInput] = useState<{ staff: string; content: string; deadline: string; status: string }>({ staff: "", content: "", deadline: "", status: "" });
@@ -464,6 +467,47 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
     return details;
   };
 
+  // 受注 entries の担当別月間明細一覧
+  const getStaffMonthAmountDetails = (staff: string, entryType: "ra" | "ca"): { date: string; revenue: number; amount: number; company: string; affiliation: string; position: string }[] => {
+    const details: { date: string; revenue: number; amount: number; company: string; affiliation: string; position: string }[] = [];
+    days.forEach(day => {
+      const dayData = allData[day.key];
+      if (!dayData || !Array.isArray(dayData.staffActivities)) return;
+      const entry = dayData.staffActivities.find((s: any) => s.staff === staff);
+      if (!entry) return;
+      const entries = entryType === "ca" ? ((entry as any).caEntries || []) : ((entry as any).raEntries || []);
+      entries.forEach((e: any) => {
+        if ((e.amount || 0) > 0 || (e.revenue || 0) > 0) {
+          details.push({ date: `${day.d}日`, revenue: e.revenue || 0, amount: e.amount || 0, company: e.company || "", affiliation: e.affiliation || "", position: e.position || "" });
+        }
+      });
+    });
+    return details;
+  };
+
+  // 受注件数の担当別月間明細一覧（件数タブ用）
+  const getStaffMonthCountDetails = (staff: string, field: string): { date: string; company: string; affiliation: string; position: string; amount: number; revenue: number }[] => {
+    const details: { date: string; company: string; affiliation: string; position: string; amount: number; revenue: number }[] = [];
+    days.forEach(day => {
+      const dayData = allData[day.key];
+      if (!dayData || !Array.isArray(dayData.staffActivities)) return;
+      const entry = dayData.staffActivities.find((s: any) => s.staff === staff);
+      if (!entry) return;
+      if (field === "ordersRA") {
+        const entries = (entry as any).raEntries || [];
+        entries.forEach((e: any) => {
+          details.push({ date: `${day.d}日`, company: e.company || "", affiliation: e.affiliation || "", position: e.position || "", amount: e.amount || 0, revenue: e.revenue || 0 });
+        });
+      } else if (field === "ordersCA") {
+        const entries = (entry as any).caEntries || [];
+        entries.forEach((e: any) => {
+          details.push({ date: `${day.d}日`, company: e.company || "", affiliation: e.affiliation || "", position: e.position || "", amount: e.amount || 0, revenue: e.revenue || 0 });
+        });
+      }
+    });
+    return details;
+  };
+
   // 3桁カンマ区切り（小数点以下あり対応）
   const fmtAmount = (v: number): string => {
     if (v === 0) return "—";
@@ -473,8 +517,9 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
   };
 
   // 月間の企業別集計（RA受注+RA単価UPのrevenue/amountを企業ごとに集計）
+  type CompanyDetail = { date: string; staff: string; revenue: number; profit: number; type: "受注" | "単UP"; affiliation?: string; position?: string };
   const getMonthlyCompanyAggregates = () => {
-    const companyMap: Record<string, { revenue: number; profit: number; orderCount: number; priceUpCount: number }> = {};
+    const companyMap: Record<string, { revenue: number; profit: number; orderCount: number; priceUpCount: number; details: CompanyDetail[] }> = {};
     days.forEach(day => {
       const dayData = allData[day.key];
       if (!dayData || !Array.isArray(dayData.staffActivities)) return;
@@ -483,27 +528,29 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
         const entries = s.raEntries || [];
         entries.forEach((e: any) => {
           if (e.company) {
-            if (!companyMap[e.company]) companyMap[e.company] = { revenue: 0, profit: 0, orderCount: 0, priceUpCount: 0 };
+            if (!companyMap[e.company]) companyMap[e.company] = { revenue: 0, profit: 0, orderCount: 0, priceUpCount: 0, details: [] };
             companyMap[e.company].revenue += (e.revenue || 0);
             companyMap[e.company].profit += (e.amount || 0);
             companyMap[e.company].orderCount += 1;
+            companyMap[e.company].details.push({ date: `${day.d}日`, staff: s.staff || "", revenue: e.revenue || 0, profit: e.amount || 0, type: "受注", affiliation: e.affiliation || "", position: e.position || "" });
           }
         });
         // RA単価UP分も加算
         const raPUEntries = s.raPriceUpEntries || [];
         raPUEntries.forEach((e: any) => {
           if (e.company) {
-            if (!companyMap[e.company]) companyMap[e.company] = { revenue: 0, profit: 0, orderCount: 0, priceUpCount: 0 };
+            if (!companyMap[e.company]) companyMap[e.company] = { revenue: 0, profit: 0, orderCount: 0, priceUpCount: 0, details: [] };
             companyMap[e.company].revenue += (e.revenue || 0);
             companyMap[e.company].profit += (e.amount || 0);
             companyMap[e.company].priceUpCount += 1;
+            companyMap[e.company].details.push({ date: `${day.d}日`, staff: s.staff || "", revenue: e.revenue || 0, profit: e.amount || 0, type: "単UP", affiliation: e.affiliation || "", position: e.position || "" });
           }
         });
       });
     });
     const all = Object.entries(companyMap).map(([company, data]) => ({
       company, revenue: Math.round(data.revenue * 10) / 10, profit: Math.round(data.profit * 10) / 10,
-      orderCount: data.orderCount, priceUpCount: data.priceUpCount,
+      orderCount: data.orderCount, priceUpCount: data.priceUpCount, details: data.details,
     }));
     const byRevenue = [...all].filter(c => c.revenue > 0).sort((a, b) => b.revenue - a.revenue);
     const byProfit = [...all].filter(c => c.profit > 0).sort((a, b) => b.profit - a.profit);
@@ -607,6 +654,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
               .sort((a, b) => b.total - a.total)
               .slice(0, 5);
             const medals = ["🥇", "🥈", "🥉"];
+            const hasDetail = af.key === "ordersRA" || af.key === "ordersCA";
             return (
               <div key={af.key} style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
@@ -617,15 +665,46 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                   </div>
                 </div>
                 {ranked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
-                  ranked.map((r, i) => (
-                    <div key={r.staff} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid #f0f2f5" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {i < 3 ? <span style={{ fontSize: 16 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center" }}>{i + 1}</span>}
-                        <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary }}>{r.staff}</span>
+                  ranked.map((r, i) => {
+                    const cntDetailKey = `${af.key}_cnt_${r.staff}`;
+                    const isCntOpen = hasDetail && (countDetailOpen[cntDetailKey] || false);
+                    return (
+                    <div key={r.staff} style={{ borderBottom: "1px solid #f0f2f5" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          {i < 3 ? <span style={{ fontSize: 16 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center" }}>{i + 1}</span>}
+                          <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary }}>{r.staff}</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ fontSize: 15, fontWeight: 700, color: af.color }}>{r.total}</span>
+                          {hasDetail && (
+                            <button onClick={() => setCountDetailOpen(prev => ({ ...prev, [cntDetailKey]: !prev[cntDetailKey] }))} style={{ padding: "2px 8px", fontSize: 11, fontWeight: 600, color: af.color, background: "transparent", border: `1px solid ${af.color}`, borderRadius: 4, cursor: "pointer", lineHeight: 1.4 }}>
+                              {isCntOpen ? "閉じる" : "詳細"}
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: af.color }}>{r.total}</span>
+                      {isCntOpen && (() => {
+                        const details = getStaffMonthCountDetails(r.staff, af.key);
+                        return details.length > 0 ? (
+                          <div style={{ padding: "4px 0 8px 28px" }}>
+                            {details.map((d, di) => (
+                              <div key={di} style={{ fontSize: 11, color: tc.textSecondary, lineHeight: 1.8, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                <span style={{ color: tc.textMuted, minWidth: 28 }}>{d.date}</span>
+                                {d.company && <span style={{ fontWeight: 600, color: tc.textPrimary }}>{d.company}</span>}
+                                {d.affiliation && <span style={{ color: af.color }}>{d.affiliation}</span>}
+                                {d.position && <span>{d.position}</span>}
+                                <span style={{ marginLeft: "auto", fontWeight: 600 }}>
+                                  {af.key === "ordersCA" ? "仕入" : "売上"}{fmtAmount(d.revenue)}／粗利{fmtAmount(d.amount)}万円
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : <div style={{ padding: "4px 0 8px 28px", fontSize: 11, color: tc.textDisabled }}>明細なし</div>;
+                      })()}
                     </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             );
@@ -643,7 +722,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
         const totalProfit = Math.round(byProfit.reduce((sum, c) => sum + c.profit, 0) * 10) / 10;
         const totalOrderCount = byRevenue.reduce((sum, c) => sum + c.orderCount, 0);
         const totalPriceUpCount = byRevenue.reduce((sum, c) => sum + c.priceUpCount, 0);
-        const renderCard = (title: string, allRanked: { company: string; revenue: number; profit: number; orderCount: number; priceUpCount: number }[], total: number, color: string, valueKey: "revenue" | "profit", showAll: boolean, setShowAll: (v: boolean) => void) => {
+        const renderCard = (title: string, allRanked: { company: string; revenue: number; profit: number; orderCount: number; priceUpCount: number; details: CompanyDetail[] }[], total: number, color: string, valueKey: "revenue" | "profit", showAll: boolean, setShowAll: (v: boolean) => void) => {
           const ranked = showAll ? allRanked : allRanked.slice(0, 5);
           return (
           <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, borderTop: `3px solid ${color}` }}>
@@ -655,20 +734,45 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
               </div>
             </div>
             {ranked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
-              ranked.map((r, i) => (
+              ranked.map((r, i) => {
+                const compDetailKey = `${valueKey}_${r.company}`;
+                const isCompOpen = companyDetailOpen[compDetailKey] || false;
+                return (
                 <div key={r.company} style={{ padding: "8px 0", borderBottom: `1px solid ${tc.borderLight || "#f0f2f5"}` }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
                       {i < 3 ? <span style={{ fontSize: 16, flexShrink: 0 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center", flexShrink: 0 }}>{i + 1}</span>}
                       <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.company}</span>
                     </div>
-                    <div style={{ flexShrink: 0, marginLeft: 8, textAlign: "right" }}>
+                    <div style={{ flexShrink: 0, marginLeft: 8, display: "flex", alignItems: "center", gap: 4 }}>
                       <span style={{ fontSize: 15, fontWeight: 700, color, display: "inline-block", minWidth: 90, textAlign: "right" }}>{fmtAmount(r[valueKey])}<span style={{ fontSize: 11 }}>万円</span></span>
-                      <span style={{ fontSize: 9, color: tc.textMuted, marginLeft: 4 }}>（受：{r.orderCount}件 単UP：{r.priceUpCount}件）</span>
+                      <button onClick={() => setCompanyDetailOpen(prev => ({ ...prev, [compDetailKey]: !prev[compDetailKey] }))} style={{ padding: "2px 8px", fontSize: 10, fontWeight: 600, color, background: "transparent", border: `1px solid ${color}`, borderRadius: 4, cursor: "pointer", lineHeight: 1.4, flexShrink: 0 }}>
+                        {isCompOpen ? "閉じる" : "詳細"}
+                      </button>
+                      <span style={{ fontSize: 9, color: tc.textMuted }}>（受：{r.orderCount}件 単UP：{r.priceUpCount}件）</span>
                     </div>
                   </div>
+                  {isCompOpen && (() => {
+                    return r.details.length > 0 ? (
+                      <div style={{ padding: "4px 0 8px 28px" }}>
+                        {r.details.map((d, di) => (
+                          <div key={di} style={{ fontSize: 11, color: tc.textSecondary, lineHeight: 1.8, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            <span style={{ color: tc.textMuted, minWidth: 28 }}>{d.date}</span>
+                            <span style={{ fontWeight: 600, color: tc.textPrimary }}>{d.staff}</span>
+                            {d.affiliation && <span style={{ color }}>{d.affiliation}</span>}
+                            {d.position && <span>{d.position}</span>}
+                            <span style={{ color: tc.textMuted }}>({d.type})</span>
+                            <span style={{ marginLeft: "auto", fontWeight: 600 }}>
+                              売上{fmtAmount(d.revenue)}／粗利{fmtAmount(d.profit)}万円
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : <div style={{ padding: "4px 0 8px 28px", fontSize: 11, color: tc.textDisabled }}>明細なし</div>;
+                  })()}
                 </div>
-              ))
+                );
+              })
             )}
             {allRanked.length > 5 && (
               <button onClick={() => setShowAll(!showAll)} style={{ display: "block", width: "100%", marginTop: 8, padding: "6px 0", fontSize: 12, fontWeight: 600, color: tc.accent || color, background: "transparent", border: `1px solid ${tc.border}`, borderRadius: 6, cursor: "pointer" }}>
@@ -760,15 +864,45 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                   <span style={{ fontSize: 18, fontWeight: 700, color: af.color }}>{grandTotal > 0 ? fmtAmount(grandTotal) : "0"}万円</span>
                 </div>
                 {amountRanked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
-                  amountRanked.map((r, i) => (
-                    <div key={r.staff} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid #f0f2f5" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {i < 3 ? <span style={{ fontSize: 16 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center" }}>{i + 1}</span>}
-                        <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary }}>{r.staff}</span>
+                  amountRanked.map((r, i) => {
+                    const amtDetailKey = `${isCAField ? "ca" : "ra"}_amt_${r.staff}`;
+                    const isAmtOpen = amountDetailOpen[amtDetailKey] || false;
+                    const amtEntryType = isCAField ? "ca" as const : "ra" as const;
+                    return (
+                    <div key={r.staff} style={{ borderBottom: "1px solid #f0f2f5" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          {i < 3 ? <span style={{ fontSize: 16 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center" }}>{i + 1}</span>}
+                          <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary }}>{r.staff}</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ fontSize: 15, fontWeight: 700, color: af.color }}>{r.total > 0 ? fmtAmount(r.total) : "0"}万円</span>
+                          <button onClick={() => setAmountDetailOpen(prev => ({ ...prev, [amtDetailKey]: !prev[amtDetailKey] }))} style={{ padding: "2px 8px", fontSize: 11, fontWeight: 600, color: af.color, background: "transparent", border: `1px solid ${af.color}`, borderRadius: 4, cursor: "pointer", lineHeight: 1.4 }}>
+                            {isAmtOpen ? "閉じる" : "詳細"}
+                          </button>
+                        </div>
                       </div>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: af.color }}>{r.total > 0 ? fmtAmount(r.total) : "0"}万円</span>
+                      {isAmtOpen && (() => {
+                        const details = getStaffMonthAmountDetails(r.staff, amtEntryType);
+                        return details.length > 0 ? (
+                          <div style={{ padding: "4px 0 8px 28px" }}>
+                            {details.map((d, di) => (
+                              <div key={di} style={{ fontSize: 11, color: tc.textSecondary, lineHeight: 1.8, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                <span style={{ color: tc.textMuted, minWidth: 28 }}>{d.date}</span>
+                                {d.company && <span style={{ fontWeight: 600, color: tc.textPrimary }}>{d.company}</span>}
+                                {d.affiliation && <span style={{ color: af.color }}>{d.affiliation}</span>}
+                                {d.position && <span>{d.position}</span>}
+                                <span style={{ marginLeft: "auto", fontWeight: 600 }}>
+                                  {isCAField ? "仕入" : "売上"}{fmtAmount(d.revenue)}／粗利{fmtAmount(d.amount)}万円
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : <div style={{ padding: "4px 0 8px 28px", fontSize: 11, color: tc.textDisabled }}>明細なし</div>;
+                      })()}
                     </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
               {/* 単価UPカード */}
