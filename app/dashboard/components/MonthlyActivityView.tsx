@@ -72,8 +72,8 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
   // その他
   const [miscItems, setMiscItems] = useState<{ staff: string; content: string; deadline: string; status: string; createdAt: string }[]>([]);
   const [miscInput, setMiscInput] = useState<{ staff: string; content: string; deadline: string; status: string }>({ staff: "", content: "", deadline: "", status: "" });
-  const [miscSortKey, setMiscSortKey] = useState<"staff" | "status">("staff");
-  const [miscSortDir, setMiscSortDir] = useState<"asc" | "desc">("asc");
+  const [miscSortKey, setMiscSortKey] = useState<"staff" | "status">("status");
+  const [miscSortDir, setMiscSortDir] = useState<"asc" | "desc">("desc");
   const [ymYear, ymMonth] = monthlyYM.split("-").map(Number);
   const daysInMonth = new Date(ymYear, ymMonth, 0).getDate();
   const DOW = ["日", "月", "火", "水", "木", "金", "土"];
@@ -2036,7 +2036,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
               if (cmp === 0) cmp = (b.createdAt || "").localeCompare(a.createdAt || "");
             } else {
               cmp = (statusDisplay[a.status]?.order ?? 9) - (statusDisplay[b.status]?.order ?? 9);
-              if (cmp === 0) cmp = a.staff.localeCompare(b.staff, "ja");
+              if (cmp === 0) cmp = (a.deadline || "9999").localeCompare(b.deadline || "9999");
             }
             return miscSortDir === "desc" ? -cmp : cmp;
           });
