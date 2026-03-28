@@ -37,18 +37,18 @@ export function AmountRankCard({ title, data, prevData, entryType, color, darkMo
     const borderCol = darkMode ? "rgba(255,255,255,0.08)" : tc.border;
     const isOpen = detailOpen[i] || false;
     return (
-      <div key={i} style={{ padding: darkMode ? "6px 0" : "8px 0", borderBottom: `1px solid ${borderCol}` }}>
+      <div key={i} style={{ padding: darkMode ? "4px 0" : "8px 0", borderBottom: `1px solid ${borderCol}` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: darkMode ? 6 : 8 }}>
-            {isSub ? <span style={{ fontSize: darkMode ? 10 : 12, color: darkMode ? "rgba(255,255,255,0.7)" : tc.textMuted, width: darkMode ? 18 : 20, textAlign: "center" }}>{i + 1}</span> : <span style={{ fontSize: darkMode ? 14 : 16 }}>{medals[i]}</span>}
-            <span style={{ fontSize: darkMode ? (isSub ? 11 : 12) : (isSub ? 13 : 14), fontWeight: 600, color: textPrimary }}>{s.staff}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: darkMode ? 4 : 8, minWidth: 0 }}>
+            {isSub ? <span style={{ fontSize: darkMode ? 9 : 12, color: darkMode ? "rgba(255,255,255,0.7)" : tc.textMuted, width: darkMode ? 14 : 20, textAlign: "center", flexShrink: 0 }}>{i + 1}</span> : <span style={{ fontSize: darkMode ? 12 : 16, flexShrink: 0 }}>{medals[i]}</span>}
+            <span style={{ fontSize: darkMode ? (isSub ? 10 : 11) : (isSub ? 13 : 14), fontWeight: 600, color: textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.staff}</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ fontSize: darkMode ? (isSub ? 12 : 14) : (isSub ? 14 : 16), fontWeight: 700, color: darkMode ? "#fff" : color }}>{fmtVal(staffTotal)}</span>
-            {isPU && <span style={{ fontSize: darkMode ? 10 : 11, color: textDetail }}>{entries.length}件</span>}
+          <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+            <span style={{ fontSize: darkMode ? (isSub ? 10 : 12) : (isSub ? 14 : 16), fontWeight: 700, color: darkMode ? "#fff" : color }}>{fmtVal(staffTotal)}</span>
+            {isPU && <span style={{ fontSize: darkMode ? 9 : 11, color: textDetail }}>{entries.length}件</span>}
             {entries.length > 0 && (
               <button onClick={() => setDetailOpen(prev => ({ ...prev, [i]: !prev[i] }))} style={{
-                padding: darkMode ? "1px 6px" : "2px 8px", fontSize: darkMode ? 9 : 10, fontWeight: 600, color: darkMode ? "#fff" : color,
+                padding: darkMode ? "1px 4px" : "2px 8px", fontSize: darkMode ? 8 : 10, fontWeight: 600, color: darkMode ? "#fff" : color,
                 background: "transparent", border: `1px solid ${darkMode ? "rgba(255,255,255,0.4)" : color}`, borderRadius: 4, cursor: "pointer", lineHeight: 1.4
               }}>
                 {isOpen ? "閉じる" : "詳細"}
@@ -72,12 +72,12 @@ export function AmountRankCard({ title, data, prevData, entryType, color, darkMo
     const textDisabled = "rgba(255,255,255,0.35)";
     const btnBg = "rgba(255,255,255,0.1)";
     return (
-      <div style={{ background: bgCard, borderRadius: 10, padding: "16px 14px", borderLeft: `3px solid ${color}` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <h3 style={{ fontSize: 13, fontWeight: 700, color, margin: 0 }}>{title}</h3>
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+      <div style={{ background: bgCard, borderRadius: 10, padding: "12px 10px", borderLeft: `3px solid ${color}` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <h3 style={{ fontSize: 11, fontWeight: 700, color, margin: 0 }}>{title}</h3>
+          <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
             {prevData && <TrendIcon current={total} prev={prevTotal} />}
-            <span style={{ fontSize: 20, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{total}万円</span>
+            <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{total}万円</span>
           </div>
         </div>
         {sorted.length === 0 ? <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, margin: 0 }}>未入力</p> : (

@@ -24,37 +24,37 @@ export function ActivityRankCard({ title, data, prevData, field, color, unit, da
     const textDisabled = "rgba(255,255,255,0.35)";
     const btnBg = "rgba(255,255,255,0.1)";
     return (
-      <div style={{ background: bgCard, borderRadius: 10, padding: "16px 14px", borderLeft: `3px solid ${color}` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <h3 style={{ fontSize: 13, fontWeight: 700, color, margin: 0 }}>{title}</h3>
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+      <div style={{ background: bgCard, borderRadius: 10, padding: "12px 10px", borderLeft: `3px solid ${color}` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <h3 style={{ fontSize: 11, fontWeight: 700, color, margin: 0 }}>{title}</h3>
+          <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
             {prevData && <TrendIcon current={total} prev={prevTotal} />}
-            <span style={{ fontSize: 20, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{unit ? `${totalDisplay}${unit}` : totalDisplay}</span>
+            <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{unit ? `${totalDisplay}${unit}` : totalDisplay}</span>
           </div>
         </div>
-        {sorted.length === 0 ? <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, margin: 0 }}>未入力</p> : (
+        {sorted.length === 0 ? <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, margin: 0 }}>未入力</p> : (
           <>
             {top3.map((s, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${borderColor}` }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 14 }}>{medals[i]}</span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: textPrimary }}>{s.staff}</span>
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: `1px solid ${borderColor}` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
+                  <span style={{ fontSize: 12, flexShrink: 0 }}>{medals[i]}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.staff}</span>
                 </div>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{fmtVal(s[field] as number)}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{fmtVal(s[field] as number)}</span>
               </div>
             ))}
             {sorted.length > 3 && (
               <>
-                <button onClick={() => setShowAll(!showAll)} style={{ marginTop: 6, padding: "4px 8px", fontSize: 10, fontWeight: 600, color: "#fff", background: btnBg, border: `1px solid rgba(255,255,255,0.3)`, borderRadius: 4, cursor: "pointer", width: "100%" }}>
+                <button onClick={() => setShowAll(!showAll)} style={{ marginTop: 4, padding: "3px 6px", fontSize: 9, fontWeight: 600, color: "#fff", background: btnBg, border: `1px solid rgba(255,255,255,0.3)`, borderRadius: 4, cursor: "pointer", width: "100%" }}>
                   {showAll ? "閉じる" : `全${sorted.length}件を表示`}
                 </button>
                 {showAll && sorted.slice(3).map((s, i) => (
-                  <div key={i + 3} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: `1px solid ${borderColor}` }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", width: 18, textAlign: "center" }}>{i + 4}</span>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: "#fff" }}>{s.staff}</span>
+                  <div key={i + 3} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: `1px solid ${borderColor}` }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
+                      <span style={{ fontSize: 9, color: "rgba(255,255,255,0.7)", width: 14, textAlign: "center", flexShrink: 0 }}>{i + 4}</span>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.staff}</span>
                     </div>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>{fmtVal(s[field] as number)}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{fmtVal(s[field] as number)}</span>
                   </div>
                 ))}
               </>
