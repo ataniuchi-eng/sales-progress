@@ -77,10 +77,10 @@ export function AmountRankCard({ title, data, prevData, entryType, color, darkMo
           <h3 style={{ fontSize: 13, fontWeight: 700, color, margin: 0 }}>{title}</h3>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             {prevData && <TrendIcon current={total} prev={prevTotal} />}
-            <span style={{ fontSize: 20, fontWeight: 800, color, lineHeight: 1 }}>{total}万円</span>
+            <span style={{ fontSize: 20, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{total}万円</span>
           </div>
         </div>
-        {sorted.length === 0 ? <p style={{ color: textDisabled, fontSize: 12, margin: 0 }}>未入力</p> : (
+        {sorted.length === 0 ? <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, margin: 0 }}>未入力</p> : (
           <>
             {top3.map((s, i) => renderEntry(s, i))}
             {sorted.length > 3 && (

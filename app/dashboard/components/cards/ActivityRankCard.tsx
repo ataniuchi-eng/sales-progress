@@ -29,10 +29,10 @@ export function ActivityRankCard({ title, data, prevData, field, color, unit, da
           <h3 style={{ fontSize: 13, fontWeight: 700, color, margin: 0 }}>{title}</h3>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             {prevData && <TrendIcon current={total} prev={prevTotal} />}
-            <span style={{ fontSize: 20, fontWeight: 800, color, lineHeight: 1 }}>{unit ? `${totalDisplay}${unit}` : totalDisplay}</span>
+            <span style={{ fontSize: 20, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{unit ? `${totalDisplay}${unit}` : totalDisplay}</span>
           </div>
         </div>
-        {sorted.length === 0 ? <p style={{ color: textDisabled, fontSize: 12, margin: 0 }}>未入力</p> : (
+        {sorted.length === 0 ? <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, margin: 0 }}>未入力</p> : (
           <>
             {top3.map((s, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${borderColor}` }}>

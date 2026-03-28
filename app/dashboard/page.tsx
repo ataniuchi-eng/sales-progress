@@ -789,6 +789,7 @@ export default function DashboardPage() {
           .sidebar { width: 100% !important; }
           .card-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .main-focus-grid { grid-template-columns: 1fr !important; }
+          .prev-result-grid { grid-template-columns: 1fr !important; }
           .input-3col { grid-template-columns: 1fr !important; }
           .focus-row-flex { flex-wrap: wrap !important; }
           .focus-row-flex > div { min-width: 0 !important; }
@@ -983,7 +984,7 @@ export default function DashboardPage() {
             {/* 件数エリア - ダークブルー */}
             <div style={{ background: "linear-gradient(135deg, #0c2340, #1a3a5c)", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.15)", color: "#fff", marginBottom: 16 }}>
               <h3 style={{ fontSize: 16, fontWeight: 700, color: "#4cc9f0", marginBottom: 14 }}>件数</h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }} className="main-focus-grid">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }} className="prev-result-grid">
                 <ActivityRankCard title="RA受注数" data={dStaffActivities} prevData={prevPrevStaffActivities} field="ordersRA" color="#ff6b6b" darkMode />
                 <ActivityRankCard title="CA受注数" data={dStaffActivities} prevData={prevPrevStaffActivities} field="ordersCA" color="#c084fc" darkMode />
                 <ActivityRankCard title="面談設定数" data={dStaffActivities} prevData={prevPrevStaffActivities} field="interviewSetups" color="#4cc9f0" darkMode />
@@ -995,7 +996,7 @@ export default function DashboardPage() {
             {/* 金額エリア（受注粗利 + 単価UP横並び） - ダークパープル */}
             <div style={{ background: "linear-gradient(135deg, #2d1b2e, #1a1a2e)", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.15)", color: "#fff", marginBottom: isMobile ? 16 : 24 }}>
               <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f9a8d4", marginBottom: 14 }}>金額（万円）</h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }} className="main-focus-grid">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }} className="prev-result-grid">
                 <AmountRankCard title="RA受注粗利" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ra" color="#ff6b6b" darkMode />
                 <AmountRankCard title="CA受注粗利" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ca" color="#c084fc" darkMode />
                 <AmountRankCard title="RA単価UP" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="raPU" color="#ff6b6b" darkMode />
