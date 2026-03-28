@@ -624,7 +624,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
         const totalTarget = progressRows.reduce((s, r) => s + r.target, 0);
         const totalRate = totalTarget > 0 ? Math.round((totalProgress / totalTarget) * 1000) / 10 : 0;
         return (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 5fr", gap: 16, marginBottom: 24 }} className="focus-grid">
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 5fr", gap: 16, marginBottom: 24 }} className="focus-grid">
             {/* 稼働進捗カード */}
             <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, borderTop: "3px solid #3498db" }}>
               <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: "0 0 12px" }}>稼働進捗</h3>
@@ -646,7 +646,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
               </div>
             </div>
             {/* ランキングカード */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16 }} className="focus-grid">
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(5, 1fr)", gap: isMobile ? 12 : 16 }} className="focus-grid">
           {ACTIVITY_FIELDS.map(af => {
             const ranked = STAFF_LIST
               .map(staff => ({ staff, total: getStaffMonthTotal(staff, af.key) }))
@@ -783,7 +783,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
           );
         };
         return (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: 24 }} className="focus-grid">
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: isMobile ? 12 : 16, marginBottom: 24 }} className="focus-grid">
             {renderCard("当月受注企業売上", byRevenue, totalRevenue, "#e74c3c", "revenue", showAllRevenue, setShowAllRevenue)}
             {renderCard("当月受注企業粗利", byProfit, totalProfit, "#2ecc71", "profit", showAllProfit, setShowAllProfit)}
           </div>
@@ -791,7 +791,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
       })()}
 
       {monthlyMode === "amount" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }} className="focus-grid">
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: isMobile ? 12 : 16, marginBottom: 24 }} className="focus-grid">
           {ACTIVITY_AMOUNT_FIELDS.map(af => {
             const medals = ["🥇", "🥈", "🥉"];
             const isCAField = af.key === "amountCA";
