@@ -235,18 +235,30 @@ export default function DashboardPage() {
     return numbersEmpty && peopleEmpty && projectsEmpty && raEmpty && announcementsEmpty;
   }, []);
 
-  // 初回ロード時のみ当日データを前営業日から継承（1回だけ実行）
+  // 初回ロード時のみ当日データを前営業日から継承（セクション単位で欠落を補完）
   const inheritOnce = useCallback(async (targetKey: string, currentAllData: AllData) => {
     const existing = currentAllData[targetKey];
-    // RAデータが既にあるか判定
+    // 各セクションが既にあるか判定
+    const hasBudget = existing && (
+      (existing.proper?.target || 0) > 0 || (existing.proper?.forecast || 0) > 0
+      || (existing.bp?.target || 0) > 0 || (existing.bp?.forecast || 0) > 0
+      || (existing.fl?.target || 0) > 0 || (existing.fl?.forecast || 0) > 0
+      || (existing.co?.target || 0) > 0 || (existing.co?.forecast || 0) > 0
+    );
+    const hasFocus = existing && (
+      (existing.focusPeople?.length || 0) > 0 || (existing.focusProjects?.length || 0) > 0
+    );
     const hasRA = existing?.ra && (
       (existing.ra.acquisitionTarget || 0) > 0 || (existing.ra.acquisitionProgress || 0) > 0
       || (existing.ra.joinTarget || 0) > 0 || (existing.ra.joinProgress || 0) > 0
       || (existing.ra.acquisitionCompanies?.length || 0) > 0
       || (existing.ra.joinCompanies?.length || 0) > 0
     );
-    // 既にデータがあり、かつRAも揃っていれば何もしない
-    if (existing && !isDataEmpty(existing) && hasRA) return;
+    const hasAnnouncements = existing && (
+      (existing.announcements?.length || 0) > 0 && existing.announcements!.some(a => a && a.trim())
+    );
+    // 全セクション揃っていれば何もしない
+    if (hasBudget && hasFocus && hasRA && hasAnnouncements) return;
     // 前営業日から遡って最新の実データを探す
     const prevBizDay = getPrevBusinessDay(targetKey);
     let prevData: DayData | null = null;
@@ -258,32 +270,28 @@ export default function DashboardPage() {
       }
     }
     if (!prevData) return;
-    // 既にデータがある場合（RAだけ欠けている）はRAのみ補完
-    if (existing && !isDataEmpty(existing) && !hasRA) {
-      const merged: DayData = JSON.parse(JSON.stringify(existing));
-      if (prevData.ra) {
-        merged.ra = JSON.parse(JSON.stringify(prevData.ra));
-      }
-      try {
-        const res = await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dateKey: targetKey, data: merged }) });
-        if (res.ok) {
-          setAllData((prev) => ({ ...prev, [targetKey]: merged }));
-        }
-      } catch { /* サイレント */ }
-      return;
+    // 既存データをベースに、欠落セクションのみ前営業日から補完
+    const merged: DayData = JSON.parse(JSON.stringify(existing || {}));
+    let needsSave = false;
+    if (!hasBudget) {
+      if (prevData.proper) { merged.proper = JSON.parse(JSON.stringify(prevData.proper)); needsSave = true; }
+      if (prevData.bp) { merged.bp = JSON.parse(JSON.stringify(prevData.bp)); needsSave = true; }
+      if (prevData.fl) { merged.fl = JSON.parse(JSON.stringify(prevData.fl)); needsSave = true; }
+      if (prevData.co) { merged.co = JSON.parse(JSON.stringify(prevData.co)); needsSave = true; }
     }
-    // 完全に空の場合：全データを継承（営業活動は除く）
-    const merged: DayData = JSON.parse(JSON.stringify(prevData));
-    merged.staffActivities = []; // 営業活動は日次入力のため継承しない
-    if (existing) {
-      if (existing.announcements?.length) merged.announcements = existing.announcements;
-      if (existing.ra) {
-        const r = existing.ra;
-        if (r.acquisitionTarget || r.acquisitionProgress || r.acquisitionCompanies?.length || r.joinTarget || r.joinProgress || r.joinCompanies?.length) {
-          merged.ra = existing.ra;
-        }
-      }
+    if (!hasFocus) {
+      if (prevData.focusPeople?.length) { merged.focusPeople = JSON.parse(JSON.stringify(prevData.focusPeople)); needsSave = true; }
+      if (prevData.focusProjects?.length) { merged.focusProjects = JSON.parse(JSON.stringify(prevData.focusProjects)); needsSave = true; }
     }
+    if (!hasRA && prevData.ra) {
+      merged.ra = JSON.parse(JSON.stringify(prevData.ra)); needsSave = true;
+    }
+    if (!hasAnnouncements && prevData.announcements?.length) {
+      merged.announcements = JSON.parse(JSON.stringify(prevData.announcements)); needsSave = true;
+    }
+    // staffActivitiesは日次入力のため継承しない（既存があればそのまま）
+    if (!merged.staffActivities) merged.staffActivities = [];
+    if (!needsSave) return;
     try {
       const res = await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dateKey: targetKey, data: merged }) });
       if (res.ok) {
@@ -299,17 +307,28 @@ export default function DashboardPage() {
       .then((data) => {
         if (data) {
           setAllData(data);
-          // 初回ロード時のみ：当日データがないか、RAデータが欠けていれば前営業日から継承
+          // 初回ロード時のみ：当日データでいずれかのセクションが欠けていれば前営業日から継承
           const today = todayKey();
           const todayData = data[today];
-          const todayRA = todayData?.ra;
-          const hasRAData = todayRA && (
-            (todayRA.acquisitionTarget || 0) > 0 || (todayRA.acquisitionProgress || 0) > 0
-            || (todayRA.joinTarget || 0) > 0 || (todayRA.joinProgress || 0) > 0
-            || (todayRA.acquisitionCompanies?.length || 0) > 0
-            || (todayRA.joinCompanies?.length || 0) > 0
+          const hasBudget = todayData && (
+            (todayData.proper?.target || 0) > 0 || (todayData.proper?.forecast || 0) > 0
+            || (todayData.bp?.target || 0) > 0 || (todayData.bp?.forecast || 0) > 0
+            || (todayData.fl?.target || 0) > 0 || (todayData.fl?.forecast || 0) > 0
+            || (todayData.co?.target || 0) > 0 || (todayData.co?.forecast || 0) > 0
           );
-          if (!todayData || isDataEmpty(todayData) || !hasRAData) {
+          const hasFocus = todayData && (
+            (todayData.focusPeople?.length || 0) > 0 || (todayData.focusProjects?.length || 0) > 0
+          );
+          const hasRA = todayData?.ra && (
+            (todayData.ra.acquisitionTarget || 0) > 0 || (todayData.ra.acquisitionProgress || 0) > 0
+            || (todayData.ra.joinTarget || 0) > 0 || (todayData.ra.joinProgress || 0) > 0
+            || (todayData.ra.acquisitionCompanies?.length || 0) > 0
+            || (todayData.ra.joinCompanies?.length || 0) > 0
+          );
+          const hasAnnouncements = todayData && (
+            (todayData.announcements?.length || 0) > 0 && todayData.announcements!.some((a: string) => a && a.trim())
+          );
+          if (!todayData || !hasBudget || !hasFocus || !hasRA || !hasAnnouncements) {
             inheritOnce(today, data);
           }
         }
@@ -713,6 +732,9 @@ export default function DashboardPage() {
       announcements: announcements.filter(a => a.trim()),
     });
   };
+
+  // 過去日付判定: 当日より前の日付は目標・見込/注力/RA開拓/全体連絡を更新不可
+  const isSaveDatePast = saveDate < todayKey();
 
   const handleLogout = async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/login"); };
   const handleNumInput = (field: string, value: string) => {
@@ -1255,11 +1277,11 @@ export default function DashboardPage() {
                         ]} onChange={handleNumInput} />
                       </div>
                       <div style={{ marginTop: 16 }}>
-                        <button onClick={saveBudget} disabled={savingSection === "budget"} style={{
-                          width: "100%", padding: "14px 24px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
-                          border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: savingSection === "budget" ? "not-allowed" : "pointer", opacity: savingSection === "budget" ? 0.7 : 1,
+                        <button onClick={saveBudget} disabled={savingSection === "budget" || isSaveDatePast} style={{
+                          width: "100%", padding: "14px 24px", background: isSaveDatePast ? "#888" : "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
+                          border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: (savingSection === "budget" || isSaveDatePast) ? "not-allowed" : "pointer", opacity: (savingSection === "budget" || isSaveDatePast) ? 0.7 : 1,
                         }}>
-                          {savingSection === "budget" ? "保存中..." : "目標・見込を保存"}
+                          {isSaveDatePast ? "過去日付のため更新不可" : savingSection === "budget" ? "保存中..." : "目標・見込を保存"}
                         </button>
                       </div>
                     </div>
@@ -1322,11 +1344,11 @@ export default function DashboardPage() {
                   <button onClick={() => setFocusPeople([...focusPeople, { name: "", affiliation: "プロパー", cost: 0, staff: (!isAdmin && currentStaffName) ? currentStaffName : "", position: "", skill: "" }])} style={addBtnStyle}>＋ 人材を追加</button>
 
                   <div style={{ marginTop: 16 }}>
-                    <button onClick={saveFocus} disabled={savingSection === "focus"} style={{
-                      width: "100%", padding: "14px 24px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
-                      border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: savingSection === "focus" ? "not-allowed" : "pointer", opacity: savingSection === "focus" ? 0.7 : 1,
+                    <button onClick={saveFocus} disabled={savingSection === "focus" || isSaveDatePast} style={{
+                      width: "100%", padding: "14px 24px", background: isSaveDatePast ? "#888" : "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
+                      border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: (savingSection === "focus" || isSaveDatePast) ? "not-allowed" : "pointer", opacity: (savingSection === "focus" || isSaveDatePast) ? 0.7 : 1,
                     }}>
-                      {savingSection === "focus" ? "保存中..." : "注力を保存"}
+                      {isSaveDatePast ? "過去日付のため更新不可" : savingSection === "focus" ? "保存中..." : "注力を保存"}
                     </button>
                   </div>
 
@@ -1398,11 +1420,11 @@ export default function DashboardPage() {
                   </div>
 
                   <div style={{ marginTop: 16 }}>
-                    <button onClick={saveRA} disabled={savingSection === "ra"} style={{
-                      width: "100%", padding: "14px 24px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
-                      border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: savingSection === "ra" ? "not-allowed" : "pointer", opacity: savingSection === "ra" ? 0.7 : 1,
+                    <button onClick={saveRA} disabled={savingSection === "ra" || isSaveDatePast} style={{
+                      width: "100%", padding: "14px 24px", background: isSaveDatePast ? "#888" : "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
+                      border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: (savingSection === "ra" || isSaveDatePast) ? "not-allowed" : "pointer", opacity: (savingSection === "ra" || isSaveDatePast) ? 0.7 : 1,
                     }}>
-                      {savingSection === "ra" ? "保存中..." : "RA開拓を保存"}
+                      {isSaveDatePast ? "過去日付のため更新不可" : savingSection === "ra" ? "保存中..." : "RA開拓を保存"}
                     </button>
                   </div>
 
@@ -1431,11 +1453,11 @@ export default function DashboardPage() {
                   <button onClick={() => setAnnouncements([...announcements, ""])} style={addBtnStyle}>＋ 連絡事項を追加</button>
 
                   <div style={{ marginTop: 16 }}>
-                    <button onClick={saveAnnouncements} disabled={savingSection === "announcements"} style={{
-                      width: "100%", padding: "14px 24px", background: "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
-                      border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: savingSection === "announcements" ? "not-allowed" : "pointer", opacity: savingSection === "announcements" ? 0.7 : 1,
+                    <button onClick={saveAnnouncements} disabled={savingSection === "announcements" || isSaveDatePast} style={{
+                      width: "100%", padding: "14px 24px", background: isSaveDatePast ? "#888" : "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
+                      border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: (savingSection === "announcements" || isSaveDatePast) ? "not-allowed" : "pointer", opacity: (savingSection === "announcements" || isSaveDatePast) ? 0.7 : 1,
                     }}>
-                      {savingSection === "announcements" ? "保存中..." : "全体連絡を保存"}
+                      {isSaveDatePast ? "過去日付のため更新不可" : savingSection === "announcements" ? "保存中..." : "全体連絡を保存"}
                     </button>
                   </div>
 
