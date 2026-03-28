@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getCustomCompanies, addCustomCompany } from "@/lib/db";
+import { getMasterCompanies, initMasterCompanies, addMasterCompany, addCustomCompany } from "@/lib/db";
+import { COMPANY_LIST } from "@/app/dashboard/constants/data";
 
-// GET: カスタム企業リスト取得
+// GET: マスター企業リスト取得（テーブルが空なら初期化）
 export async function GET() {
   const session = await getSession();
   if (!session) {
@@ -10,7 +11,14 @@ export async function GET() {
   }
 
   try {
-    const companies = await getCustomCompanies();
+    let companies = await getMasterCompanies();
+
+    // テーブルが空の場合は constants + custom_companies から初期化
+    if (companies.length === 0) {
+      await initMasterCompanies(COMPANY_LIST);
+      companies = await getMasterCompanies();
+    }
+
     return NextResponse.json(companies);
   } catch (error) {
     console.error("Company fetch error:", error);
@@ -18,7 +26,7 @@ export async function GET() {
   }
 }
 
-// POST: カスタム企業追加
+// POST: マスター企業追加（custom_companiesにも後方互換で追加）
 export async function POST(request: Request) {
   const session = await getSession();
   if (!session) {
@@ -30,7 +38,15 @@ export async function POST(request: Request) {
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "企業名は必須です" }, { status: 400 });
     }
-    await addCustomCompany(name.trim());
+
+    const trimmedName = name.trim();
+
+    // master_companies に追加
+    await addMasterCompany(trimmedName);
+
+    // custom_companies にも後方互換で追加
+    await addCustomCompany(trimmedName);
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Company add error:", error);

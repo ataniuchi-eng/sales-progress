@@ -212,3 +212,128 @@ export async function addCustomCompany(name: string): Promise<void> {
     ON CONFLICT (name) DO NOTHING
   `;
 }
+
+// ===== マスター担当者管理 =====
+
+async function ensureMasterStaffTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS master_staff (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) UNIQUE NOT NULL,
+      sort_order INTEGER DEFAULT 0,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
+}
+
+// マスター担当者全取得（sort_order順）
+export async function getMasterStaff(): Promise<string[]> {
+  await ensureMasterStaffTable();
+  const { rows } = await sql`
+    SELECT name FROM master_staff ORDER BY sort_order ASC, created_at ASC
+  `;
+  return rows.map(r => r.name);
+}
+
+// マスター担当者初期化（初回のみ）
+export async function initMasterStaff(staffList: string[]): Promise<void> {
+  await ensureMasterStaffTable();
+  // テーブルが空の場合のみ投入
+  const { rows } = await sql`SELECT COUNT(*) as count FROM master_staff`;
+  if (rows[0].count > 0) {
+    return;
+  }
+
+  for (let i = 0; i < staffList.length; i++) {
+    await sql`
+      INSERT INTO master_staff (name, sort_order)
+      VALUES (${staffList[i]}, ${i})
+      ON CONFLICT (name) DO NOTHING
+    `;
+  }
+}
+
+// マスター担当者追加
+export async function addMasterStaff(name: string): Promise<void> {
+  await ensureMasterStaffTable();
+  await sql`
+    INSERT INTO master_staff (name, sort_order)
+    VALUES (${name}, (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM master_staff))
+    ON CONFLICT (name) DO NOTHING
+  `;
+}
+
+// ===== マスター企業管理 =====
+
+async function ensureMasterCompanyTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS master_companies (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) UNIQUE NOT NULL,
+      sort_order INTEGER DEFAULT 0,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
+}
+
+// マスター企業全取得（sort_order順）
+export async function getMasterCompanies(): Promise<string[]> {
+  await ensureMasterCompanyTable();
+  const { rows } = await sql`
+    SELECT name FROM master_companies ORDER BY sort_order ASC, created_at ASC
+  `;
+  return rows.map(r => r.name);
+}
+
+// マスター企業初期化（初回のみ、custom_companiesと統合）
+export async function initMasterCompanies(companyList: string[]): Promise<void> {
+  await ensureMasterCompanyTable();
+  await ensureCompanyTable();
+
+  // master_companiesテーブルが空の場合のみ投入
+  const { rows } = await sql`SELECT COUNT(*) as count FROM master_companies`;
+  if (rows[0].count > 0) {
+    return;
+  }
+
+  // COMPANY_LIST + custom_companies を統合
+  const seenNames = new Set<string>();
+  let sortOrder = 0;
+
+  // COMPANY_LIST を先に入れる
+  for (const companyName of companyList) {
+    if (!seenNames.has(companyName)) {
+      seenNames.add(companyName);
+      await sql`
+        INSERT INTO master_companies (name, sort_order)
+        VALUES (${companyName}, ${sortOrder})
+        ON CONFLICT (name) DO NOTHING
+      `;
+      sortOrder++;
+    }
+  }
+
+  // custom_companies から既存データを取得して追加
+  const customCompanies = await getCustomCompanies();
+  for (const companyName of customCompanies) {
+    if (!seenNames.has(companyName)) {
+      seenNames.add(companyName);
+      await sql`
+        INSERT INTO master_companies (name, sort_order)
+        VALUES (${companyName}, ${sortOrder})
+        ON CONFLICT (name) DO NOTHING
+      `;
+      sortOrder++;
+    }
+  }
+}
+
+// マスター企業追加
+export async function addMasterCompany(name: string): Promise<void> {
+  await ensureMasterCompanyTable();
+  await sql`
+    INSERT INTO master_companies (name, sort_order)
+    VALUES (${name}, (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM master_companies))
+    ON CONFLICT (name) DO NOTHING
+  `;
+}
