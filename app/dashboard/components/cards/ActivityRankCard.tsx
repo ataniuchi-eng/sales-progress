@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTheme } from "../../../theme-provider";
 import { TrendIcon } from "../ui/TrendIcon";
+import { DARK_CARD } from "./cardStyles";
 import type { StaffActivity } from "../../types";
 
 export function ActivityRankCard({ title, data, prevData, field, color, unit, darkMode }: { title: string; data: StaffActivity[]; prevData?: StaffActivity[]; field: keyof StaffActivity; color: string; unit?: string; darkMode?: boolean }) {
@@ -17,44 +18,38 @@ export function ActivityRankCard({ title, data, prevData, field, color, unit, da
   const fmtVal = (v: number) => unit ? `${Math.round(v * 10) / 10}${unit}` : String(v);
 
   if (darkMode) {
-    const bgCard = "rgba(255,255,255,0.06)";
-    const borderColor = "rgba(255,255,255,0.08)";
-    const textPrimary = "#fff";
-    const textSub = "rgba(255,255,255,0.6)";
-    const textDisabled = "rgba(255,255,255,0.35)";
-    const btnBg = "rgba(255,255,255,0.1)";
     return (
-      <div style={{ background: bgCard, borderRadius: 10, padding: "12px 10px", borderLeft: `3px solid ${color}` }}>
+      <div style={{ background: DARK_CARD.bgCard, borderRadius: 10, padding: "12px 10px", borderLeft: `3px solid ${color}` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
           <h3 style={{ fontSize: 11, fontWeight: 700, color, margin: 0 }}>{title}</h3>
           <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
             {prevData && <TrendIcon current={total} prev={prevTotal} />}
-            <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{unit ? `${totalDisplay}${unit}` : totalDisplay}</span>
+            <span style={{ fontSize: 15, fontWeight: 800, color: DARK_CARD.textPrimary, lineHeight: 1 }}>{unit ? `${totalDisplay}${unit}` : totalDisplay}</span>
           </div>
         </div>
-        {sorted.length === 0 ? <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, margin: 0 }}>未入力</p> : (
+        {sorted.length === 0 ? <p style={{ color: DARK_CARD.textMuted, fontSize: 11, margin: 0 }}>未入力</p> : (
           <>
             {top3.map((s, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: `1px solid ${borderColor}` }}>
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: `1px solid ${DARK_CARD.borderColor}` }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
                   <span style={{ fontSize: 12, flexShrink: 0 }}>{medals[i]}</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.staff}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: DARK_CARD.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.staff}</span>
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{fmtVal(s[field] as number)}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: DARK_CARD.textPrimary, flexShrink: 0 }}>{fmtVal(s[field] as number)}</span>
               </div>
             ))}
             {sorted.length > 3 && (
               <>
-                <button onClick={() => setShowAll(!showAll)} style={{ marginTop: 4, padding: "3px 6px", fontSize: 9, fontWeight: 600, color: "#fff", background: btnBg, border: `1px solid rgba(255,255,255,0.3)`, borderRadius: 4, cursor: "pointer", width: "100%" }}>
+                <button onClick={() => setShowAll(!showAll)} style={{ marginTop: 4, padding: "3px 6px", fontSize: 9, fontWeight: 600, color: DARK_CARD.textPrimary, background: DARK_CARD.btnBg, border: `1px solid ${DARK_CARD.btnBorder}`, borderRadius: 4, cursor: "pointer", width: "100%" }}>
                   {showAll ? "閉じる" : `全${sorted.length}件を表示`}
                 </button>
                 {showAll && sorted.slice(3).map((s, i) => (
-                  <div key={i + 3} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: `1px solid ${borderColor}` }}>
+                  <div key={i + 3} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: `1px solid ${DARK_CARD.borderColor}` }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
-                      <span style={{ fontSize: 9, color: "rgba(255,255,255,0.7)", width: 14, textAlign: "center", flexShrink: 0 }}>{i + 4}</span>
-                      <span style={{ fontSize: 10, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.staff}</span>
+                      <span style={{ fontSize: 9, color: DARK_CARD.textDetail, width: 14, textAlign: "center", flexShrink: 0 }}>{i + 4}</span>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: DARK_CARD.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.staff}</span>
                     </div>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{fmtVal(s[field] as number)}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: DARK_CARD.textPrimary, flexShrink: 0 }}>{fmtVal(s[field] as number)}</span>
                   </div>
                 ))}
               </>

@@ -26,16 +26,19 @@ import { InputGroup } from "./components/forms/InputGroup";
 import { CompanySelect } from "./components/ui/CompanySelect";
 import { AmountInput } from "./components/ui/AmountInput";
 import { UserManagementView } from "./components/UserManagementView";
+import { useAuth } from "./hooks/useAuth";
+import { useDataManagement } from "./hooks/useDataManagement";
+import { PrevDayResultSection } from "./components/sections/PrevDayResultSection";
 
 // ===== メインコンポーネント =====
 export default function DashboardPage() {
   const router = useRouter();
   const { theme, t: tc } = useTheme();
-  const [allData, setAllData] = useState<AllData>({});
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const t = todayKey();
-    return isBusinessDay(t) ? t : getNextBusinessDay(t);
-  });
+
+  // Custom hooks
+  const { isAdmin, setIsAdmin, currentStaffName, setCurrentStaffName, subStaffName, setSubStaffName, userRole, setUserRole } = useAuth();
+  const { allData, setAllData, selectedDate, setSelectedDate, saveDate, setSaveDate, loading, setLoading, isDataEmpty, inheritOnce, fetchAllData } = useDataManagement();
+
   const [calYear, setCalYear] = useState(new Date().getFullYear());
   const [calMonth, setCalMonth] = useState(new Date().getMonth());
   const [inputOpen, setInputOpen] = useState(false);
@@ -44,16 +47,10 @@ export default function DashboardPage() {
   const [sectionFocusOpen, setSectionFocusOpen] = useState(false);
   const [sectionRAOpen, setSectionRAOpen] = useState(false);
   const [sectionAnnouncementOpen, setSectionAnnouncementOpen] = useState(false);
-  const [saveDate, setSaveDate] = useState(selectedDate);
   const [toast, setToast] = useState("");
   const [savingSection, setSavingSection] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab] = useState<"main" | "monthly" | "users">("main");
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [currentStaffName, setCurrentStaffName] = useState<string | null>(null); // null = admin (全担当編集可)
-  const [subStaffName, setSubStaffName] = useState<string | null>(null); // サブ担当
-  const [userRole, setUserRole] = useState<"A" | "B" | "C" | "D">("C");
   const [monthlyYM, setMonthlyYM] = useState(`${new Date().getFullYear()}-${("0" + (new Date().getMonth() + 1)).slice(-2)}`);
 
   const [inp, setInp] = useState({
@@ -81,15 +78,15 @@ export default function DashboardPage() {
   }, []);
   const allCompanies = [...COMPANY_LIST, ...customCompanies].sort((a, b) => a.localeCompare(b, "ja"));
   const handleAddCompany = useCallback(async (name: string) => {
-    if (!COMPANY_LIST.includes(name) && !customCompanies.includes(name)) {
-      try {
-        const res = await fetch("/api/companies", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
-        if (res.ok) {
-          setCustomCompanies(prev => [...prev, name]);
-        }
-      } catch { /* サイレント */ }
-    }
-  }, [customCompanies]);
+    setCustomCompanies(prev => {
+      if (!COMPANY_LIST.includes(name) && !prev.includes(name)) {
+        fetch("/api/companies", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) })
+          .catch(() => {});
+        return [...prev, name];
+      }
+      return prev;
+    });
+  }, []);
 
   // 天気情報（9時・14時・18時の3時間帯）
   type WeatherSlot = { time: string; weather: string; temp: number };
@@ -97,20 +94,6 @@ export default function DashboardPage() {
   const [weatherInfo, setWeatherInfo] = useState<{ shibuya: AreaWeather; shinjuku: AreaWeather } | null>(null);
   // ビジネス格言
   const [dailyQuote, setDailyQuote] = useState<string>("");
-
-  // ログインユーザー情報取得
-  useEffect(() => {
-    fetch("/api/auth/me")
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data?.isAdmin || data?.role === "A") { setIsAdmin(true); setUserRole("A"); }
-        if (data?.staffName) setCurrentStaffName(data.staffName);
-        if (data?.subStaff) setSubStaffName(data.subStaff);
-        if (data?.role) setUserRole(data.role);
-        // admin / role A の場合は全担当編集可
-      })
-      .catch(() => {});
-  }, []);
 
   // currentStaffNameが取得された後、空staffのstaffActivitiesを補完
   useEffect(() => {
@@ -215,131 +198,11 @@ export default function DashboardPage() {
     setTimeout(() => setToast(""), 2500);
   }, []);
 
-  // データが実質空かどうか判定（全セクション: 予算・見込・注力・RA開拓・全体連絡）
-  const isDataEmpty = useCallback((d: DayData): boolean => {
-    const p = d.proper || { target: 0, progress: 0, forecast: 0 };
-    const b = d.bp || { target: 0, progress: 0, forecast: 0 };
-    const f = d.fl || { target: 0, progress: 0, forecast: 0 };
-    const c = d.co || { target: 0, forecast: 0 };
-    const numbersEmpty = p.target === 0 && p.progress === 0 && p.forecast === 0
-      && b.target === 0 && b.progress === 0 && b.forecast === 0
-      && f.target === 0 && f.progress === 0 && f.forecast === 0
-      && (c.target || 0) === 0 && (c.forecast || 0) === 0;
-    const peopleEmpty = !d.focusPeople || d.focusPeople.length === 0;
-    const projectsEmpty = !d.focusProjects || d.focusProjects.length === 0;
-    const ra = d.ra;
-    const raEmpty = !ra || (
-      (ra.acquisitionTarget || 0) === 0 && (ra.acquisitionProgress || 0) === 0
-      && (ra.joinTarget || 0) === 0 && (ra.joinProgress || 0) === 0
-      && (!ra.acquisitionCompanies || ra.acquisitionCompanies.length === 0)
-      && (!ra.joinCompanies || ra.joinCompanies.length === 0)
-    );
-    const announcementsEmpty = !d.announcements || d.announcements.length === 0 || d.announcements.every(a => !a || !a.trim());
-    return numbersEmpty && peopleEmpty && projectsEmpty && raEmpty && announcementsEmpty;
-  }, []);
-
-  // 初回ロード時のみ当日データを前営業日から継承（セクション単位で欠落を補完）
-  const inheritOnce = useCallback(async (targetKey: string, currentAllData: AllData) => {
-    const existing = currentAllData[targetKey];
-    // 各セクションが既にあるか判定
-    const hasBudget = existing && (
-      (existing.proper?.target || 0) > 0 || (existing.proper?.forecast || 0) > 0
-      || (existing.bp?.target || 0) > 0 || (existing.bp?.forecast || 0) > 0
-      || (existing.fl?.target || 0) > 0 || (existing.fl?.forecast || 0) > 0
-      || (existing.co?.target || 0) > 0 || (existing.co?.forecast || 0) > 0
-    );
-    const hasFocus = existing && (
-      (existing.focusPeople?.length || 0) > 0 || (existing.focusProjects?.length || 0) > 0
-    );
-    const hasRA = existing?.ra && (
-      (existing.ra.acquisitionTarget || 0) > 0 || (existing.ra.acquisitionProgress || 0) > 0
-      || (existing.ra.joinTarget || 0) > 0 || (existing.ra.joinProgress || 0) > 0
-      || (existing.ra.acquisitionCompanies?.length || 0) > 0
-      || (existing.ra.joinCompanies?.length || 0) > 0
-    );
-    const hasAnnouncements = existing && (
-      (existing.announcements?.length || 0) > 0 && existing.announcements!.some(a => a && a.trim())
-    );
-    // 全セクション揃っていれば何もしない
-    if (hasBudget && hasFocus && hasRA && hasAnnouncements) return;
-    // 前営業日から遡って最新の実データを探す
-    const prevBizDay = getPrevBusinessDay(targetKey);
-    let prevData: DayData | null = null;
-    const keys = Object.keys(currentAllData).sort().reverse();
-    for (const k of keys) {
-      if (k <= prevBizDay && isBusinessDay(k) && !isDataEmpty(currentAllData[k])) {
-        prevData = currentAllData[k];
-        break;
-      }
-    }
-    if (!prevData) return;
-    // 既存データをベースに、欠落セクションのみ前営業日から補完
-    const merged: DayData = JSON.parse(JSON.stringify(existing || {}));
-    let needsSave = false;
-    if (!hasBudget) {
-      if (prevData.proper) { merged.proper = JSON.parse(JSON.stringify(prevData.proper)); needsSave = true; }
-      if (prevData.bp) { merged.bp = JSON.parse(JSON.stringify(prevData.bp)); needsSave = true; }
-      if (prevData.fl) { merged.fl = JSON.parse(JSON.stringify(prevData.fl)); needsSave = true; }
-      if (prevData.co) { merged.co = JSON.parse(JSON.stringify(prevData.co)); needsSave = true; }
-    }
-    if (!hasFocus) {
-      if (prevData.focusPeople?.length) { merged.focusPeople = JSON.parse(JSON.stringify(prevData.focusPeople)); needsSave = true; }
-      if (prevData.focusProjects?.length) { merged.focusProjects = JSON.parse(JSON.stringify(prevData.focusProjects)); needsSave = true; }
-    }
-    if (!hasRA && prevData.ra) {
-      merged.ra = JSON.parse(JSON.stringify(prevData.ra)); needsSave = true;
-    }
-    if (!hasAnnouncements && prevData.announcements?.length) {
-      merged.announcements = JSON.parse(JSON.stringify(prevData.announcements)); needsSave = true;
-    }
-    // staffActivitiesは日次入力のため継承しない（既存があればそのまま）
-    if (!merged.staffActivities) merged.staffActivities = [];
-    if (!needsSave) return;
-    try {
-      const res = await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dateKey: targetKey, data: merged }) });
-      if (res.ok) {
-        setAllData((prev) => ({ ...prev, [targetKey]: merged }));
-      }
-    } catch { /* サイレント */ }
-  }, [isDataEmpty]);
 
   // データロード（初回のみ当日データを前営業日から継承。日付変更時の自動継承は行わない）
   useEffect(() => {
-    fetch("/api/data")
-      .then((r) => { if (r.status === 401) { router.push("/login"); return null; } return r.json(); })
-      .then((data) => {
-        if (data) {
-          setAllData(data);
-          // 初回ロード時のみ：当日データでいずれかのセクションが欠けていれば前営業日から継承
-          const today = todayKey();
-          const todayData = data[today];
-          const hasBudget = todayData && (
-            (todayData.proper?.target || 0) > 0 || (todayData.proper?.forecast || 0) > 0
-            || (todayData.bp?.target || 0) > 0 || (todayData.bp?.forecast || 0) > 0
-            || (todayData.fl?.target || 0) > 0 || (todayData.fl?.forecast || 0) > 0
-            || (todayData.co?.target || 0) > 0 || (todayData.co?.forecast || 0) > 0
-          );
-          const hasFocus = todayData && (
-            (todayData.focusPeople?.length || 0) > 0 || (todayData.focusProjects?.length || 0) > 0
-          );
-          const hasRA = todayData?.ra && (
-            (todayData.ra.acquisitionTarget || 0) > 0 || (todayData.ra.acquisitionProgress || 0) > 0
-            || (todayData.ra.joinTarget || 0) > 0 || (todayData.ra.joinProgress || 0) > 0
-            || (todayData.ra.acquisitionCompanies?.length || 0) > 0
-            || (todayData.ra.joinCompanies?.length || 0) > 0
-          );
-          const hasAnnouncements = todayData && (
-            (todayData.announcements?.length || 0) > 0 && todayData.announcements!.some((a: string) => a && a.trim())
-          );
-          if (!todayData || !hasBudget || !hasFocus || !hasRA || !hasAnnouncements) {
-            inheritOnce(today, data);
-          }
-        }
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [router, inheritOnce, isDataEmpty]);
-  // 注: 日付変更時の自動継承は廃止。日付切替はgetLatestDataForDate + openInputフォールバックで処理。
+    fetchAllData(router);
+  }, [router, fetchAllData]);
 
   // 表示用データ
   const result = getLatestDataForDate(allData, selectedDate);
@@ -976,33 +839,7 @@ export default function DashboardPage() {
             </div>
 
             {/* 前日営業活動成績 */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingBottom: 8, borderBottom: "3px solid #e67e22" }}>
-              <div style={{ width: 6, height: 24, borderRadius: 3, background: "#e67e22" }} />
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>前営業日結果</h3>
-            </div>
-
-            {/* 件数エリア - ダークブルー */}
-            <div style={{ background: "linear-gradient(135deg, #0c2340, #1a3a5c)", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.15)", color: "#fff", marginBottom: 16 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#4cc9f0", marginBottom: 14 }}>件数</h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }} className="prev-result-grid">
-                <ActivityRankCard title="RA受注数" data={dStaffActivities} prevData={prevPrevStaffActivities} field="ordersRA" color="#ff6b6b" darkMode />
-                <ActivityRankCard title="CA受注数" data={dStaffActivities} prevData={prevPrevStaffActivities} field="ordersCA" color="#c084fc" darkMode />
-                <ActivityRankCard title="面談設定数" data={dStaffActivities} prevData={prevPrevStaffActivities} field="interviewSetups" color="#4cc9f0" darkMode />
-                <ActivityRankCard title="面談実施数" data={dStaffActivities} prevData={prevPrevStaffActivities} field="interviewsConducted" color="#fbbf24" darkMode />
-                <ActivityRankCard title="RA開拓アポ獲得" data={dStaffActivities} prevData={prevPrevStaffActivities} field="appointmentAcquisitions" color="#34d399" darkMode />
-              </div>
-            </div>
-
-            {/* 金額エリア（受注粗利 + 単価UP横並び） - ダークパープル */}
-            <div style={{ background: "linear-gradient(135deg, #2d1b2e, #1a1a2e)", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.15)", color: "#fff", marginBottom: isMobile ? 16 : 24 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f9a8d4", marginBottom: 14 }}>金額（万円）</h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }} className="prev-result-grid">
-                <AmountRankCard title="RA受注粗利" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ra" color="#ff6b6b" darkMode />
-                <AmountRankCard title="CA受注粗利" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ca" color="#c084fc" darkMode />
-                <AmountRankCard title="RA単価UP" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="raPU" color="#ff6b6b" darkMode />
-                <AmountRankCard title="CA単価UP" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="caPU" color="#c084fc" darkMode />
-              </div>
-            </div>
+            <PrevDayResultSection dStaffActivities={dStaffActivities} prevPrevStaffActivities={prevPrevStaffActivities} isMobile={isMobile} textColor={tc.textPrimary} />
 
             {/* RA開拓セクション */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingBottom: 8, borderBottom: "3px solid #2ecc71" }}>
