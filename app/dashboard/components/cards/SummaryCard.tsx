@@ -13,19 +13,19 @@ function fmtMan(v: number): string {
   return parts.join(".");
 }
 
-export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, supportCost, countInfo, grossProfitTotal, companyProfits }: {
+export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, supportCost, countInfo, grossProfitTotal, companyProfits, totalDeduction }: {
   title: string; data: { target: number; progress: number; forecast: number };
   rate: number; isTotal?: boolean; standby?: number; standbyCost?: number; supportCost?: number;
   countInfo?: { progress: number; target: number };
   grossProfitTotal?: number;
   companyProfits?: { company: string; profit: number }[];
+  totalDeduction?: number;
 }) {
   const { t: tc } = useTheme();
   const [showAllCompanies, setShowAllCompanies] = useState(false);
   const bg = isTotal ? "linear-gradient(135deg, #0c4a6e, #0284c7)" : tc.bgCard;
   const color = isTotal ? "#fff" : tc.text;
   const labelColor = isTotal ? "rgba(255,255,255,0.7)" : tc.textMuted;
-  // 進捗から待機費用or支援費等を引いた値で達成率を計算
   const deduction = standbyCost || supportCost || 0;
   const adjustedProgress = data.progress - deduction;
   const barFill = isTotal ? "#4cc9f0" : rate >= 100 ? "#2ecc71" : rate >= 70 ? "#f39c12" : "#e63946";
@@ -45,20 +45,28 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
         )}
       </div>
       <Row label="目標" value={formatYen(data.target)} labelColor={labelColor} valueColor={isTotal ? "#fff" : tc.textPrimary} />
-      {grossProfitTotal !== undefined ? (
-        <Row label="粗利計" value={formatYen(grossProfitTotal)} labelColor={labelColor} valueColor={isTotal ? "#4cc9f0" : tc.accentText} />
+      {isTotal ? (
+        <>
+          <Row label="現在粗利" value={formatYen(data.progress)} labelColor={labelColor} valueColor="#4cc9f0" />
+          <Row label="待機・支援費等" value={formatYen(totalDeduction || 0)} labelColor={labelColor} valueColor="#ffb3b3" />
+          <Row label="粗利計" value={formatYen(grossProfitTotal || 0)} labelColor={labelColor} valueColor="#4cc9f0" />
+          <Row label="見込" value={formatYen(data.forecast)} labelColor={labelColor} valueColor="#a8e6cf" />
+          <div style={{ marginBottom: 6, height: 13 }} />
+        </>
       ) : (
-        <Row label="現在粗利" value={formatYen(data.progress)} labelColor={labelColor} valueColor={isTotal ? "#4cc9f0" : tc.accentText} />
+        <>
+          <Row label="現在粗利" value={formatYen(data.progress)} labelColor={labelColor} valueColor={tc.accentText} />
+          {standbyCost !== undefined && <Row label="待機費用" value={formatYen(standbyCost)} labelColor={labelColor} valueColor="#e74c3c" />}
+          {supportCost !== undefined && <Row label="支援費等" value={formatYen(supportCost)} labelColor={labelColor} valueColor="#e74c3c" />}
+          {(standbyCost !== undefined || supportCost !== undefined) && <Row label="粗利計" value={formatYen(adjustedProgress)} labelColor={labelColor} valueColor={tc.accentText} />}
+          <Row label="見込" value={formatYen(data.forecast)} labelColor={labelColor} valueColor="#2ecc71" />
+          {standby !== undefined ? (
+            <Row label="待機" value={`${standby}名`} labelColor={labelColor} valueColor="#f39c12" />
+          ) : (
+            <div style={{ marginBottom: 6, height: 13 }} />
+          )}
+        </>
       )}
-      {standbyCost !== undefined && <Row label="待機費用" value={formatYen(standbyCost)} labelColor={labelColor} valueColor={isTotal ? "#ffb3b3" : "#e74c3c"} />}
-      {supportCost !== undefined && <Row label="支援費等" value={formatYen(supportCost)} labelColor={labelColor} valueColor={isTotal ? "#ffb3b3" : "#e74c3c"} />}
-      {(standbyCost !== undefined || supportCost !== undefined) && <Row label="粗利計" value={formatYen(adjustedProgress)} labelColor={labelColor} valueColor={isTotal ? "#4cc9f0" : tc.accentText} />}
-      <Row label="見込" value={formatYen(data.forecast)} labelColor={labelColor} valueColor={isTotal ? "#a8e6cf" : "#2ecc71"} />
-      {standby !== undefined ? (
-        <Row label="待機" value={`${standby}名`} labelColor={labelColor} valueColor={isTotal ? "#ffd6a5" : "#f39c12"} />
-      ) : !isTotal ? (
-        <div style={{ marginBottom: 6, height: 13 }} />
-      ) : null}
       <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${trackColor}`, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
         <div style={{ fontSize: 11, color: labelColor }}>達成率</div>
         <div style={{ position: "relative" }}>
@@ -66,18 +74,18 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
           <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%) rotate(0deg)", fontSize: 16, fontWeight: 800, color: barFill }}>{rate}%</span>
         </div>
       </div>
-      {companies.length > 0 && (
+      {!isTotal && companies.length > 0 && (
         <div style={{ marginTop: 10, paddingTop: 8, borderTop: `1px solid ${trackColor}` }}>
           <div style={{ fontSize: 10, color: labelColor, marginBottom: 6, fontWeight: 600 }}>今月決定粗利BEST{Math.min(3, companies.length)}</div>
           {displayCompanies.map((c, i) => (
             <div key={c.company} style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 0", fontSize: 11 }}>
               {i < 3 ? <span style={{ fontSize: 13, flexShrink: 0 }}>{medals[i]}</span> : <span style={{ fontSize: 10, fontWeight: 700, width: 18, textAlign: "center", flexShrink: 0, color: labelColor }}>{i + 1}</span>}
               <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 600, fontSize: 11 }}>{c.company}</span>
-              <span style={{ flexShrink: 0, fontWeight: 700, fontSize: 11, color: isTotal ? "#4cc9f0" : barFill }}>{fmtMan(c.profit)}<span style={{ fontSize: 9, fontWeight: 400 }}>万円</span></span>
+              <span style={{ flexShrink: 0, fontWeight: 700, fontSize: 11, color: barFill }}>{fmtMan(c.profit)}<span style={{ fontSize: 9, fontWeight: 400 }}>万円</span></span>
             </div>
           ))}
           {companies.length > 3 && (
-            <button onClick={() => setShowAllCompanies(!showAllCompanies)} style={{ display: "block", width: "100%", marginTop: 6, padding: "4px 0", fontSize: 10, fontWeight: 600, color: isTotal ? "#4cc9f0" : barFill, background: "transparent", border: `1px solid ${trackColor}`, borderRadius: 4, cursor: "pointer" }}>
+            <button onClick={() => setShowAllCompanies(!showAllCompanies)} style={{ display: "block", width: "100%", marginTop: 6, padding: "4px 0", fontSize: 10, fontWeight: 600, color: barFill, background: "transparent", border: `1px solid ${trackColor}`, borderRadius: 4, cursor: "pointer" }}>
               {showAllCompanies ? "TOP3のみ表示" : `全${companies.length}件を表示`}
             </button>
           )}

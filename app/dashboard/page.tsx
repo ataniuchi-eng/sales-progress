@@ -931,7 +931,7 @@ export default function DashboardPage() {
           <div style={{ flex: 1, minWidth: 0 }}>
             {/* カード4枚 */}
             <div className="card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: isMobile ? 8 : 12, marginBottom: isMobile ? 16 : 24 }}>
-              <SummaryCard title="全体" data={total} rate={calcRate(totalAdjusted, total.target)} isTotal countInfo={affiliationProgress["全体"]} grossProfitTotal={totalAdjusted} companyProfits={companyProfitAll} />
+              <SummaryCard title="全体" data={total} rate={calcRate(totalAdjusted, total.target)} isTotal countInfo={affiliationProgress["全体"]} grossProfitTotal={totalAdjusted} totalDeduction={(proper.standbyCost || 0) + (bp.supportCost || 0) + (fl.supportCost || 0) + (co.supportCost || 0)} />
               <SummaryCard title="プロパー" data={proper} rate={calcRate(properAdjusted, proper.target)} standby={proper.standby} standbyCost={proper.standbyCost} countInfo={affiliationProgress["プロパー"]} companyProfits={companyProfitProper} />
               <SummaryCard title="BP" data={bp} rate={calcRate(bpAdjusted, bp.target)} supportCost={bp.supportCost} countInfo={affiliationProgress["BP"]} companyProfits={companyProfitBP} />
               <SummaryCard title="フリーランス" data={fl} rate={calcRate(flAdjusted, fl.target)} supportCost={fl.supportCost} countInfo={affiliationProgress["フリーランス"]} companyProfits={companyProfitFL} />
