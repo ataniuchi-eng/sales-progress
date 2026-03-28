@@ -396,6 +396,67 @@ export default function DashboardPage() {
     forecast: proper.forecast + bp.forecast + fl.forecast + co.forecast,
   };
   const totalAdjusted = properAdjusted + bpAdjusted + flAdjusted + coAdjusted;
+
+  // 所属別 企業粗利ランキング集計
+  const getCompanyProfitByAffiliation = useCallback((affiliation: string): { company: string; profit: number }[] => {
+    const ym = selectedDate.substring(0, 7);
+    const [y, m] = ym.split("-").map(Number);
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const compMap: Record<string, number> = {};
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dk = `${y}-${("0" + m).slice(-2)}-${("0" + d).slice(-2)}`;
+      const dayData = allData[dk];
+      if (!dayData || !Array.isArray(dayData.staffActivities)) continue;
+      dayData.staffActivities.forEach((s: any) => {
+        (s.caEntries || []).forEach((e: any) => {
+          if (e.affiliation === affiliation && e.company) {
+            compMap[e.company] = (compMap[e.company] || 0) + (e.amount || 0);
+          }
+        });
+        (s.caPriceUpEntries || []).forEach((e: any) => {
+          if (e.affiliation === affiliation && e.company) {
+            compMap[e.company] = (compMap[e.company] || 0) + (e.amount || 0);
+          }
+        });
+      });
+    }
+    return Object.entries(compMap)
+      .map(([company, profit]) => ({ company, profit: Math.round(profit * 10) / 10 }))
+      .filter(c => c.profit !== 0)
+      .sort((a, b) => b.profit - a.profit);
+  }, [allData, selectedDate]);
+
+  // 全体用：全所属の企業粗利ランキング
+  const getCompanyProfitAll = useCallback((): { company: string; profit: number }[] => {
+    const ym = selectedDate.substring(0, 7);
+    const [y, m] = ym.split("-").map(Number);
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const compMap: Record<string, number> = {};
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dk = `${y}-${("0" + m).slice(-2)}-${("0" + d).slice(-2)}`;
+      const dayData = allData[dk];
+      if (!dayData || !Array.isArray(dayData.staffActivities)) continue;
+      dayData.staffActivities.forEach((s: any) => {
+        (s.caEntries || []).forEach((e: any) => {
+          if (e.company) compMap[e.company] = (compMap[e.company] || 0) + (e.amount || 0);
+        });
+        (s.caPriceUpEntries || []).forEach((e: any) => {
+          if (e.company) compMap[e.company] = (compMap[e.company] || 0) + (e.amount || 0);
+        });
+      });
+    }
+    return Object.entries(compMap)
+      .map(([company, profit]) => ({ company, profit: Math.round(profit * 10) / 10 }))
+      .filter(c => c.profit !== 0)
+      .sort((a, b) => b.profit - a.profit);
+  }, [allData, selectedDate]);
+
+  const companyProfitProper = getCompanyProfitByAffiliation("プロパー");
+  const companyProfitBP = getCompanyProfitByAffiliation("BP");
+  const companyProfitFL = getCompanyProfitByAffiliation("フリーランス");
+  const companyProfitCO = getCompanyProfitByAffiliation("協業");
+  const companyProfitAll = getCompanyProfitAll();
+
   const dPeople = Array.isArray(displayData.focusPeople) ? displayData.focusPeople : [];
   const dProjects = Array.isArray(displayData.focusProjects) ? displayData.focusProjects : [];
   const dAnnouncements = Array.isArray(displayData.announcements) ? displayData.announcements.filter(a => a) : [];
@@ -870,11 +931,11 @@ export default function DashboardPage() {
           <div style={{ flex: 1, minWidth: 0 }}>
             {/* カード4枚 */}
             <div className="card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: isMobile ? 8 : 12, marginBottom: isMobile ? 16 : 24 }}>
-              <SummaryCard title="全体" data={total} rate={calcRate(totalAdjusted, total.target)} isTotal countInfo={affiliationProgress["全体"]} grossProfitTotal={totalAdjusted} />
-              <SummaryCard title="プロパー" data={proper} rate={calcRate(properAdjusted, proper.target)} standby={proper.standby} standbyCost={proper.standbyCost} countInfo={affiliationProgress["プロパー"]} />
-              <SummaryCard title="BP" data={bp} rate={calcRate(bpAdjusted, bp.target)} supportCost={bp.supportCost} countInfo={affiliationProgress["BP"]} />
-              <SummaryCard title="フリーランス" data={fl} rate={calcRate(flAdjusted, fl.target)} supportCost={fl.supportCost} countInfo={affiliationProgress["フリーランス"]} />
-              <SummaryCard title="協業" data={co} rate={calcRate(coAdjusted, co.target)} supportCost={co.supportCost} countInfo={affiliationProgress["協業"]} />
+              <SummaryCard title="全体" data={total} rate={calcRate(totalAdjusted, total.target)} isTotal countInfo={affiliationProgress["全体"]} grossProfitTotal={totalAdjusted} companyProfits={companyProfitAll} />
+              <SummaryCard title="プロパー" data={proper} rate={calcRate(properAdjusted, proper.target)} standby={proper.standby} standbyCost={proper.standbyCost} countInfo={affiliationProgress["プロパー"]} companyProfits={companyProfitProper} />
+              <SummaryCard title="BP" data={bp} rate={calcRate(bpAdjusted, bp.target)} supportCost={bp.supportCost} countInfo={affiliationProgress["BP"]} companyProfits={companyProfitBP} />
+              <SummaryCard title="フリーランス" data={fl} rate={calcRate(flAdjusted, fl.target)} supportCost={fl.supportCost} countInfo={affiliationProgress["フリーランス"]} companyProfits={companyProfitFL} />
+              <SummaryCard title="協業" data={co} rate={calcRate(coAdjusted, co.target)} supportCost={co.supportCost} countInfo={affiliationProgress["協業"]} companyProfits={companyProfitCO} />
             </div>
 
             {/* 前日営業活動成績（件数5カード + 金額2カード） */}
@@ -973,6 +1034,15 @@ export default function DashboardPage() {
               </>);
             })()}
 
+            {/* RA開拓セクション */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingBottom: 8, borderBottom: "3px solid #2ecc71" }}>
+              <div style={{ width: 6, height: 24, borderRadius: 3, background: "#2ecc71" }} />
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>RA開拓</h3>
+            </div>
+            <div style={{ marginBottom: isMobile ? 16 : 24 }}>
+              <RADisplay ra={dRA} />
+            </div>
+
             {/* 注力セクション */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingBottom: 8, borderBottom: "3px solid #4cc9f0" }}>
               <div style={{ width: 6, height: 24, borderRadius: 3, background: "#4cc9f0" }} />
@@ -981,15 +1051,6 @@ export default function DashboardPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: isMobile ? 16 : 24 }}>
               <FocusProjectsDisplay projects={dProjects} />
               <FocusPeopleDisplay people={dPeople} />
-            </div>
-
-            {/* RA開拓セクション（3段目） */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingBottom: 8, borderBottom: "3px solid #2ecc71" }}>
-              <div style={{ width: 6, height: 24, borderRadius: 3, background: "#2ecc71" }} />
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>RA開拓</h3>
-            </div>
-            <div style={{ marginBottom: isMobile ? 16 : 24 }}>
-              <RADisplay ra={dRA} />
             </div>
 
             {/* 入力トグル */}

@@ -1,17 +1,27 @@
 "use client";
 
+import { useState } from "react";
 import { useTheme } from "../../../theme-provider";
 import { formatYen } from "../../utils/numbers";
 import { DonutChart } from "../ui/DonutChart";
 import { Row } from "../ui/Row";
 
-export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, supportCost, countInfo, grossProfitTotal }: {
+function fmtMan(v: number): string {
+  if (v === 0) return "0";
+  const parts = v.toString().split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return parts.join(".");
+}
+
+export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, supportCost, countInfo, grossProfitTotal, companyProfits }: {
   title: string; data: { target: number; progress: number; forecast: number };
   rate: number; isTotal?: boolean; standby?: number; standbyCost?: number; supportCost?: number;
   countInfo?: { progress: number; target: number };
   grossProfitTotal?: number;
+  companyProfits?: { company: string; profit: number }[];
 }) {
   const { t: tc } = useTheme();
+  const [showAllCompanies, setShowAllCompanies] = useState(false);
   const bg = isTotal ? "linear-gradient(135deg, #0c4a6e, #0284c7)" : tc.bgCard;
   const color = isTotal ? "#fff" : tc.text;
   const labelColor = isTotal ? "rgba(255,255,255,0.7)" : tc.textMuted;
@@ -20,6 +30,10 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
   const adjustedProgress = data.progress - deduction;
   const barFill = isTotal ? "#4cc9f0" : rate >= 100 ? "#2ecc71" : rate >= 70 ? "#f39c12" : "#e63946";
   const trackColor = isTotal ? "rgba(255,255,255,0.15)" : tc.border;
+  const medals = ["🥇", "🥈", "🥉"];
+  const companies = companyProfits || [];
+  const displayCompanies = showAllCompanies ? companies : companies.slice(0, 3);
+
   return (
     <div style={{ background: bg, borderRadius: 14, padding: "20px 16px", boxShadow: tc.shadow, color }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, paddingBottom: 6, borderBottom: `1px solid ${trackColor}` }}>
@@ -48,6 +62,23 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
           <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%) rotate(0deg)", fontSize: 16, fontWeight: 800, color: barFill }}>{rate}%</span>
         </div>
       </div>
+      {companies.length > 0 && (
+        <div style={{ marginTop: 10, paddingTop: 8, borderTop: `1px solid ${trackColor}` }}>
+          <div style={{ fontSize: 10, color: labelColor, marginBottom: 6, fontWeight: 600 }}>粗利企業BEST{Math.min(3, companies.length)}</div>
+          {displayCompanies.map((c, i) => (
+            <div key={c.company} style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 0", fontSize: 11 }}>
+              {i < 3 ? <span style={{ fontSize: 13, flexShrink: 0 }}>{medals[i]}</span> : <span style={{ fontSize: 10, fontWeight: 700, width: 18, textAlign: "center", flexShrink: 0, color: labelColor }}>{i + 1}</span>}
+              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 600, fontSize: 11 }}>{c.company}</span>
+              <span style={{ flexShrink: 0, fontWeight: 700, fontSize: 11, color: isTotal ? "#4cc9f0" : barFill }}>{fmtMan(c.profit)}<span style={{ fontSize: 9, fontWeight: 400 }}>万円</span></span>
+            </div>
+          ))}
+          {companies.length > 3 && (
+            <button onClick={() => setShowAllCompanies(!showAllCompanies)} style={{ display: "block", width: "100%", marginTop: 6, padding: "4px 0", fontSize: 10, fontWeight: 600, color: isTotal ? "#4cc9f0" : barFill, background: "transparent", border: `1px solid ${trackColor}`, borderRadius: 4, cursor: "pointer" }}>
+              {showAllCompanies ? "BEST3のみ表示" : `全${companies.length}件を表示`}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
