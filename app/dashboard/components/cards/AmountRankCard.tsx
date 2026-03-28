@@ -6,11 +6,20 @@ import { TrendIcon } from "../ui/TrendIcon";
 import type { StaffActivity, OrderEntry } from "../../types";
 
 export function AmountRankCard({ title, data, prevData, entryType, color, darkMode }: {
-  title: string; data: StaffActivity[]; prevData?: StaffActivity[]; entryType: "ra" | "ca"; color: string; darkMode?: boolean;
+  title: string; data: StaffActivity[]; prevData?: StaffActivity[]; entryType: "ra" | "ca" | "raPU" | "caPU"; color: string; darkMode?: boolean;
 }) {
   const { t: tc } = useTheme();
   const [showAll, setShowAll] = useState(false);
-  const getEntries = (s: StaffActivity) => entryType === "ra" ? (s.raEntries || []) : (s.caEntries || []);
+  const [detailOpen, setDetailOpen] = useState<Record<number, boolean>>({});
+  const isPU = entryType === "raPU" || entryType === "caPU";
+  const getEntries = (s: StaffActivity) => {
+    switch (entryType) {
+      case "ra": return s.raEntries || [];
+      case "ca": return s.caEntries || [];
+      case "raPU": return s.raPriceUpEntries || [];
+      case "caPU": return s.caPriceUpEntries || [];
+    }
+  };
   const getTotal = (s: StaffActivity) => getEntries(s).reduce((sum, e) => sum + (e.amount || 0), 0);
   const sorted = [...data].filter(s => s.staff && getTotal(s) > 0).sort((a, b) => getTotal(b) - getTotal(a));
   const top3 = sorted.slice(0, 3);
@@ -18,6 +27,7 @@ export function AmountRankCard({ title, data, prevData, entryType, color, darkMo
   const prevTotal = Math.round((prevData || []).reduce((sum, s) => sum + getTotal(s), 0) * 10) / 10;
   const medals = ["🥇", "🥈", "🥉"];
   const fmtVal = (v: number) => `${Math.round(v * 10) / 10}万円`;
+  const revLabel = (entryType === "ra" || entryType === "raPU") ? "売上" : "仕入";
 
   const renderEntry = (s: StaffActivity, i: number, isSub?: boolean) => {
     const entries = getEntries(s);
@@ -25,6 +35,7 @@ export function AmountRankCard({ title, data, prevData, entryType, color, darkMo
     const textPrimary = darkMode ? "#fff" : (isSub ? tc.textSecondary : tc.textPrimary);
     const textDetail = darkMode ? "rgba(255,255,255,0.45)" : tc.textMuted;
     const borderCol = darkMode ? "rgba(255,255,255,0.08)" : tc.border;
+    const isOpen = detailOpen[i] || false;
     return (
       <div key={i} style={{ padding: darkMode ? "6px 0" : "8px 0", borderBottom: `1px solid ${borderCol}` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -32,11 +43,21 @@ export function AmountRankCard({ title, data, prevData, entryType, color, darkMo
             {isSub ? <span style={{ fontSize: darkMode ? 10 : 12, color: darkMode ? "rgba(255,255,255,0.5)" : tc.textMuted, width: darkMode ? 18 : 20, textAlign: "center" }}>{i + 1}</span> : <span style={{ fontSize: darkMode ? 14 : 16 }}>{medals[i]}</span>}
             <span style={{ fontSize: darkMode ? (isSub ? 11 : 12) : (isSub ? 13 : 14), fontWeight: 600, color: textPrimary }}>{s.staff}</span>
           </div>
-          <span style={{ fontSize: darkMode ? (isSub ? 12 : 14) : (isSub ? 14 : 16), fontWeight: 700, color }}>{fmtVal(staffTotal)}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <span style={{ fontSize: darkMode ? (isSub ? 12 : 14) : (isSub ? 14 : 16), fontWeight: 700, color }}>{fmtVal(staffTotal)}</span>
+            {isPU && <span style={{ fontSize: darkMode ? 10 : 11, color: textDetail }}>{entries.length}件</span>}
+            {entries.length > 0 && (
+              <button onClick={() => setDetailOpen(prev => ({ ...prev, [i]: !prev[i] }))} style={{
+                padding: darkMode ? "1px 6px" : "2px 8px", fontSize: darkMode ? 9 : 10, fontWeight: 600, color,
+                background: "transparent", border: `1px solid ${darkMode ? color + "60" : color}`, borderRadius: 4, cursor: "pointer", lineHeight: 1.4
+              }}>
+                {isOpen ? "閉じる" : "詳細"}
+              </button>
+            )}
+          </div>
         </div>
-        {entries.map((e, ei) => {
+        {isOpen && entries.map((e, ei) => {
           const details = [e.company, e.affiliation, e.position].filter(Boolean).join(" / ");
-          const revLabel = entryType === "ra" ? "売上" : "仕入";
           const revVal = e.revenue || 0;
           const amtVal = e.amount || 0;
           const priceStr = revVal > 0 && amtVal > 0 ? ` (${revLabel}${fmtVal(revVal)}／粗利${fmtVal(amtVal)})` : revVal > 0 ? ` (${revLabel}${fmtVal(revVal)})` : amtVal > 0 ? ` (粗利${fmtVal(amtVal)})` : "";

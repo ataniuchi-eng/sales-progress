@@ -959,58 +959,15 @@ export default function DashboardPage() {
             </div>
 
             {/* 金額エリア（受注粗利 + 単価UP横並び） - ダークパープル */}
-            {(() => {
-              const raPUData = dStaffActivities.filter(s => (s.raPriceUpEntries || []).length > 0);
-              const caPUData = dStaffActivities.filter(s => (s.caPriceUpEntries || []).length > 0);
-              const fmtVal = (v: number) => `${Math.round(v * 10) / 10}万円`;
-              const raRanked = raPUData.map(s => ({
-                staff: s.staff,
-                count: (s.raPriceUpEntries || []).length,
-                amount: (s.raPriceUpEntries || []).reduce((sum, e) => sum + (e.amount || 0), 0),
-                entries: s.raPriceUpEntries || [],
-              })).sort((a, b) => b.count - a.count);
-              const caRanked = caPUData.map(s => ({
-                staff: s.staff,
-                count: (s.caPriceUpEntries || []).length,
-                amount: (s.caPriceUpEntries || []).reduce((sum, e) => sum + (e.amount || 0), 0),
-                entries: s.caPriceUpEntries || [],
-              })).sort((a, b) => b.count - a.count);
-              const hasPU = raPUData.length > 0 || caPUData.length > 0;
-              const renderPUCard = (puTitle: string, ranked: typeof raRanked, puColor: string, revLabel: string) => (
-                <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 10, padding: "16px 14px", borderLeft: `3px solid ${puColor}` }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                    <h4 style={{ fontSize: 13, fontWeight: 700, color: puColor, margin: 0 }}>{puTitle}</h4>
-                    <span style={{ fontSize: 20, fontWeight: 800, color: puColor, lineHeight: 1 }}>{fmtVal(ranked.reduce((s, r) => s + r.amount, 0))}</span>
-                  </div>
-                  {ranked.length === 0 ? <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, margin: 0 }}>未入力</p> : ranked.map((r, i) => (
-                    <div key={i} style={{ padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>{r.staff}</span>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{r.count}件</span>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: puColor }}>{fmtVal(r.amount)}</span>
-                        </div>
-                      </div>
-                      {r.entries.map((e, ei) => {
-                        const details = [e.company, e.affiliation, e.position].filter(Boolean).join(" / ");
-                        return details ? <div key={ei} style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 2, paddingLeft: 4 }}>{r.entries.length > 1 ? `${ei + 1}件目: ` : ""}{details} ({revLabel}{fmtVal(e.revenue || 0)}／粗利{fmtVal(e.amount || 0)})</div> : null;
-                      })}
-                    </div>
-                  ))}
-                </div>
-              );
-              return (
-              <div style={{ background: "linear-gradient(135deg, #2d1b2e, #1a1a2e)", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.15)", color: "#fff", marginBottom: isMobile ? 16 : 24 }}>
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f9a8d4", marginBottom: 14 }}>金額（万円）</h3>
-                <div style={{ display: "grid", gridTemplateColumns: hasPU ? "repeat(4, 1fr)" : "repeat(2, 1fr)", gap: 12 }} className="focus-grid">
-                  <AmountRankCard title="RA受注粗利" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ra" color="#ff6b6b" darkMode />
-                  <AmountRankCard title="CA受注粗利" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ca" color="#c084fc" darkMode />
-                  {hasPU && renderPUCard("RA単価UP", raRanked, "#ff6b6b", "売上")}
-                  {hasPU && renderPUCard("CA単価UP", caRanked, "#c084fc", "仕入")}
-                </div>
+            <div style={{ background: "linear-gradient(135deg, #2d1b2e, #1a1a2e)", borderRadius: 14, padding: "20px 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.15)", color: "#fff", marginBottom: isMobile ? 16 : 24 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f9a8d4", marginBottom: 14 }}>金額（万円）</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }} className="focus-grid">
+                <AmountRankCard title="RA受注粗利" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ra" color="#ff6b6b" darkMode />
+                <AmountRankCard title="CA受注粗利" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="ca" color="#c084fc" darkMode />
+                <AmountRankCard title="RA単価UP" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="raPU" color="#ff6b6b" darkMode />
+                <AmountRankCard title="CA単価UP" data={dStaffActivities} prevData={prevPrevStaffActivities} entryType="caPU" color="#c084fc" darkMode />
               </div>
-              );
-            })()}
+            </div>
 
             {/* RA開拓セクション */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingBottom: 8, borderBottom: "3px solid #2ecc71" }}>
