@@ -54,7 +54,11 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
       {supportCost !== undefined && <Row label="支援費等" value={formatYen(supportCost)} labelColor={labelColor} valueColor={isTotal ? "#ffb3b3" : "#e74c3c"} />}
       {(standbyCost !== undefined || supportCost !== undefined) && <Row label="粗利計" value={formatYen(adjustedProgress)} labelColor={labelColor} valueColor={isTotal ? "#4cc9f0" : tc.accentText} />}
       <Row label="見込" value={formatYen(data.forecast)} labelColor={labelColor} valueColor={isTotal ? "#a8e6cf" : "#2ecc71"} />
-      {standby !== undefined && <Row label="待機" value={`${standby}名`} labelColor={labelColor} valueColor={isTotal ? "#ffd6a5" : "#f39c12"} />}
+      {standby !== undefined ? (
+        <Row label="待機" value={`${standby}名`} labelColor={labelColor} valueColor={isTotal ? "#ffd6a5" : "#f39c12"} />
+      ) : !isTotal ? (
+        <div style={{ marginBottom: 6, height: 13 }} />
+      ) : null}
       <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${trackColor}`, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
         <div style={{ fontSize: 11, color: labelColor }}>達成率</div>
         <div style={{ position: "relative" }}>
@@ -64,7 +68,7 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
       </div>
       {companies.length > 0 && (
         <div style={{ marginTop: 10, paddingTop: 8, borderTop: `1px solid ${trackColor}` }}>
-          <div style={{ fontSize: 10, color: labelColor, marginBottom: 6, fontWeight: 600 }}>粗利企業BEST{Math.min(3, companies.length)}</div>
+          <div style={{ fontSize: 10, color: labelColor, marginBottom: 6, fontWeight: 600 }}>今月決定粗利BEST{Math.min(3, companies.length)}</div>
           {displayCompanies.map((c, i) => (
             <div key={c.company} style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 0", fontSize: 11 }}>
               {i < 3 ? <span style={{ fontSize: 13, flexShrink: 0 }}>{medals[i]}</span> : <span style={{ fontSize: 10, fontWeight: 700, width: 18, textAlign: "center", flexShrink: 0, color: labelColor }}>{i + 1}</span>}
@@ -74,7 +78,7 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
           ))}
           {companies.length > 3 && (
             <button onClick={() => setShowAllCompanies(!showAllCompanies)} style={{ display: "block", width: "100%", marginTop: 6, padding: "4px 0", fontSize: 10, fontWeight: 600, color: isTotal ? "#4cc9f0" : barFill, background: "transparent", border: `1px solid ${trackColor}`, borderRadius: 4, cursor: "pointer" }}>
-              {showAllCompanies ? "BEST3のみ表示" : `全${companies.length}件を表示`}
+              {showAllCompanies ? "TOP3のみ表示" : `全${companies.length}件を表示`}
             </button>
           )}
         </div>

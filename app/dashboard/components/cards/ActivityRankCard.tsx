@@ -5,7 +5,7 @@ import { useTheme } from "../../../theme-provider";
 import { TrendIcon } from "../ui/TrendIcon";
 import type { StaffActivity } from "../../types";
 
-export function ActivityRankCard({ title, data, prevData, field, color, unit }: { title: string; data: StaffActivity[]; prevData?: StaffActivity[]; field: keyof StaffActivity; color: string; unit?: string }) {
+export function ActivityRankCard({ title, data, prevData, field, color, unit, darkMode }: { title: string; data: StaffActivity[]; prevData?: StaffActivity[]; field: keyof StaffActivity; color: string; unit?: string; darkMode?: boolean }) {
   const { t: tc } = useTheme();
   const [showAll, setShowAll] = useState(false);
   const sorted = [...data].filter(s => s.staff && (s[field] as number) > 0).sort((a, b) => (b[field] as number) - (a[field] as number));
@@ -15,6 +15,57 @@ export function ActivityRankCard({ title, data, prevData, field, color, unit }: 
   const totalDisplay = unit ? (Math.round(total * 10) / 10) : total;
   const medals = ["🥇", "🥈", "🥉"];
   const fmtVal = (v: number) => unit ? `${Math.round(v * 10) / 10}${unit}` : String(v);
+
+  if (darkMode) {
+    const bgCard = "rgba(255,255,255,0.06)";
+    const borderColor = "rgba(255,255,255,0.08)";
+    const textPrimary = "#fff";
+    const textSub = "rgba(255,255,255,0.6)";
+    const textDisabled = "rgba(255,255,255,0.35)";
+    const btnBg = "rgba(255,255,255,0.1)";
+    return (
+      <div style={{ background: bgCard, borderRadius: 10, padding: "16px 14px", borderLeft: `3px solid ${color}` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <h3 style={{ fontSize: 13, fontWeight: 700, color, margin: 0 }}>{title}</h3>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            {prevData && <TrendIcon current={total} prev={prevTotal} />}
+            <span style={{ fontSize: 20, fontWeight: 800, color, lineHeight: 1 }}>{unit ? `${totalDisplay}${unit}` : totalDisplay}</span>
+          </div>
+        </div>
+        {sorted.length === 0 ? <p style={{ color: textDisabled, fontSize: 12, margin: 0 }}>未入力</p> : (
+          <>
+            {top3.map((s, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${borderColor}` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 14 }}>{medals[i]}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: textPrimary }}>{s.staff}</span>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 700, color }}>{fmtVal(s[field] as number)}</span>
+              </div>
+            ))}
+            {sorted.length > 3 && (
+              <>
+                <button onClick={() => setShowAll(!showAll)} style={{ marginTop: 6, padding: "4px 8px", fontSize: 10, fontWeight: 600, color, background: btnBg, border: `1px solid ${color}40`, borderRadius: 4, cursor: "pointer", width: "100%" }}>
+                  {showAll ? "閉じる" : `全${sorted.length}件を表示`}
+                </button>
+                {showAll && sorted.slice(3).map((s, i) => (
+                  <div key={i + 3} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: `1px solid ${borderColor}` }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 10, color: textSub, width: 18, textAlign: "center" }}>{i + 4}</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: textSub }}>{s.staff}</span>
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color }}>{fmtVal(s[field] as number)}</span>
+                  </div>
+                ))}
+              </>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // Light mode (original)
   return (
     <div style={{ background: tc.bgCard, borderRadius: 14, padding: "20px 16px", boxShadow: tc.shadow, borderTop: `3px solid ${color}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
