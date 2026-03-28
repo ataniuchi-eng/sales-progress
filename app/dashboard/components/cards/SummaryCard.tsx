@@ -48,7 +48,7 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
       {isTotal ? (
         <>
           <Row label="現在粗利" value={formatYen(data.progress)} labelColor={labelColor} valueColor="#4cc9f0" />
-          <Row label="待機・支援費等" value={formatYen(totalDeduction || 0)} labelColor={labelColor} valueColor="#ffb3b3" />
+          <Row label="待機・支援費" value={formatYen(totalDeduction || 0)} labelColor={labelColor} valueColor="#ffb3b3" />
           <Row label="粗利計" value={formatYen(grossProfitTotal || 0)} labelColor={labelColor} valueColor="#4cc9f0" />
           <Row label="見込" value={formatYen(data.forecast)} labelColor={labelColor} valueColor="#a8e6cf" />
           <div style={{ marginBottom: 6, height: 13 }} />

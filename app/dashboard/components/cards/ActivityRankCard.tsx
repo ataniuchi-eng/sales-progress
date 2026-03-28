@@ -40,21 +40,21 @@ export function ActivityRankCard({ title, data, prevData, field, color, unit, da
                   <span style={{ fontSize: 14 }}>{medals[i]}</span>
                   <span style={{ fontSize: 12, fontWeight: 600, color: textPrimary }}>{s.staff}</span>
                 </div>
-                <span style={{ fontSize: 14, fontWeight: 700, color }}>{fmtVal(s[field] as number)}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{fmtVal(s[field] as number)}</span>
               </div>
             ))}
             {sorted.length > 3 && (
               <>
-                <button onClick={() => setShowAll(!showAll)} style={{ marginTop: 6, padding: "4px 8px", fontSize: 10, fontWeight: 600, color, background: btnBg, border: `1px solid ${color}40`, borderRadius: 4, cursor: "pointer", width: "100%" }}>
+                <button onClick={() => setShowAll(!showAll)} style={{ marginTop: 6, padding: "4px 8px", fontSize: 10, fontWeight: 600, color: "#fff", background: btnBg, border: `1px solid rgba(255,255,255,0.3)`, borderRadius: 4, cursor: "pointer", width: "100%" }}>
                   {showAll ? "閉じる" : `全${sorted.length}件を表示`}
                 </button>
                 {showAll && sorted.slice(3).map((s, i) => (
                   <div key={i + 3} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: `1px solid ${borderColor}` }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ fontSize: 10, color: textSub, width: 18, textAlign: "center" }}>{i + 4}</span>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: textSub }}>{s.staff}</span>
+                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", width: 18, textAlign: "center" }}>{i + 4}</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "#fff" }}>{s.staff}</span>
                     </div>
-                    <span style={{ fontSize: 12, fontWeight: 700, color }}>{fmtVal(s[field] as number)}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>{fmtVal(s[field] as number)}</span>
                   </div>
                 ))}
               </>

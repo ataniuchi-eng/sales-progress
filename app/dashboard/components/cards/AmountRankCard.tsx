@@ -33,23 +33,23 @@ export function AmountRankCard({ title, data, prevData, entryType, color, darkMo
     const entries = getEntries(s);
     const staffTotal = Math.round(getTotal(s) * 10) / 10;
     const textPrimary = darkMode ? "#fff" : (isSub ? tc.textSecondary : tc.textPrimary);
-    const textDetail = darkMode ? "rgba(255,255,255,0.45)" : tc.textMuted;
+    const textDetail = darkMode ? "rgba(255,255,255,0.7)" : tc.textMuted;
     const borderCol = darkMode ? "rgba(255,255,255,0.08)" : tc.border;
     const isOpen = detailOpen[i] || false;
     return (
       <div key={i} style={{ padding: darkMode ? "6px 0" : "8px 0", borderBottom: `1px solid ${borderCol}` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: darkMode ? 6 : 8 }}>
-            {isSub ? <span style={{ fontSize: darkMode ? 10 : 12, color: darkMode ? "rgba(255,255,255,0.5)" : tc.textMuted, width: darkMode ? 18 : 20, textAlign: "center" }}>{i + 1}</span> : <span style={{ fontSize: darkMode ? 14 : 16 }}>{medals[i]}</span>}
+            {isSub ? <span style={{ fontSize: darkMode ? 10 : 12, color: darkMode ? "rgba(255,255,255,0.7)" : tc.textMuted, width: darkMode ? 18 : 20, textAlign: "center" }}>{i + 1}</span> : <span style={{ fontSize: darkMode ? 14 : 16 }}>{medals[i]}</span>}
             <span style={{ fontSize: darkMode ? (isSub ? 11 : 12) : (isSub ? 13 : 14), fontWeight: 600, color: textPrimary }}>{s.staff}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ fontSize: darkMode ? (isSub ? 12 : 14) : (isSub ? 14 : 16), fontWeight: 700, color }}>{fmtVal(staffTotal)}</span>
+            <span style={{ fontSize: darkMode ? (isSub ? 12 : 14) : (isSub ? 14 : 16), fontWeight: 700, color: darkMode ? "#fff" : color }}>{fmtVal(staffTotal)}</span>
             {isPU && <span style={{ fontSize: darkMode ? 10 : 11, color: textDetail }}>{entries.length}件</span>}
             {entries.length > 0 && (
               <button onClick={() => setDetailOpen(prev => ({ ...prev, [i]: !prev[i] }))} style={{
-                padding: darkMode ? "1px 6px" : "2px 8px", fontSize: darkMode ? 9 : 10, fontWeight: 600, color,
-                background: "transparent", border: `1px solid ${darkMode ? color + "60" : color}`, borderRadius: 4, cursor: "pointer", lineHeight: 1.4
+                padding: darkMode ? "1px 6px" : "2px 8px", fontSize: darkMode ? 9 : 10, fontWeight: 600, color: darkMode ? "#fff" : color,
+                background: "transparent", border: `1px solid ${darkMode ? "rgba(255,255,255,0.4)" : color}`, borderRadius: 4, cursor: "pointer", lineHeight: 1.4
               }}>
                 {isOpen ? "閉じる" : "詳細"}
               </button>
@@ -85,7 +85,7 @@ export function AmountRankCard({ title, data, prevData, entryType, color, darkMo
             {top3.map((s, i) => renderEntry(s, i))}
             {sorted.length > 3 && (
               <>
-                <button onClick={() => setShowAll(!showAll)} style={{ marginTop: 6, padding: "4px 8px", fontSize: 10, fontWeight: 600, color, background: btnBg, border: `1px solid ${color}40`, borderRadius: 4, cursor: "pointer", width: "100%" }}>
+                <button onClick={() => setShowAll(!showAll)} style={{ marginTop: 6, padding: "4px 8px", fontSize: 10, fontWeight: 600, color: "#fff", background: btnBg, border: `1px solid rgba(255,255,255,0.3)`, borderRadius: 4, cursor: "pointer", width: "100%" }}>
                   {showAll ? "閉じる" : `全${sorted.length}件を表示`}
                 </button>
                 {showAll && sorted.slice(3).map((s, i) => renderEntry(s, i + 3, true))}
