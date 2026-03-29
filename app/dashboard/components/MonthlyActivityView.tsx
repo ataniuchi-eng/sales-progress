@@ -727,7 +727,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
           return (
           <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, borderTop: `3px solid ${color}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{title}{valueKey === "profit" && <span style={{ fontSize: 10, fontWeight: 400, color: tc.textMuted, marginLeft: 4 }}>％：粗利率</span>}</h3>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{title}{valueKey === "profit" && totalRevenue > 0 && <span style={{ fontSize: 10, fontWeight: 400, color: tc.textMuted, marginLeft: 4 }}>平均粗利率：{(Math.round(totalProfit / totalRevenue * 1000) / 10).toFixed(1)}％</span>}</h3>
               <div style={{ textAlign: "right" }}>
                 <span style={{ fontSize: 18, fontWeight: 700, color }}>{total > 0 ? fmtAmount(total) : "0"}<span style={{ fontSize: 13 }}>万円</span></span>
                 <div style={{ fontSize: 10, color: tc.textMuted, marginTop: 1 }}>（受：{totalOrderCount}件　単UP：{totalPriceUpCount}件）</div>
