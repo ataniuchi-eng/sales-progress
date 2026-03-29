@@ -2135,6 +2135,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                   {sortedMisc.map((item, idx) => {
                     const st = statusDisplay[item.status] || { icon: "—", color: "#999", order: 9 };
                     const miscRowBg = idx % 2 === 1 ? (isDark ? "#1e2533" : "#f8f9fb") : tc.bgCard;
+                    const isOverdue = item.deadline && item.status !== "done" && item.deadline < new Date().toISOString().slice(0, 10);
                     return (
                       <tr key={item.origIdx} style={{ background: miscRowBg }}>
                         <td style={{ padding: "10px 12px", borderBottom: "1px solid " + tc.border, fontWeight: 600, color: isDark ? "#f1f5f9" : tc.text }}>{item.staff}</td>
@@ -2143,10 +2144,10 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                             onChange={(e) => updateMiscItem(item.origIdx, "content", e.target.value)}
                             style={{ width: "100%", border: "1px solid " + tc.border, borderRadius: 6, padding: "6px 10px", fontSize: 13, background: tc.bgSection, color: tc.text, boxSizing: "border-box" }} />
                         </td>
-                        <td style={{ padding: "6px 8px", borderBottom: "1px solid " + tc.border, textAlign: "center" }}>
+                        <td style={{ padding: "6px 8px", borderBottom: "1px solid " + tc.border, textAlign: "center", background: isOverdue ? (isDark ? "#7f1d1d" : "#fee2e2") : undefined, borderRadius: isOverdue ? 4 : undefined }}>
                           <input type="date" value={item.deadline || ""}
                             onChange={(e) => updateMiscItem(item.origIdx, "deadline", e.target.value)}
-                            style={{ border: "1px solid " + tc.border, borderRadius: 6, padding: "6px 8px", fontSize: 12, background: tc.bgSection, color: tc.text, width: "100%", boxSizing: "border-box" }} />
+                            style={{ border: "1px solid " + (isOverdue ? "#e74c3c" : tc.border), borderRadius: 6, padding: "6px 8px", fontSize: 12, background: isOverdue ? (isDark ? "#991b1b" : "#fecaca") : tc.bgSection, color: isOverdue ? (isDark ? "#fca5a5" : "#991b1b") : tc.text, width: "100%", boxSizing: "border-box" }} />
                         </td>
                         <td style={{ padding: "6px 8px", borderBottom: "1px solid " + tc.border, textAlign: "center" }}>
                           <div style={{ display: "flex", gap: 3, justifyContent: "center" }}>
