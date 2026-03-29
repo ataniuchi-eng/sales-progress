@@ -727,7 +727,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
           return (
           <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, borderTop: `3px solid ${color}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{title}</h3>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{title}{valueKey === "profit" && <span style={{ fontSize: 10, fontWeight: 400, color: tc.textMuted, marginLeft: 4 }}>％：粗利率</span>}</h3>
               <div style={{ textAlign: "right" }}>
                 <span style={{ fontSize: 18, fontWeight: 700, color }}>{total > 0 ? fmtAmount(total) : "0"}<span style={{ fontSize: 13 }}>万円</span></span>
                 <div style={{ fontSize: 10, color: tc.textMuted, marginTop: 1 }}>（受：{totalOrderCount}件　単UP：{totalPriceUpCount}件）</div>
@@ -742,7 +742,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
                       {i < 3 ? <span style={{ fontSize: 16, flexShrink: 0 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center", flexShrink: 0 }}>{i + 1}</span>}
-                      <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.company}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.company}{valueKey === "profit" && r.revenue > 0 && <span style={{ fontSize: 10, fontWeight: 400, color: tc.textMuted }}>（{(Math.round(r.profit / r.revenue * 1000) / 10).toFixed(1)}％）</span>}</span>
                     </div>
                     <div style={{ flexShrink: 0, marginLeft: 8, display: "flex", alignItems: "center", gap: 4 }}>
                       <span style={{ fontSize: 15, fontWeight: 700, color, display: "inline-block", minWidth: 90, textAlign: "right" }}>{fmtAmount(r[valueKey])}<span style={{ fontSize: 11 }}>万円</span></span>
