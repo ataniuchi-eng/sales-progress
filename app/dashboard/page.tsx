@@ -912,11 +912,11 @@ export default function DashboardPage() {
                 const totalSlide = pSlide + bSlide + fSlide + cSlide;
                 const totalPU = pPU + bPU + fPU + cPU;
                 // HC情報
-                const pHC = { total: properBreakdown.hcCarryover + properBreakdown.hcNew + properBreakdown.hcSlide, hcNew: properBreakdown.hcNew, hcSlide: properBreakdown.hcSlide };
-                const bHC = { total: bpBreakdown.hcCarryover + bpBreakdown.hcNew + bpBreakdown.hcSlide, hcNew: bpBreakdown.hcNew, hcSlide: bpBreakdown.hcSlide };
-                const fHC = { total: flBreakdown.hcCarryover + flBreakdown.hcNew + flBreakdown.hcSlide, hcNew: flBreakdown.hcNew, hcSlide: flBreakdown.hcSlide };
-                const cHC = { total: coBreakdown.hcCarryover + coBreakdown.hcNew + coBreakdown.hcSlide, hcNew: coBreakdown.hcNew, hcSlide: coBreakdown.hcSlide };
-                const tHC = { total: pHC.total + bHC.total + fHC.total + cHC.total, hcNew: pHC.hcNew + bHC.hcNew + fHC.hcNew + cHC.hcNew, hcSlide: pHC.hcSlide + bHC.hcSlide + fHC.hcSlide + cHC.hcSlide };
+                const pHC = { hcCarryover: properBreakdown.hcCarryover, hcNew: properBreakdown.hcNew, hcSlide: properBreakdown.hcSlide };
+                const bHC = { hcCarryover: bpBreakdown.hcCarryover, hcNew: bpBreakdown.hcNew, hcSlide: bpBreakdown.hcSlide };
+                const fHC = { hcCarryover: flBreakdown.hcCarryover, hcNew: flBreakdown.hcNew, hcSlide: flBreakdown.hcSlide };
+                const cHC = { hcCarryover: coBreakdown.hcCarryover, hcNew: coBreakdown.hcNew, hcSlide: coBreakdown.hcSlide };
+                const tHC = { hcCarryover: pHC.hcCarryover + bHC.hcCarryover + fHC.hcCarryover + cHC.hcCarryover, hcNew: pHC.hcNew + bHC.hcNew + fHC.hcNew + cHC.hcNew, hcSlide: pHC.hcSlide + bHC.hcSlide + fHC.hcSlide + cHC.hcSlide };
                 return (
                   <>
                     <SummaryCard title="全体" data={total} rate={calcRate(totalAdjusted, total.target)} isTotal countInfo={affiliationProgress["全体"]} grossProfitTotal={totalAdjusted} totalDeduction={(proper.standbyCost || 0) + (bp.supportCost || 0) + (fl.supportCost || 0) + (co.supportCost || 0)} carryover={totalCarry} monthOrder={total.progress - totalCarry} monthOrderNew={totalNew} monthOrderSlide={totalSlide} monthOrderPU={totalPU} hcInfo={tHC} />

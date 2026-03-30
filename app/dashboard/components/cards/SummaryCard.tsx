@@ -25,7 +25,7 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
   monthOrderNew?: number;
   monthOrderSlide?: number;
   monthOrderPU?: number;
-  hcInfo?: { total: number; hcNew: number; hcSlide: number };
+  hcInfo?: { hcCarryover: number; hcNew: number; hcSlide: number };
 }) {
   const { t: tc } = useTheme();
   const [showAllCompanies, setShowAllCompanies] = useState(false);
@@ -53,7 +53,7 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
         </div>
         {hcInfo && (
           <div style={{ fontSize: 10, color: labelColor, marginTop: 3, fontWeight: 500 }}>
-            稼働HC：{hcInfo.total}（新：{hcInfo.hcNew}・ス：{hcInfo.hcSlide}）
+            稼働HC：繰越：{hcInfo.hcCarryover}　新：{hcInfo.hcNew}　ス：{hcInfo.hcSlide}
           </div>
         )}
       </div>
