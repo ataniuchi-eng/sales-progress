@@ -764,13 +764,14 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                       <button onClick={() => setCompanyDetailOpen(prev => ({ ...prev, [compDetailKey]: !prev[compDetailKey] }))} style={{ padding: "2px 8px", fontSize: 10, fontWeight: 600, color, background: "transparent", border: `1px solid ${color}`, borderRadius: 4, cursor: "pointer", lineHeight: 1.4, flexShrink: 0 }}>
                         {isCompOpen ? "閉じる" : "詳細"}
                       </button>
-                      <span style={{ fontSize: 9, color: tc.textMuted }}>（受：{r.orderCount}件 単UP：{r.priceUpCount}件）</span>
+                      <span style={{ fontSize: 9, color: tc.textMuted }}>{sortByProfitRate && valueKey === "profit" ? `（受：${r.orderCount}件）` : `（受：${r.orderCount}件 単UP：${r.priceUpCount}件）`}</span>
                     </div>
                   </div>
                   {isCompOpen && (() => {
-                    return r.details.length > 0 ? (
+                    const visibleDetails = sortByProfitRate && valueKey === "profit" ? r.details.filter((d: any) => d.type === "受注") : r.details;
+                    return visibleDetails.length > 0 ? (
                       <div style={{ padding: "4px 0 8px 28px" }}>
-                        {r.details.map((d, di) => (
+                        {visibleDetails.map((d, di) => (
                           <div key={di} style={{ fontSize: 11, color: tc.textSecondary, lineHeight: 1.8, display: "flex", gap: 6, flexWrap: "wrap" }}>
                             <span style={{ color: tc.textMuted, minWidth: 28 }}>{d.date}</span>
                             <span style={{ fontWeight: 600, color: tc.textPrimary }}>{d.staff}</span>
