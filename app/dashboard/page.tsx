@@ -211,6 +211,7 @@ export default function DashboardPage() {
 
   // CA粗利の前月繰越データをロード
   const [caCarryovers, setCaCarryovers] = useState<Record<string, Record<string, number>>>({});
+  const [caCountCarryovers, setCaCountCarryovers] = useState<Record<string, Record<string, number>>>({});
   useEffect(() => {
     const loadCarryovers = async () => {
       try {
@@ -218,17 +219,20 @@ export default function DashboardPage() {
         if (!res.ok) return;
         const data = await res.json();
         const co: Record<string, Record<string, number>> = {};
+        const cco: Record<string, Record<string, number>> = {};
         for (const key of Object.keys(data)) {
           if (key.startsWith("carryover-")) co[key] = data[key];
+          if (key.startsWith("countCarryover-")) cco[key] = data[key];
         }
         setCaCarryovers(co);
+        setCaCountCarryovers(cco);
       } catch {}
     };
     loadCarryovers();
   }, []);
 
   // CA粗利を所属別に月間集計（前月繰越＋月間新規＋CA単価UP = 月別タブの合計と同じ）
-  const calcCAProgressByAffiliation = useCallback((affiliation: string): { total: number; carryover: number; monthOrder: number; monthOrderNew: number; monthOrderSlide: number; monthOrderPU: number } => {
+  const calcCAProgressByAffiliation = useCallback((affiliation: string): { total: number; carryover: number; monthOrder: number; monthOrderNew: number; monthOrderSlide: number; monthOrderPU: number; hcCarryover: number; hcNew: number; hcSlide: number } => {
     const ym = selectedDate.substring(0, 7); // "YYYY-MM"
     const [y, m] = ym.split("-").map(Number);
     const daysInMonth = new Date(y, m, 0).getDate();
@@ -236,11 +240,17 @@ export default function DashboardPage() {
     const carryKey = `carryover-amountCA_${affiliation}-${ym}`;
     const carryData = caCarryovers[carryKey] || {};
     const carryTotal = STAFF_LIST.reduce((sum, staff) => sum + (carryData[staff] || 0), 0);
+    // 繰越HC: 件数繰越
+    const countCarryKey = `countCarryover-ordersCA_${affiliation}-${ym}`;
+    const countCarryData = caCountCarryovers[countCarryKey] || {};
+    const hcCarryover = STAFF_LIST.reduce((sum, staff) => sum + (countCarryData[staff] || 0), 0);
     // 月間新規: CA受注の粗利を所属別にSUM + CA単価UP分も加算
     let monthTotal = 0;
     let monthNew = 0;
     let monthSlide = 0;
     let monthPU = 0;
+    let hcNew = 0;
+    let hcSlide = 0;
     for (let d = 1; d <= daysInMonth; d++) {
       const dk = `${y}-${("0" + m).slice(-2)}-${("0" + d).slice(-2)}`;
       const dayData = allData[dk];
@@ -252,11 +262,11 @@ export default function DashboardPage() {
             const amt = e.amount || 0;
             monthTotal += amt;
             const ot = e.orderType || "新規";
-            if (ot === "スライド") monthSlide += amt;
-            else monthNew += amt;
+            if (ot === "スライド") { monthSlide += amt; hcSlide += 1; }
+            else { monthNew += amt; hcNew += 1; }
           }
         });
-        // CA単価UP分
+        // CA単価UP分（HCには含めない：既存稼働者の単価変更のため）
         const puEntries = s.caPriceUpEntries || [];
         puEntries.forEach((e: any) => {
           if (e.affiliation === affiliation) {
@@ -272,8 +282,8 @@ export default function DashboardPage() {
     const roundedNew = Math.round(monthNew * 10) / 10;
     const roundedSlide = Math.round(monthSlide * 10) / 10;
     const roundedPU = Math.round(monthPU * 10) / 10;
-    return { total: Math.round((carryTotal + monthTotal) * 10) / 10, carryover: roundedCarry, monthOrder: roundedMonth, monthOrderNew: roundedNew, monthOrderSlide: roundedSlide, monthOrderPU: roundedPU };
-  }, [allData, selectedDate, caCarryovers]);
+    return { total: Math.round((carryTotal + monthTotal) * 10) / 10, carryover: roundedCarry, monthOrder: roundedMonth, monthOrderNew: roundedNew, monthOrderSlide: roundedSlide, monthOrderPU: roundedPU, hcCarryover, hcNew, hcSlide };
+  }, [allData, selectedDate, caCarryovers, caCountCarryovers]);
 
   const properBreakdown = calcCAProgressByAffiliation("プロパー");
   const bpBreakdown = calcCAProgressByAffiliation("BP");
@@ -901,13 +911,19 @@ export default function DashboardPage() {
                 const totalNew = pNew + bNew + fNew + cNew;
                 const totalSlide = pSlide + bSlide + fSlide + cSlide;
                 const totalPU = pPU + bPU + fPU + cPU;
+                // HC情報
+                const pHC = { total: properBreakdown.hcCarryover + properBreakdown.hcNew + properBreakdown.hcSlide, hcNew: properBreakdown.hcNew, hcSlide: properBreakdown.hcSlide };
+                const bHC = { total: bpBreakdown.hcCarryover + bpBreakdown.hcNew + bpBreakdown.hcSlide, hcNew: bpBreakdown.hcNew, hcSlide: bpBreakdown.hcSlide };
+                const fHC = { total: flBreakdown.hcCarryover + flBreakdown.hcNew + flBreakdown.hcSlide, hcNew: flBreakdown.hcNew, hcSlide: flBreakdown.hcSlide };
+                const cHC = { total: coBreakdown.hcCarryover + coBreakdown.hcNew + coBreakdown.hcSlide, hcNew: coBreakdown.hcNew, hcSlide: coBreakdown.hcSlide };
+                const tHC = { total: pHC.total + bHC.total + fHC.total + cHC.total, hcNew: pHC.hcNew + bHC.hcNew + fHC.hcNew + cHC.hcNew, hcSlide: pHC.hcSlide + bHC.hcSlide + fHC.hcSlide + cHC.hcSlide };
                 return (
                   <>
-                    <SummaryCard title="全体" data={total} rate={calcRate(totalAdjusted, total.target)} isTotal countInfo={affiliationProgress["全体"]} grossProfitTotal={totalAdjusted} totalDeduction={(proper.standbyCost || 0) + (bp.supportCost || 0) + (fl.supportCost || 0) + (co.supportCost || 0)} carryover={totalCarry} monthOrder={total.progress - totalCarry} monthOrderNew={totalNew} monthOrderSlide={totalSlide} monthOrderPU={totalPU} />
-                    <SummaryCard title="プロパー" data={proper} rate={calcRate(properAdjusted, proper.target)} standby={proper.standby} standbyCost={proper.standbyCost} countInfo={affiliationProgress["プロパー"]} companyProfits={companyProfitProper} carryover={pCarry} monthOrder={properProgress - pCarry} monthOrderNew={pNew} monthOrderSlide={pSlide} monthOrderPU={pPU} />
-                    <SummaryCard title="BP" data={bp} rate={calcRate(bpAdjusted, bp.target)} supportCost={bp.supportCost} countInfo={affiliationProgress["BP"]} companyProfits={companyProfitBP} carryover={bCarry} monthOrder={bpProgress - bCarry} monthOrderNew={bNew} monthOrderSlide={bSlide} monthOrderPU={bPU} />
-                    <SummaryCard title="フリーランス" data={fl} rate={calcRate(flAdjusted, fl.target)} supportCost={fl.supportCost} countInfo={affiliationProgress["フリーランス"]} companyProfits={companyProfitFL} carryover={fCarry} monthOrder={flProgress - fCarry} monthOrderNew={fNew} monthOrderSlide={fSlide} monthOrderPU={fPU} />
-                    <SummaryCard title="協業" data={co} rate={calcRate(coAdjusted, co.target)} supportCost={co.supportCost} countInfo={affiliationProgress["協業"]} companyProfits={companyProfitCO} carryover={cCarry} monthOrder={coProgress - cCarry} monthOrderNew={cNew} monthOrderSlide={cSlide} monthOrderPU={cPU} />
+                    <SummaryCard title="全体" data={total} rate={calcRate(totalAdjusted, total.target)} isTotal countInfo={affiliationProgress["全体"]} grossProfitTotal={totalAdjusted} totalDeduction={(proper.standbyCost || 0) + (bp.supportCost || 0) + (fl.supportCost || 0) + (co.supportCost || 0)} carryover={totalCarry} monthOrder={total.progress - totalCarry} monthOrderNew={totalNew} monthOrderSlide={totalSlide} monthOrderPU={totalPU} hcInfo={tHC} />
+                    <SummaryCard title="プロパー" data={proper} rate={calcRate(properAdjusted, proper.target)} standby={proper.standby} standbyCost={proper.standbyCost} countInfo={affiliationProgress["プロパー"]} companyProfits={companyProfitProper} carryover={pCarry} monthOrder={properProgress - pCarry} monthOrderNew={pNew} monthOrderSlide={pSlide} monthOrderPU={pPU} hcInfo={pHC} />
+                    <SummaryCard title="BP" data={bp} rate={calcRate(bpAdjusted, bp.target)} supportCost={bp.supportCost} countInfo={affiliationProgress["BP"]} companyProfits={companyProfitBP} carryover={bCarry} monthOrder={bpProgress - bCarry} monthOrderNew={bNew} monthOrderSlide={bSlide} monthOrderPU={bPU} hcInfo={bHC} />
+                    <SummaryCard title="フリーランス" data={fl} rate={calcRate(flAdjusted, fl.target)} supportCost={fl.supportCost} countInfo={affiliationProgress["フリーランス"]} companyProfits={companyProfitFL} carryover={fCarry} monthOrder={flProgress - fCarry} monthOrderNew={fNew} monthOrderSlide={fSlide} monthOrderPU={fPU} hcInfo={fHC} />
+                    <SummaryCard title="協業" data={co} rate={calcRate(coAdjusted, co.target)} supportCost={co.supportCost} countInfo={affiliationProgress["協業"]} companyProfits={companyProfitCO} carryover={cCarry} monthOrder={coProgress - cCarry} monthOrderNew={cNew} monthOrderSlide={cSlide} monthOrderPU={cPU} hcInfo={cHC} />
                   </>
                 );
               })()}
