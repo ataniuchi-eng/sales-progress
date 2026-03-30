@@ -227,7 +227,7 @@ export default function DashboardPage() {
   }, []);
 
   // CA粗利を所属別に月間集計（前月繰越＋月間新規＋CA単価UP = 月別タブの合計と同じ）
-  const calcCAProgressByAffiliation = useCallback((affiliation: string): number => {
+  const calcCAProgressByAffiliation = useCallback((affiliation: string): { total: number; carryover: number; monthOrder: number } => {
     const ym = selectedDate.substring(0, 7); // "YYYY-MM"
     const [y, m] = ym.split("-").map(Number);
     const daysInMonth = new Date(y, m, 0).getDate();
@@ -253,13 +253,19 @@ export default function DashboardPage() {
         });
       });
     }
-    return Math.round((carryTotal + monthTotal) * 10) / 10;
+    const roundedCarry = Math.round(carryTotal * 10) / 10;
+    const roundedMonth = Math.round(monthTotal * 10) / 10;
+    return { total: Math.round((carryTotal + monthTotal) * 10) / 10, carryover: roundedCarry, monthOrder: roundedMonth };
   }, [allData, selectedDate, caCarryovers]);
 
-  const properProgressMan = calcCAProgressByAffiliation("プロパー");
-  const bpProgressMan = calcCAProgressByAffiliation("BP");
-  const flProgressMan = calcCAProgressByAffiliation("フリーランス");
-  const coProgressMan = calcCAProgressByAffiliation("協業");
+  const properBreakdown = calcCAProgressByAffiliation("プロパー");
+  const bpBreakdown = calcCAProgressByAffiliation("BP");
+  const flBreakdown = calcCAProgressByAffiliation("フリーランス");
+  const coBreakdown = calcCAProgressByAffiliation("協業");
+  const properProgressMan = properBreakdown.total;
+  const bpProgressMan = bpBreakdown.total;
+  const flProgressMan = flBreakdown.total;
+  const coProgressMan = coBreakdown.total;
   // 万円→円に変換（メインカード表示は円単位、小数以下切り捨て）
   const properProgress = Math.floor(properProgressMan * 10000);
   const bpProgress = Math.floor(bpProgressMan * 10000);
@@ -831,11 +837,22 @@ export default function DashboardPage() {
           <div style={{ flex: 1, minWidth: 0 }}>
             {/* カード4枚 */}
             <div className="card-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: isMobile ? 8 : 12, marginBottom: isMobile ? 16 : 24 }}>
-              <SummaryCard title="全体" data={total} rate={calcRate(totalAdjusted, total.target)} isTotal countInfo={affiliationProgress["全体"]} grossProfitTotal={totalAdjusted} totalDeduction={(proper.standbyCost || 0) + (bp.supportCost || 0) + (fl.supportCost || 0) + (co.supportCost || 0)} />
-              <SummaryCard title="プロパー" data={proper} rate={calcRate(properAdjusted, proper.target)} standby={proper.standby} standbyCost={proper.standbyCost} countInfo={affiliationProgress["プロパー"]} companyProfits={companyProfitProper} />
-              <SummaryCard title="BP" data={bp} rate={calcRate(bpAdjusted, bp.target)} supportCost={bp.supportCost} countInfo={affiliationProgress["BP"]} companyProfits={companyProfitBP} />
-              <SummaryCard title="フリーランス" data={fl} rate={calcRate(flAdjusted, fl.target)} supportCost={fl.supportCost} countInfo={affiliationProgress["フリーランス"]} companyProfits={companyProfitFL} />
-              <SummaryCard title="協業" data={co} rate={calcRate(coAdjusted, co.target)} supportCost={co.supportCost} countInfo={affiliationProgress["協業"]} companyProfits={companyProfitCO} />
+              {(() => {
+                const pCarry = Math.floor(properBreakdown.carryover * 10000);
+                const bCarry = Math.floor(bpBreakdown.carryover * 10000);
+                const fCarry = Math.floor(flBreakdown.carryover * 10000);
+                const cCarry = Math.floor(coBreakdown.carryover * 10000);
+                const totalCarry = pCarry + bCarry + fCarry + cCarry;
+                return (
+                  <>
+                    <SummaryCard title="全体" data={total} rate={calcRate(totalAdjusted, total.target)} isTotal countInfo={affiliationProgress["全体"]} grossProfitTotal={totalAdjusted} totalDeduction={(proper.standbyCost || 0) + (bp.supportCost || 0) + (fl.supportCost || 0) + (co.supportCost || 0)} carryover={totalCarry} monthOrder={total.progress - totalCarry} />
+                    <SummaryCard title="プロパー" data={proper} rate={calcRate(properAdjusted, proper.target)} standby={proper.standby} standbyCost={proper.standbyCost} countInfo={affiliationProgress["プロパー"]} companyProfits={companyProfitProper} carryover={pCarry} monthOrder={properProgress - pCarry} />
+                    <SummaryCard title="BP" data={bp} rate={calcRate(bpAdjusted, bp.target)} supportCost={bp.supportCost} countInfo={affiliationProgress["BP"]} companyProfits={companyProfitBP} carryover={bCarry} monthOrder={bpProgress - bCarry} />
+                    <SummaryCard title="フリーランス" data={fl} rate={calcRate(flAdjusted, fl.target)} supportCost={fl.supportCost} countInfo={affiliationProgress["フリーランス"]} companyProfits={companyProfitFL} carryover={fCarry} monthOrder={flProgress - fCarry} />
+                    <SummaryCard title="協業" data={co} rate={calcRate(coAdjusted, co.target)} supportCost={co.supportCost} countInfo={affiliationProgress["協業"]} companyProfits={companyProfitCO} carryover={cCarry} monthOrder={coProgress - cCarry} />
+                  </>
+                );
+              })()}
             </div>
 
             {/* 前日営業活動成績 */}

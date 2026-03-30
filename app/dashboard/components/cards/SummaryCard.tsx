@@ -13,13 +13,15 @@ function fmtMan(v: number): string {
   return parts.join(".");
 }
 
-export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, supportCost, countInfo, grossProfitTotal, companyProfits, totalDeduction }: {
+export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, supportCost, countInfo, grossProfitTotal, companyProfits, totalDeduction, carryover, monthOrder }: {
   title: string; data: { target: number; progress: number; forecast: number };
   rate: number; isTotal?: boolean; standby?: number; standbyCost?: number; supportCost?: number;
   countInfo?: { progress: number; target: number };
   grossProfitTotal?: number;
   companyProfits?: { company: string; profit: number }[];
   totalDeduction?: number;
+  carryover?: number;
+  monthOrder?: number;
 }) {
   const { t: tc } = useTheme();
   const [showAllCompanies, setShowAllCompanies] = useState(false);
@@ -48,6 +50,8 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
       {isTotal ? (
         <>
           <Row label="現在粗利" value={formatYen(data.progress)} labelColor={labelColor} valueColor="#4cc9f0" />
+          {carryover !== undefined && <Row label="（月初繰越）" value={`(${formatYen(carryover)})`} labelColor={labelColor} valueColor="rgba(255,255,255,0.55)" small />}
+          {monthOrder !== undefined && <Row label="（今月受注）" value={`(${formatYen(monthOrder)})`} labelColor={labelColor} valueColor="rgba(255,255,255,0.55)" small />}
           <Row label="待機・支援費" value={formatYen(totalDeduction || 0)} labelColor={labelColor} valueColor="#ffb3b3" />
           <Row label="粗利計" value={formatYen(grossProfitTotal || 0)} labelColor={labelColor} valueColor="#4cc9f0" />
           <Row label="見込" value={formatYen(data.forecast)} labelColor={labelColor} valueColor="#a8e6cf" />
@@ -56,6 +60,8 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
       ) : (
         <>
           <Row label="現在粗利" value={formatYen(data.progress)} labelColor={labelColor} valueColor={tc.accentText} />
+          {carryover !== undefined && <Row label="（月初繰越）" value={`(${formatYen(carryover)})`} labelColor={labelColor} valueColor={tc.textMuted} small />}
+          {monthOrder !== undefined && <Row label="（今月受注）" value={`(${formatYen(monthOrder)})`} labelColor={labelColor} valueColor={tc.textMuted} small />}
           {standbyCost !== undefined && <Row label="待機費用" value={formatYen(standbyCost)} labelColor={labelColor} valueColor="#e74c3c" />}
           {supportCost !== undefined && <Row label="支援費等" value={formatYen(supportCost)} labelColor={labelColor} valueColor="#e74c3c" />}
           {(standbyCost !== undefined || supportCost !== undefined) && <Row label="粗利計" value={formatYen(adjustedProgress)} labelColor={labelColor} valueColor={tc.accentText} />}
