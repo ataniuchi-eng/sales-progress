@@ -228,7 +228,7 @@ export default function DashboardPage() {
   }, []);
 
   // CA粗利を所属別に月間集計（前月繰越＋月間新規＋CA単価UP = 月別タブの合計と同じ）
-  const calcCAProgressByAffiliation = useCallback((affiliation: string): { total: number; carryover: number; monthOrder: number } => {
+  const calcCAProgressByAffiliation = useCallback((affiliation: string): { total: number; carryover: number; monthOrder: number; monthOrderNew: number; monthOrderSlide: number; monthOrderPU: number } => {
     const ym = selectedDate.substring(0, 7); // "YYYY-MM"
     const [y, m] = ym.split("-").map(Number);
     const daysInMonth = new Date(y, m, 0).getDate();
@@ -238,6 +238,9 @@ export default function DashboardPage() {
     const carryTotal = STAFF_LIST.reduce((sum, staff) => sum + (carryData[staff] || 0), 0);
     // 月間新規: CA受注の粗利を所属別にSUM + CA単価UP分も加算
     let monthTotal = 0;
+    let monthNew = 0;
+    let monthSlide = 0;
+    let monthPU = 0;
     for (let d = 1; d <= daysInMonth; d++) {
       const dk = `${y}-${("0" + m).slice(-2)}-${("0" + d).slice(-2)}`;
       const dayData = allData[dk];
@@ -245,18 +248,31 @@ export default function DashboardPage() {
       dayData.staffActivities.forEach((s: any) => {
         const entries = s.caEntries || [];
         entries.forEach((e: any) => {
-          if (e.affiliation === affiliation) monthTotal += (e.amount || 0);
+          if (e.affiliation === affiliation) {
+            const amt = e.amount || 0;
+            monthTotal += amt;
+            const ot = e.orderType || "新規";
+            if (ot === "スライド") monthSlide += amt;
+            else monthNew += amt;
+          }
         });
-        // CA単価UP分も加算
+        // CA単価UP分
         const puEntries = s.caPriceUpEntries || [];
         puEntries.forEach((e: any) => {
-          if (e.affiliation === affiliation) monthTotal += (e.amount || 0);
+          if (e.affiliation === affiliation) {
+            const amt = e.amount || 0;
+            monthTotal += amt;
+            monthPU += amt;
+          }
         });
       });
     }
     const roundedCarry = Math.round(carryTotal * 10) / 10;
     const roundedMonth = Math.round(monthTotal * 10) / 10;
-    return { total: Math.round((carryTotal + monthTotal) * 10) / 10, carryover: roundedCarry, monthOrder: roundedMonth };
+    const roundedNew = Math.round(monthNew * 10) / 10;
+    const roundedSlide = Math.round(monthSlide * 10) / 10;
+    const roundedPU = Math.round(monthPU * 10) / 10;
+    return { total: Math.round((carryTotal + monthTotal) * 10) / 10, carryover: roundedCarry, monthOrder: roundedMonth, monthOrderNew: roundedNew, monthOrderSlide: roundedSlide, monthOrderPU: roundedPU };
   }, [allData, selectedDate, caCarryovers]);
 
   const properBreakdown = calcCAProgressByAffiliation("プロパー");
@@ -417,8 +433,8 @@ export default function DashboardPage() {
           appointmentAcquisitions: s.appointmentAcquisitions || 0,
           ordersRA: s.ordersRA || 0,
           ordersCA: s.ordersCA || 0,
-          raEntries: s.raEntries?.length ? s.raEntries : (s.ordersRA > 0 ? [{ amount: s.amountRA || 0, revenue: 0, company: "", affiliation: s.affiliationRA || "", position: s.positionRA || "" }] : []),
-          caEntries: s.caEntries?.length ? s.caEntries : (s.ordersCA > 0 ? [{ amount: s.amountCA || 0, revenue: 0, company: "", affiliation: s.affiliationCA || "", position: s.positionCA || "" }] : []),
+          raEntries: s.raEntries?.length ? s.raEntries.map((e: any) => ({ ...e, orderType: e.orderType || "新規" })) : (s.ordersRA > 0 ? [{ amount: s.amountRA || 0, revenue: 0, company: "", affiliation: s.affiliationRA || "", position: s.positionRA || "", orderType: "新規" as const }] : []),
+          caEntries: s.caEntries?.length ? s.caEntries.map((e: any) => ({ ...e, orderType: e.orderType || "新規" })) : (s.ordersCA > 0 ? [{ amount: s.amountCA || 0, revenue: 0, company: "", affiliation: s.affiliationCA || "", position: s.positionCA || "", orderType: "新規" as const }] : []),
           raPriceUpCount: s.raPriceUpCount || 0,
           caPriceUpCount: s.caPriceUpCount || 0,
           raPriceUpEntries: s.raPriceUpEntries || [],
@@ -570,12 +586,33 @@ export default function DashboardPage() {
     const myStaffActs = staffActivities
       .map(s => ({ ...s, staff: s.staff || currentStaffName || "" }))
       .filter(s => s.staff && (s.interviewSetups || s.interviewsConducted || s.appointmentAcquisitions || s.ordersRA || s.ordersCA || s.raPriceUpCount || s.caPriceUpCount));
-    // 受注・単価UPエントリーで企業名が未入力のものがないかチェック
+    // 受注・単価UPエントリーの入力漏れチェック
     for (const s of myStaffActs) {
-      const entries = [...(s.raEntries || []), ...(s.caEntries || []), ...(s.raPriceUpEntries || []), ...(s.caPriceUpEntries || [])];
-      const missing = entries.find(e => (e.amount || e.revenue) && !e.company);
-      if (missing) {
-        showToast(`${s.staff}の受注/単価UPに企業名が未入力です`);
+      // RA受注の必須チェック
+      for (let j = 0; j < (s.raEntries || []).length; j++) {
+        const e = s.raEntries[j];
+        if (!e.revenue) { showToast(`${s.staff}のRA受注${j + 1}件目：売上が未入力です`); return; }
+        if (!e.amount) { showToast(`${s.staff}のRA受注${j + 1}件目：粗利が未入力です`); return; }
+        if (!e.company) { showToast(`${s.staff}のRA受注${j + 1}件目：企業名が未入力です`); return; }
+        if (!e.affiliation) { showToast(`${s.staff}のRA受注${j + 1}件目：所属が未選択です`); return; }
+        if (!e.position) { showToast(`${s.staff}のRA受注${j + 1}件目：ポジションが未選択です`); return; }
+        if (!e.orderType) { showToast(`${s.staff}のRA受注${j + 1}件目：種別が未選択です`); return; }
+      }
+      // CA受注の必須チェック
+      for (let j = 0; j < (s.caEntries || []).length; j++) {
+        const e = s.caEntries[j];
+        if (!e.revenue) { showToast(`${s.staff}のCA受注${j + 1}件目：仕入が未入力です`); return; }
+        if (!e.amount) { showToast(`${s.staff}のCA受注${j + 1}件目：粗利が未入力です`); return; }
+        if (!e.company) { showToast(`${s.staff}のCA受注${j + 1}件目：企業名が未入力です`); return; }
+        if (!e.affiliation) { showToast(`${s.staff}のCA受注${j + 1}件目：所属が未選択です`); return; }
+        if (!e.position) { showToast(`${s.staff}のCA受注${j + 1}件目：ポジションが未選択です`); return; }
+        if (!e.orderType) { showToast(`${s.staff}のCA受注${j + 1}件目：種別が未選択です`); return; }
+      }
+      // 単価UPエントリーの企業名チェック
+      const puEntries = [...(s.raPriceUpEntries || []), ...(s.caPriceUpEntries || [])];
+      const puMissing = puEntries.find(e => (e.amount || e.revenue) && !e.company);
+      if (puMissing) {
+        showToast(`${s.staff}の単価UPに企業名が未入力です`);
         return;
       }
     }
@@ -849,13 +886,28 @@ export default function DashboardPage() {
                 const fCarry = Math.floor(flBreakdown.carryover * 10000);
                 const cCarry = Math.floor(coBreakdown.carryover * 10000);
                 const totalCarry = pCarry + bCarry + fCarry + cCarry;
+                const pNew = Math.floor(properBreakdown.monthOrderNew * 10000);
+                const bNew = Math.floor(bpBreakdown.monthOrderNew * 10000);
+                const fNew = Math.floor(flBreakdown.monthOrderNew * 10000);
+                const cNew = Math.floor(coBreakdown.monthOrderNew * 10000);
+                const pSlide = Math.floor(properBreakdown.monthOrderSlide * 10000);
+                const bSlide = Math.floor(bpBreakdown.monthOrderSlide * 10000);
+                const fSlide = Math.floor(flBreakdown.monthOrderSlide * 10000);
+                const cSlide = Math.floor(coBreakdown.monthOrderSlide * 10000);
+                const pPU = Math.floor(properBreakdown.monthOrderPU * 10000);
+                const bPU = Math.floor(bpBreakdown.monthOrderPU * 10000);
+                const fPU = Math.floor(flBreakdown.monthOrderPU * 10000);
+                const cPU = Math.floor(coBreakdown.monthOrderPU * 10000);
+                const totalNew = pNew + bNew + fNew + cNew;
+                const totalSlide = pSlide + bSlide + fSlide + cSlide;
+                const totalPU = pPU + bPU + fPU + cPU;
                 return (
                   <>
-                    <SummaryCard title="全体" data={total} rate={calcRate(totalAdjusted, total.target)} isTotal countInfo={affiliationProgress["全体"]} grossProfitTotal={totalAdjusted} totalDeduction={(proper.standbyCost || 0) + (bp.supportCost || 0) + (fl.supportCost || 0) + (co.supportCost || 0)} carryover={totalCarry} monthOrder={total.progress - totalCarry} />
-                    <SummaryCard title="プロパー" data={proper} rate={calcRate(properAdjusted, proper.target)} standby={proper.standby} standbyCost={proper.standbyCost} countInfo={affiliationProgress["プロパー"]} companyProfits={companyProfitProper} carryover={pCarry} monthOrder={properProgress - pCarry} />
-                    <SummaryCard title="BP" data={bp} rate={calcRate(bpAdjusted, bp.target)} supportCost={bp.supportCost} countInfo={affiliationProgress["BP"]} companyProfits={companyProfitBP} carryover={bCarry} monthOrder={bpProgress - bCarry} />
-                    <SummaryCard title="フリーランス" data={fl} rate={calcRate(flAdjusted, fl.target)} supportCost={fl.supportCost} countInfo={affiliationProgress["フリーランス"]} companyProfits={companyProfitFL} carryover={fCarry} monthOrder={flProgress - fCarry} />
-                    <SummaryCard title="協業" data={co} rate={calcRate(coAdjusted, co.target)} supportCost={co.supportCost} countInfo={affiliationProgress["協業"]} companyProfits={companyProfitCO} carryover={cCarry} monthOrder={coProgress - cCarry} />
+                    <SummaryCard title="全体" data={total} rate={calcRate(totalAdjusted, total.target)} isTotal countInfo={affiliationProgress["全体"]} grossProfitTotal={totalAdjusted} totalDeduction={(proper.standbyCost || 0) + (bp.supportCost || 0) + (fl.supportCost || 0) + (co.supportCost || 0)} carryover={totalCarry} monthOrder={total.progress - totalCarry} monthOrderNew={totalNew} monthOrderSlide={totalSlide} monthOrderPU={totalPU} />
+                    <SummaryCard title="プロパー" data={proper} rate={calcRate(properAdjusted, proper.target)} standby={proper.standby} standbyCost={proper.standbyCost} countInfo={affiliationProgress["プロパー"]} companyProfits={companyProfitProper} carryover={pCarry} monthOrder={properProgress - pCarry} monthOrderNew={pNew} monthOrderSlide={pSlide} monthOrderPU={pPU} />
+                    <SummaryCard title="BP" data={bp} rate={calcRate(bpAdjusted, bp.target)} supportCost={bp.supportCost} countInfo={affiliationProgress["BP"]} companyProfits={companyProfitBP} carryover={bCarry} monthOrder={bpProgress - bCarry} monthOrderNew={bNew} monthOrderSlide={bSlide} monthOrderPU={bPU} />
+                    <SummaryCard title="フリーランス" data={fl} rate={calcRate(flAdjusted, fl.target)} supportCost={fl.supportCost} countInfo={affiliationProgress["フリーランス"]} companyProfits={companyProfitFL} carryover={fCarry} monthOrder={flProgress - fCarry} monthOrderNew={fNew} monthOrderSlide={fSlide} monthOrderPU={fPU} />
+                    <SummaryCard title="協業" data={co} rate={calcRate(coAdjusted, co.target)} supportCost={co.supportCost} countInfo={affiliationProgress["協業"]} companyProfits={companyProfitCO} carryover={cCarry} monthOrder={coProgress - cCarry} monthOrderNew={cNew} monthOrderSlide={cSlide} monthOrderPU={cPU} />
                   </>
                 );
               })()}
@@ -929,7 +981,7 @@ export default function DashboardPage() {
                       const oldEntries = a[i].raEntries || [];
                       let newEntries: OrderEntry[] = [];
                       if (newCount > oldEntries.length) {
-                        newEntries = [...oldEntries, ...Array(newCount - oldEntries.length).fill(null).map(() => ({ amount: 0, revenue: 0, company: "", affiliation: "", position: "", orderType: "新規" as const }))];
+                        newEntries = [...oldEntries, ...Array(newCount - oldEntries.length).fill(null).map(() => ({ amount: 0, revenue: 0, company: "", affiliation: "", position: "", orderType: "" as any }))];
                       } else {
                         newEntries = oldEntries.slice(0, newCount);
                       }
@@ -943,7 +995,7 @@ export default function DashboardPage() {
                       const oldEntries = a[i].caEntries || [];
                       let newEntries: OrderEntry[] = [];
                       if (newCount > oldEntries.length) {
-                        newEntries = [...oldEntries, ...Array(newCount - oldEntries.length).fill(null).map(() => ({ amount: 0, revenue: 0, company: "", affiliation: "", position: "", orderType: "新規" as const }))];
+                        newEntries = [...oldEntries, ...Array(newCount - oldEntries.length).fill(null).map(() => ({ amount: 0, revenue: 0, company: "", affiliation: "", position: "", orderType: "" as any }))];
                       } else {
                         newEntries = oldEntries.slice(0, newCount);
                       }
@@ -1009,7 +1061,7 @@ export default function DashboardPage() {
                               <FieldWrap label="企業名" grow><CompanySelect value={entry.company || ""} onChange={(v) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], company: v }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} companies={allCompanies} onAddCompany={handleAddCompany} style={focusInputStyle} /></FieldWrap>
                               <FieldWrap label="所属" className="fw-select" w={110}><select disabled={!canEdit} value={entry.affiliation || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
                               <FieldWrap label="ポジション" className="fw-select" w={120}><select disabled={!canEdit} value={entry.position || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], position: e.target.value }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
-                              <FieldWrap label="種別" className="fw-select" w={90}><select disabled={!canEdit} value={entry.orderType || "新規"} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], orderType: e.target.value as "新規" | "スライド" }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option>新規</option><option>スライド</option></select></FieldWrap>
+                              <FieldWrap label="種別" className="fw-select" w={90}><select disabled={!canEdit} value={entry.orderType || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], orderType: e.target.value as "新規" | "スライド" }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>新規</option><option>スライド</option></select></FieldWrap>
                             </div>
                           ))}
                         </div>
@@ -1038,7 +1090,7 @@ export default function DashboardPage() {
                               <FieldWrap label="企業名" grow><CompanySelect value={entry.company || ""} onChange={(v) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], company: v }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} companies={allCompanies} onAddCompany={handleAddCompany} style={focusInputStyle} /></FieldWrap>
                               <FieldWrap label="所属" className="fw-select" w={110}><select disabled={!canEdit} value={entry.affiliation || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
                               <FieldWrap label="ポジション" className="fw-select" w={120}><select disabled={!canEdit} value={entry.position || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], position: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
-                              <FieldWrap label="種別" className="fw-select" w={90}><select disabled={!canEdit} value={entry.orderType || "新規"} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], orderType: e.target.value as "新規" | "スライド" }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option>新規</option><option>スライド</option></select></FieldWrap>
+                              <FieldWrap label="種別" className="fw-select" w={90}><select disabled={!canEdit} value={entry.orderType || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], orderType: e.target.value as "新規" | "スライド" }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>新規</option><option>スライド</option></select></FieldWrap>
                             </div>
                           ))}
                         </div>
