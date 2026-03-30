@@ -665,7 +665,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(5, 1fr)", gap: isMobile ? 12 : 16 }} className="focus-grid">
           {ACTIVITY_FIELDS.map(af => {
             const isCACount = af.key === "ordersCA";
-            const cntAfOptions = isCACount ? ["全体", "プロパー", "BP", "フリーランス"] : [];
+            const cntAfOptions = isCACount ? ["全体", "プロパー", "BP", "フリーランス", "協業"] : [];
             const selCntAf = rankAffiliation[`cnt_${af.key}`] || "全体";
             const ranked = STAFF_LIST
               .map(staff => {
@@ -860,7 +860,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
             const medals = ["🥇", "🥈", "🥉"];
             const isCAField = af.key === "amountCA";
             const caSubs = ["プロパー", "BP", "フリーランス", "協業"];
-            const affiliationOptions = isCAField ? ["全体", "プロパー", "BP", "フリーランス"] : [];
+            const affiliationOptions = isCAField ? ["全体", "プロパー", "BP", "フリーランス", "協業"] : [];
             const selRate = rankAffiliation[`${af.key}_rate`] || "全体";
             const selAmt = rankAffiliation[`${af.key}_amt`] || "全体";
             const selPu = rankAffiliation[`${af.key}_pu`] || "全体";
