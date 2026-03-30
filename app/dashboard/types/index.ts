@@ -46,6 +46,7 @@ export interface OrderEntry {
   company: string;
   affiliation: string;
   position: string;
+  orderType?: "新規" | "スライド";
 }
 
 export interface StaffActivity {

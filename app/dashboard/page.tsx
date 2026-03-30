@@ -29,6 +29,7 @@ import { UserManagementView } from "./components/UserManagementView";
 import { useAuth } from "./hooks/useAuth";
 import { useDataManagement } from "./hooks/useDataManagement";
 import { PrevDayResultSection } from "./components/sections/PrevDayResultSection";
+import { SalesAnalysisView } from "./components/SalesAnalysisView";
 
 // ===== メインコンポーネント =====
 export default function DashboardPage() {
@@ -50,7 +51,7 @@ export default function DashboardPage() {
   const [toast, setToast] = useState("");
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [activeTab, setActiveTab] = useState<"main" | "monthly" | "users">("main");
+  const [activeTab, setActiveTab] = useState<"main" | "monthly" | "analysis" | "users">("main");
   const [monthlyYM, setMonthlyYM] = useState(`${new Date().getFullYear()}-${("0" + (new Date().getMonth() + 1)).slice(-2)}`);
 
   const [inp, setInp] = useState({
@@ -704,6 +705,7 @@ export default function DashboardPage() {
           {[
             { key: "main" as const, label: "メイン" },
             { key: "monthly" as const, label: "月別営業活動成績" },
+            ...(isAdmin ? [{ key: "analysis" as const, label: "営業分析" }] : []),
             ...(isAdmin ? [{ key: "users" as const, label: "ユーザー追加" }] : []),
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
@@ -715,6 +717,10 @@ export default function DashboardPage() {
 
         {activeTab === "monthly" && (
           <MonthlyActivityView allData={allData} setAllData={setAllData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} currentStaffName={currentStaffName} isAdmin={isAdmin} userRole={userRole} subStaffName={subStaffName} onAffiliationProgress={setAffiliationProgress} />
+        )}
+
+        {activeTab === "analysis" && isAdmin && (
+          <SalesAnalysisView allData={allData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} />
         )}
 
         {activeTab === "users" && isAdmin && (
@@ -923,7 +929,7 @@ export default function DashboardPage() {
                       const oldEntries = a[i].raEntries || [];
                       let newEntries: OrderEntry[] = [];
                       if (newCount > oldEntries.length) {
-                        newEntries = [...oldEntries, ...Array(newCount - oldEntries.length).fill(null).map(() => ({ amount: 0, revenue: 0, company: "", affiliation: "", position: "" }))];
+                        newEntries = [...oldEntries, ...Array(newCount - oldEntries.length).fill(null).map(() => ({ amount: 0, revenue: 0, company: "", affiliation: "", position: "", orderType: "新規" as const }))];
                       } else {
                         newEntries = oldEntries.slice(0, newCount);
                       }
@@ -937,7 +943,7 @@ export default function DashboardPage() {
                       const oldEntries = a[i].caEntries || [];
                       let newEntries: OrderEntry[] = [];
                       if (newCount > oldEntries.length) {
-                        newEntries = [...oldEntries, ...Array(newCount - oldEntries.length).fill(null).map(() => ({ amount: 0, revenue: 0, company: "", affiliation: "", position: "" }))];
+                        newEntries = [...oldEntries, ...Array(newCount - oldEntries.length).fill(null).map(() => ({ amount: 0, revenue: 0, company: "", affiliation: "", position: "", orderType: "新規" as const }))];
                       } else {
                         newEntries = oldEntries.slice(0, newCount);
                       }
@@ -1003,6 +1009,7 @@ export default function DashboardPage() {
                               <FieldWrap label="企業名" grow><CompanySelect value={entry.company || ""} onChange={(v) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], company: v }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} companies={allCompanies} onAddCompany={handleAddCompany} style={focusInputStyle} /></FieldWrap>
                               <FieldWrap label="所属" className="fw-select" w={110}><select disabled={!canEdit} value={entry.affiliation || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
                               <FieldWrap label="ポジション" className="fw-select" w={120}><select disabled={!canEdit} value={entry.position || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], position: e.target.value }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
+                              <FieldWrap label="種別" className="fw-select" w={90}><select disabled={!canEdit} value={entry.orderType || "新規"} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].raEntries]; entries[j] = { ...entries[j], orderType: e.target.value as "新規" | "スライド" }; a[i] = { ...a[i], raEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option>新規</option><option>スライド</option></select></FieldWrap>
                             </div>
                           ))}
                         </div>
@@ -1031,6 +1038,7 @@ export default function DashboardPage() {
                               <FieldWrap label="企業名" grow><CompanySelect value={entry.company || ""} onChange={(v) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], company: v }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} companies={allCompanies} onAddCompany={handleAddCompany} style={focusInputStyle} /></FieldWrap>
                               <FieldWrap label="所属" className="fw-select" w={110}><select disabled={!canEdit} value={entry.affiliation || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], affiliation: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option><option>プロパー</option><option>BP</option><option>フリーランス</option><option>協業</option></select></FieldWrap>
                               <FieldWrap label="ポジション" className="fw-select" w={120}><select disabled={!canEdit} value={entry.position || ""} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], position: e.target.value }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option value="">選択</option>{POSITION_LIST.map(p => <option key={p}>{p}</option>)}</select></FieldWrap>
+                              <FieldWrap label="種別" className="fw-select" w={90}><select disabled={!canEdit} value={entry.orderType || "新規"} onChange={(e) => { if (!canEdit) return; const a = [...staffActivities]; const entries = [...a[i].caEntries]; entries[j] = { ...entries[j], orderType: e.target.value as "新規" | "スライド" }; a[i] = { ...a[i], caEntries: entries }; setStaffActivities(a); }} style={focusSelectStyle}><option>新規</option><option>スライド</option></select></FieldWrap>
                             </div>
                           ))}
                         </div>
