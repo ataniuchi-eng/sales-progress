@@ -45,9 +45,10 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
       <div style={{ marginBottom: 12, paddingBottom: 6, borderBottom: `1px solid ${trackColor}` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: 16, fontWeight: 700 }}>{title}</span>
-          {countInfo && countInfo.target > 0 && (
+          {hcInfo && (
             <span style={{ fontSize: 11, fontWeight: 700, color: isTotal ? "#4cc9f0" : tc.accentText, whiteSpace: "nowrap" }}>
-              稼働HC：{countInfo.progress}<span style={{ fontWeight: 400, color: labelColor }}>/{countInfo.target}</span>
+              稼働HC：{hcInfo.hcCarryover + hcInfo.hcNew + hcInfo.hcSlide}
+              {countInfo && countInfo.target > 0 && <span style={{ fontWeight: 400, color: labelColor }}>/{countInfo.target}</span>}
             </span>
           )}
         </div>
