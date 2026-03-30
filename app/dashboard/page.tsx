@@ -752,7 +752,7 @@ export default function DashboardPage() {
           {[
             { key: "main" as const, label: "メイン" },
             { key: "monthly" as const, label: "月別営業活動成績" },
-            ...(isAdmin ? [{ key: "analysis" as const, label: "営業分析" }] : []),
+            { key: "analysis" as const, label: "営業分析" },
             ...(isAdmin ? [{ key: "users" as const, label: "ユーザー追加" }] : []),
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
@@ -766,7 +766,7 @@ export default function DashboardPage() {
           <MonthlyActivityView allData={allData} setAllData={setAllData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} currentStaffName={currentStaffName} isAdmin={isAdmin} userRole={userRole} subStaffName={subStaffName} onAffiliationProgress={setAffiliationProgress} />
         )}
 
-        {activeTab === "analysis" && isAdmin && (
+        {activeTab === "analysis" && (
           <SalesAnalysisView allData={allData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} />
         )}
 

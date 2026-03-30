@@ -16,6 +16,21 @@ export function SalesAnalysisView({ allData, monthlyYM, setMonthlyYM, isMobile }
   const { t: tc, theme } = useTheme();
   const isDark = theme === "dark";
   const [analysisMode, setAnalysisMode] = useState<"funnel" | "matrix">("funnel");
+  // ファネルソート
+  const [funnelSortKey, setFunnelSortKey] = useState<string>("cv3");
+  const [funnelSortDir, setFunnelSortDir] = useState<"asc" | "desc">("desc");
+  // マトリクスソート (CA / RA)
+  const [caSortKey, setCaSortKey] = useState<string>("total");
+  const [caSortDir, setCaSortDir] = useState<"asc" | "desc">("desc");
+  const [raSortKey, setRaSortKey] = useState<string>("total");
+  const [raSortDir, setRaSortDir] = useState<"asc" | "desc">("desc");
+
+  const toggleSort = (current: string, dir: "asc" | "desc", key: string, setKey: (k: string) => void, setDir: (d: "asc" | "desc") => void) => {
+    if (current === key) setDir(dir === "asc" ? "desc" : "asc");
+    else { setKey(key); setDir("desc"); }
+  };
+  const sortIcon = (currentKey: string, dir: "asc" | "desc", key: string) => currentKey === key ? (dir === "asc" ? "▲" : "▼") : "";
+
   const [ymYear, ymMonth] = monthlyYM.split("-").map(Number);
   const daysInMonth = new Date(ymYear, ymMonth, 0).getDate();
 
@@ -123,26 +138,49 @@ export function SalesAnalysisView({ allData, monthlyYM, setMonthlyYM, isMobile }
             <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 600, fontSize: 13 }}>
               <thead>
                 <tr>
-                  <th style={{ padding: "8px 12px", textAlign: "left", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: tc.textHeading }}>担当</th>
-                  <th style={{ padding: "8px 12px", textAlign: "right", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: "#0077b6" }}>面談設定</th>
-                  <th style={{ padding: "8px 12px", textAlign: "right", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: "#e67e22" }}>面談実施</th>
-                  <th style={{ padding: "8px 12px", textAlign: "center", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: tc.textMuted }}>設定→実施</th>
-                  <th style={{ padding: "8px 12px", textAlign: "right", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: "#e74c3c" }}>RA受注</th>
-                  <th style={{ padding: "8px 12px", textAlign: "right", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: "#9b59b6" }}>CA受注</th>
-                  <th style={{ padding: "8px 12px", textAlign: "right", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: "#2ecc71" }}>受注計</th>
-                  <th style={{ padding: "8px 12px", textAlign: "center", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: tc.textMuted }}>実施→受注</th>
-                  <th style={{ padding: "8px 12px", textAlign: "center", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: tc.textMuted }}>設定→受注</th>
+                  {([
+                    { key: "staff", label: "担当", align: "left" as const, color: tc.textHeading },
+                    { key: "setups", label: "面談設定", align: "right" as const, color: "#0077b6" },
+                    { key: "conducted", label: "面談実施", align: "right" as const, color: "#e67e22" },
+                    { key: "cv1", label: "設定→実施", align: "center" as const, color: tc.textMuted },
+                    { key: "ordersRA", label: "RA受注", align: "right" as const, color: "#e74c3c" },
+                    { key: "ordersCA", label: "CA受注", align: "right" as const, color: "#9b59b6" },
+                    { key: "ordersTotal", label: "受注計", align: "right" as const, color: "#2ecc71" },
+                    { key: "cv2", label: "実施→受注", align: "center" as const, color: tc.textMuted },
+                    { key: "cv3", label: "設定→受注", align: "center" as const, color: tc.textMuted },
+                  ]).map(col => (
+                    <th key={col.key} onClick={() => toggleSort(funnelSortKey, funnelSortDir, col.key, setFunnelSortKey, setFunnelSortDir)} style={{ padding: "8px 12px", textAlign: col.align, borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: col.color, cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}>
+                      {col.label} {sortIcon(funnelSortKey, funnelSortDir, col.key)}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {staffData
                   .filter(s => s.interviewSetups > 0 || s.interviewsConducted > 0 || s.ordersRA > 0 || s.ordersCA > 0)
                   .sort((a, b) => {
-                    const aTotal = a.ordersRA + a.ordersCA;
-                    const bTotal = b.ordersRA + b.ordersCA;
-                    const aRate = a.interviewSetups > 0 ? aTotal / a.interviewSetups : 0;
-                    const bRate = b.interviewSetups > 0 ? bTotal / b.interviewSetups : 0;
-                    return bRate - aRate;
+                    const getVal = (s: typeof a) => {
+                      const total = s.ordersRA + s.ordersCA;
+                      const cv1 = s.interviewSetups > 0 ? s.interviewsConducted / s.interviewSetups : 0;
+                      const cv2 = s.interviewsConducted > 0 ? total / s.interviewsConducted : 0;
+                      const cv3 = s.interviewSetups > 0 ? total / s.interviewSetups : 0;
+                      switch (funnelSortKey) {
+                        case "staff": return s.staff;
+                        case "setups": return s.interviewSetups;
+                        case "conducted": return s.interviewsConducted;
+                        case "cv1": return cv1;
+                        case "ordersRA": return s.ordersRA;
+                        case "ordersCA": return s.ordersCA;
+                        case "ordersTotal": return total;
+                        case "cv2": return cv2;
+                        case "cv3": return cv3;
+                        default: return cv3;
+                      }
+                    };
+                    const va = getVal(a);
+                    const vb = getVal(b);
+                    const cmp = typeof va === "string" ? (va as string).localeCompare(vb as string) : (va as number) - (vb as number);
+                    return funnelSortDir === "asc" ? cmp : -cmp;
                   })
                   .map((s, idx) => {
                     const totalOrders = s.ordersRA + s.ordersCA;
@@ -195,17 +233,28 @@ export function SalesAnalysisView({ allData, monthlyYM, setMonthlyYM, isMobile }
             <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 500, fontSize: 12 }}>
               <thead>
                 <tr>
-                  <th style={{ padding: "8px 10px", textAlign: "left", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: tc.textHeading }}>担当</th>
+                  <th onClick={() => toggleSort(caSortKey, caSortDir, "staff", setCaSortKey, setCaSortDir)} style={{ padding: "8px 10px", textAlign: "left", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: tc.textHeading, cursor: "pointer", userSelect: "none" }}>担当 {sortIcon(caSortKey, caSortDir, "staff")}</th>
                   {affiliations.map(af => (
-                    <th key={af} style={{ padding: "8px 10px", textAlign: "center", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: "#9b59b6" }}>{af}</th>
+                    <th key={af} onClick={() => toggleSort(caSortKey, caSortDir, `ca_${af}`, setCaSortKey, setCaSortDir)} style={{ padding: "8px 10px", textAlign: "center", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: "#9b59b6", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}>{af} {sortIcon(caSortKey, caSortDir, `ca_${af}`)}</th>
                   ))}
-                  <th style={{ padding: "8px 10px", textAlign: "center", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: tc.textPrimary }}>合計</th>
+                  <th onClick={() => toggleSort(caSortKey, caSortDir, "total", setCaSortKey, setCaSortDir)} style={{ padding: "8px 10px", textAlign: "center", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: tc.textPrimary, cursor: "pointer", userSelect: "none" }}>合計 {sortIcon(caSortKey, caSortDir, "total")}</th>
                 </tr>
               </thead>
               <tbody>
                 {activeStaff
                   .filter(s => s.ordersCA > 0)
-                  .sort((a, b) => b.ordersCA - a.ordersCA)
+                  .sort((a, b) => {
+                    const getVal = (s: typeof a) => {
+                      if (caSortKey === "staff") return s.staff;
+                      if (caSortKey === "total") return s.ordersCA;
+                      const af = caSortKey.replace("ca_", "");
+                      return s.caByAffiliation[af]?.count || 0;
+                    };
+                    const va = getVal(a);
+                    const vb = getVal(b);
+                    const cmp = typeof va === "string" ? (va as string).localeCompare(vb as string) : (va as number) - (vb as number);
+                    return caSortDir === "asc" ? cmp : -cmp;
+                  })
                   .map((s, idx) => {
                     const rowBg = idx % 2 === 1 ? (isDark ? "#1e2533" : "#f8f9fb") : "transparent";
                     const totalProfit = Object.values(s.caByAffiliation).reduce((sum, v) => sum + v.profit, 0);
@@ -268,17 +317,28 @@ export function SalesAnalysisView({ allData, monthlyYM, setMonthlyYM, isMobile }
             <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 500, fontSize: 12 }}>
               <thead>
                 <tr>
-                  <th style={{ padding: "8px 10px", textAlign: "left", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: tc.textHeading }}>担当</th>
+                  <th onClick={() => toggleSort(raSortKey, raSortDir, "staff", setRaSortKey, setRaSortDir)} style={{ padding: "8px 10px", textAlign: "left", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: tc.textHeading, cursor: "pointer", userSelect: "none" }}>担当 {sortIcon(raSortKey, raSortDir, "staff")}</th>
                   {affiliations.map(af => (
-                    <th key={af} style={{ padding: "8px 10px", textAlign: "center", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: "#e74c3c" }}>{af}</th>
+                    <th key={af} onClick={() => toggleSort(raSortKey, raSortDir, `ra_${af}`, setRaSortKey, setRaSortDir)} style={{ padding: "8px 10px", textAlign: "center", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: "#e74c3c", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}>{af} {sortIcon(raSortKey, raSortDir, `ra_${af}`)}</th>
                   ))}
-                  <th style={{ padding: "8px 10px", textAlign: "center", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: tc.textPrimary }}>合計</th>
+                  <th onClick={() => toggleSort(raSortKey, raSortDir, "total", setRaSortKey, setRaSortDir)} style={{ padding: "8px 10px", textAlign: "center", borderBottom: `2px solid ${tc.border}`, fontWeight: 700, color: tc.textPrimary, cursor: "pointer", userSelect: "none" }}>合計 {sortIcon(raSortKey, raSortDir, "total")}</th>
                 </tr>
               </thead>
               <tbody>
                 {activeStaff
                   .filter(s => s.ordersRA > 0)
-                  .sort((a, b) => b.ordersRA - a.ordersRA)
+                  .sort((a, b) => {
+                    const getVal = (s: typeof a) => {
+                      if (raSortKey === "staff") return s.staff;
+                      if (raSortKey === "total") return s.ordersRA;
+                      const af = raSortKey.replace("ra_", "");
+                      return s.raByAffiliation[af]?.count || 0;
+                    };
+                    const va = getVal(a);
+                    const vb = getVal(b);
+                    const cmp = typeof va === "string" ? (va as string).localeCompare(vb as string) : (va as number) - (vb as number);
+                    return raSortDir === "asc" ? cmp : -cmp;
+                  })
                   .map((s, idx) => {
                     const rowBg = idx % 2 === 1 ? (isDark ? "#1e2533" : "#f8f9fb") : "transparent";
                     const totalProfit = Object.values(s.raByAffiliation).reduce((sum, v) => sum + v.profit, 0);
