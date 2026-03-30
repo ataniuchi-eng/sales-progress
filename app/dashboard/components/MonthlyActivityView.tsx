@@ -69,6 +69,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
   const [puDetailOpen, setPuDetailOpen] = useState<Record<string, boolean>>({});
   const [amountDetailOpen, setAmountDetailOpen] = useState<Record<string, boolean>>({});
   const [countDetailOpen, setCountDetailOpen] = useState<Record<string, boolean>>({});
+  const [rankAffiliation, setRankAffiliation] = useState<Record<string, string>>({});
   const [companyDetailOpen, setCompanyDetailOpen] = useState<Record<string, boolean>>({});
   // その他
   const [miscItems, setMiscItems] = useState<{ staff: string; content: string; deadline: string; status: string; createdAt: string }[]>([]);
@@ -468,6 +469,20 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
     return details;
   };
 
+  // 単価UP entries の担当別月間金額合計（所属別）
+  const getStaffMonthPriceUpByAffiliation = (staff: string, entryType: "ra" | "ca", affiliation: string): number => {
+    let total = 0;
+    days.forEach(day => {
+      const dayData = allData[day.key];
+      if (!dayData || !Array.isArray(dayData.staffActivities)) return;
+      const entry = dayData.staffActivities.find((s: any) => s.staff === staff);
+      if (!entry) return;
+      const puEntries = entryType === "ra" ? ((entry as any).raPriceUpEntries || []) : ((entry as any).caPriceUpEntries || []);
+      total += puEntries.filter((e: any) => e.affiliation === affiliation).reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
+    });
+    return Math.round(total * 10) / 10;
+  };
+
   // 受注 entries の担当別月間明細一覧
   const getStaffMonthAmountDetails = (staff: string, entryType: "ra" | "ca"): { date: string; revenue: number; amount: number; company: string; affiliation: string; position: string }[] => {
     const details: { date: string; revenue: number; amount: number; company: string; affiliation: string; position: string }[] = [];
@@ -649,25 +664,48 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
             {/* ランキングカード */}
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(5, 1fr)", gap: isMobile ? 12 : 16 }} className="focus-grid">
           {ACTIVITY_FIELDS.map(af => {
+            const isCACount = af.key === "ordersCA";
+            const cntAfOptions = isCACount ? ["全体", "プロパー", "BP", "フリーランス"] : [];
+            const selCntAf = rankAffiliation[`cnt_${af.key}`] || "全体";
             const ranked = STAFF_LIST
-              .map(staff => ({ staff, total: getStaffMonthTotal(staff, af.key) }))
+              .map(staff => {
+                const total = isCACount && selCntAf !== "全体"
+                  ? getStaffMonthCACountByAffiliation(staff, selCntAf)
+                  : getStaffMonthTotal(staff, af.key);
+                return { staff, total };
+              })
               .filter(s => s.total > 0)
               .sort((a, b) => b.total - a.total)
               .slice(0, 5);
+            const cntGrandTotal = isCACount && selCntAf !== "全体"
+              ? STAFF_LIST.reduce((sum, s) => sum + getStaffMonthCACountByAffiliation(s, selCntAf), 0)
+              : getMonthGrandTotal(af.key);
             const medals = ["🥇", "🥈", "🥉"];
             const hasDetail = af.key === "ordersRA" || af.key === "ordersCA";
             return (
               <div key={af.key} style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: cntAfOptions.length > 0 ? 8 : 12 }}>
                   <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{af.label}</h3>
                   <div style={{ textAlign: "right" }}>
-                    <span style={{ fontSize: 18, fontWeight: 700, color: af.color }}>{getMonthGrandTotal(af.key)}</span>
-                    {businessDaysElapsed > 0 && <div style={{ fontSize: 10, color: tc.textMuted, marginTop: 2 }}>{(getMonthGrandTotal(af.key) / businessDaysElapsed).toFixed(1)}件／日</div>}
+                    <span style={{ fontSize: 18, fontWeight: 700, color: af.color }}>{cntGrandTotal}</span>
+                    {businessDaysElapsed > 0 && <div style={{ fontSize: 10, color: tc.textMuted, marginTop: 2 }}>{(cntGrandTotal / businessDaysElapsed).toFixed(1)}件／日</div>}
                   </div>
                 </div>
+                {cntAfOptions.length > 0 && (
+                  <div style={{ display: "flex", gap: 2, marginBottom: 8, flexWrap: "wrap" }}>
+                    {cntAfOptions.map(opt => (
+                      <button key={opt} onClick={() => setRankAffiliation(prev => ({ ...prev, [`cnt_${af.key}`]: opt }))}
+                        style={{ padding: "2px 7px", fontSize: 10, fontWeight: selCntAf === opt ? 700 : 400, color: selCntAf === opt ? "#fff" : tc.textMuted,
+                          background: selCntAf === opt ? (isDark ? "#334155" : "#475569") : "transparent",
+                          border: `1px solid ${selCntAf === opt ? "transparent" : tc.border}`, borderRadius: 4, cursor: "pointer", lineHeight: 1.4 }}>
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {ranked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
                   ranked.map((r, i) => {
-                    const cntDetailKey = `${af.key}_cnt_${r.staff}`;
+                    const cntDetailKey = `${af.key}_cnt_${selCntAf}_${r.staff}`;
                     const isCntOpen = hasDetail && (countDetailOpen[cntDetailKey] || false);
                     return (
                     <div key={r.staff} style={{ borderBottom: "1px solid #f0f2f5" }}>
@@ -686,7 +724,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                         </div>
                       </div>
                       {isCntOpen && (() => {
-                        const details = getStaffMonthCountDetails(r.staff, af.key);
+                        const details = getStaffMonthCountDetails(r.staff, af.key).filter(d => selCntAf === "全体" || d.affiliation === selCntAf);
                         return details.length > 0 ? (
                           <div style={{ padding: "4px 0 8px 28px" }}>
                             {details.map((d, di) => (
@@ -822,21 +860,47 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
             const medals = ["🥇", "🥈", "🥉"];
             const isCAField = af.key === "amountCA";
             const caSubs = ["プロパー", "BP", "フリーランス", "協業"];
-            const getBudgetForField = (staff: string) => isCAField
-              ? caSubs.reduce((sum, a) => sum + getStaffBudget(staff, `amountCA_${a}`), 0)
-              : getStaffBudget(staff, af.key);
-            const getCarryForField = (staff: string) => isCAField
-              ? caSubs.reduce((sum, a) => sum + getStaffCarryover(staff, `amountCA_${a}`), 0)
-              : getStaffCarryover(staff, af.key);
-            const getMonthForField = (staff: string) => isCAField
-              ? Math.round(getStaffMonthAmountTotal(staff, "ca") * 10) / 10
-              : Math.round(getStaffMonthAmountTotal(staff, "ra") * 10) / 10;
+            const affiliationOptions = isCAField ? ["全体", "プロパー", "BP", "フリーランス"] : [];
+            const selRate = rankAffiliation[`${af.key}_rate`] || "全体";
+            const selAmt = rankAffiliation[`${af.key}_amt`] || "全体";
+            const selPu = rankAffiliation[`${af.key}_pu`] || "全体";
+            const renderAfTabs = (cardKey: string, selected: string) => affiliationOptions.length > 0 ? (
+              <div style={{ display: "flex", gap: 2, marginBottom: 8, flexWrap: "wrap" }}>
+                {affiliationOptions.map(opt => (
+                  <button key={opt} onClick={() => setRankAffiliation(prev => ({ ...prev, [cardKey]: opt }))}
+                    style={{ padding: "2px 7px", fontSize: 10, fontWeight: selected === opt ? 700 : 400, color: selected === opt ? "#fff" : tc.textMuted,
+                      background: selected === opt ? (isDark ? "#334155" : "#475569") : "transparent",
+                      border: `1px solid ${selected === opt ? "transparent" : tc.border}`, borderRadius: 4, cursor: "pointer", lineHeight: 1.4 }}>
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            ) : null;
+            // 所属フィルタに応じた計算関数
+            const getBudgetForField = (staff: string, aff: string) => {
+              if (!isCAField) return getStaffBudget(staff, af.key);
+              return aff === "全体" ? caSubs.reduce((sum, a) => sum + getStaffBudget(staff, `amountCA_${a}`), 0) : getStaffBudget(staff, `amountCA_${aff}`);
+            };
+            const getCarryForField = (staff: string, aff: string) => {
+              if (!isCAField) return getStaffCarryover(staff, af.key);
+              return aff === "全体" ? caSubs.reduce((sum, a) => sum + getStaffCarryover(staff, `amountCA_${a}`), 0) : getStaffCarryover(staff, `amountCA_${aff}`);
+            };
+            const getMonthForField = (staff: string, aff: string) => {
+              const et = isCAField ? "ca" as const : "ra" as const;
+              if (aff === "全体") return Math.round(getStaffMonthAmountTotal(staff, et) * 10) / 10;
+              return Math.round(getStaffMonthAmountByAffiliation(staff, et, aff) * 10) / 10;
+            };
+            const getPuForField = (staff: string, aff: string) => {
+              const et = isCAField ? "ca" as const : "ra" as const;
+              if (aff === "全体") return getStaffMonthPriceUpTotal(staff, et);
+              return getStaffMonthPriceUpByAffiliation(staff, et, aff);
+            };
             // 達成率ランキング
             const rateRanked = STAFF_LIST
               .map(staff => {
-                const budget = getBudgetForField(staff);
-                const carry = getCarryForField(staff);
-                const month = getMonthForField(staff);
+                const budget = getBudgetForField(staff, selRate);
+                const carry = getCarryForField(staff, selRate);
+                const month = getMonthForField(staff, selRate);
                 const progress = carry + month;
                 const rate = budget > 0 ? Math.round((progress / budget) * 1000) / 10 : 0;
                 return { staff, rate, budget };
@@ -844,33 +908,32 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
               .filter(s => s.budget > 0)
               .sort((a, b) => b.rate - a.rate)
               .slice(0, 5);
-            const allBudget = STAFF_LIST.reduce((sum, s) => sum + getBudgetForField(s), 0);
-            const allProgress = STAFF_LIST.reduce((sum, s) => sum + getCarryForField(s) + getMonthForField(s), 0);
+            const allBudget = STAFF_LIST.reduce((sum, s) => sum + getBudgetForField(s, selRate), 0);
+            const allProgress = STAFF_LIST.reduce((sum, s) => sum + getCarryForField(s, selRate) + getMonthForField(s, selRate), 0);
             const allRate = allBudget > 0 ? Math.round((allProgress / allBudget) * 1000) / 10 : 0;
             // 金額ランキング
             const amountRanked = STAFF_LIST
-              .map(staff => ({ staff, total: getMonthForField(staff) }))
+              .map(staff => ({ staff, total: getMonthForField(staff, selAmt) }))
               .filter(s => s.total > 0)
               .sort((a, b) => b.total - a.total)
               .slice(0, 5);
-            const grandTotal = isCAField
-              ? Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffMonthAmountTotal(s, "ca"), 0) * 10) / 10
-              : Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffMonthAmountTotal(s, "ra"), 0) * 10) / 10;
+            const grandTotal = Math.round(STAFF_LIST.reduce((sum, s) => sum + getMonthForField(s, selAmt), 0) * 10) / 10;
             // 単価UPランキング
             const puType = isCAField ? "ca" as const : "ra" as const;
             const puRanked = STAFF_LIST
-              .map(staff => ({ staff, total: getStaffMonthPriceUpTotal(staff, puType) }))
+              .map(staff => ({ staff, total: getPuForField(staff, selPu) }))
               .filter(s => s.total > 0)
               .sort((a, b) => b.total - a.total)
               .slice(0, 5);
-            const puGrandTotal = Math.round(STAFF_LIST.reduce((sum, s) => sum + getStaffMonthPriceUpTotal(s, puType), 0) * 10) / 10;
+            const puGrandTotal = Math.round(STAFF_LIST.reduce((sum, s) => sum + getPuForField(s, selPu), 0) * 10) / 10;
             return (<Fragment key={af.key}>
               {/* 達成率カード */}
               <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                   <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{af.key === "amountRA" ? "RA達成率" : "CA達成率"}</h3>
                   <span style={{ fontSize: 18, fontWeight: 700, color: allBudget > 0 ? getAchievementColor(allRate) : "#ccc" }}>{allBudget > 0 ? `${allRate.toFixed(1)}%` : "—"}</span>
                 </div>
+                {renderAfTabs(`${af.key}_rate`, selRate)}
                 {rateRanked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
                   rateRanked.map((r, i) => (
                     <div key={r.staff} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid #f0f2f5" }}>
@@ -885,13 +948,14 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
               </div>
               {/* 金額カード */}
               <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                   <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{af.rankLabel}</h3>
                   <span style={{ fontSize: 18, fontWeight: 700, color: af.color }}>{grandTotal > 0 ? fmtAmount(grandTotal) : "0"}万円</span>
                 </div>
+                {renderAfTabs(`${af.key}_amt`, selAmt)}
                 {amountRanked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
                   amountRanked.map((r, i) => {
-                    const amtDetailKey = `${isCAField ? "ca" : "ra"}_amt_${r.staff}`;
+                    const amtDetailKey = `${isCAField ? "ca" : "ra"}_amt_${selAmt}_${r.staff}`;
                     const isAmtOpen = amountDetailOpen[amtDetailKey] || false;
                     const amtEntryType = isCAField ? "ca" as const : "ra" as const;
                     return (
@@ -909,7 +973,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                         </div>
                       </div>
                       {isAmtOpen && (() => {
-                        const details = getStaffMonthAmountDetails(r.staff, amtEntryType);
+                        const details = getStaffMonthAmountDetails(r.staff, amtEntryType).filter(d => selAmt === "全体" || d.affiliation === selAmt);
                         return details.length > 0 ? (
                           <div style={{ padding: "4px 0 8px 28px" }}>
                             {details.map((d, di) => (
@@ -933,13 +997,14 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
               </div>
               {/* 単価UPカード */}
               <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, borderTop: `3px solid ${isCAField ? "#9b59b6" : "#e74c3c"}` }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                   <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{isCAField ? "今月CA単価UP" : "今月RA単価UP"}</h3>
                   <span style={{ fontSize: 18, fontWeight: 700, color: isCAField ? "#9b59b6" : "#e74c3c" }}>{puGrandTotal > 0 ? fmtAmount(puGrandTotal) : "0"}万円</span>
                 </div>
+                {renderAfTabs(`${af.key}_pu`, selPu)}
                 {puRanked.length === 0 ? <p style={{ color: tc.textDisabled, fontSize: 13, margin: 0 }}>データなし</p> : (
                   puRanked.map((r, i) => {
-                    const detailKey = `${puType}_${r.staff}`;
+                    const detailKey = `${puType}_${selPu}_${r.staff}`;
                     const isOpen = puDetailOpen[detailKey] || false;
                     const puColor = isCAField ? "#9b59b6" : "#e74c3c";
                     return (
@@ -957,7 +1022,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                         </div>
                       </div>
                       {isOpen && (() => {
-                        const details = getStaffMonthPriceUpDetails(r.staff, puType);
+                        const details = getStaffMonthPriceUpDetails(r.staff, puType).filter(d => selPu === "全体" || d.affiliation === selPu);
                         return details.length > 0 ? (
                           <div style={{ padding: "4px 0 8px 28px" }}>
                             {details.map((d, di) => (
