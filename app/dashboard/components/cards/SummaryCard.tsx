@@ -29,6 +29,7 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
 }) {
   const { t: tc } = useTheme();
   const [showAllCompanies, setShowAllCompanies] = useState(false);
+  const [showMonthDetail, setShowMonthDetail] = useState(false);
   const bg = isTotal ? "linear-gradient(135deg, #0c4a6e, #0284c7)" : tc.bgCard;
   const color = isTotal ? "#fff" : tc.text;
   const labelColor = isTotal ? "rgba(255,255,255,0.7)" : tc.textMuted;
@@ -63,10 +64,18 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
         <>
           <Row label="現在粗利" value={formatYen(data.progress)} labelColor={labelColor} valueColor="#4cc9f0" />
           {carryover !== undefined && <Row label="- 月初繰越" value={formatYen(carryover)} labelColor={labelColor} valueColor="rgba(255,255,255,0.55)" small />}
-          {monthOrder !== undefined && <Row label="- 今月受注" value={formatYen(monthOrder)} labelColor={labelColor} valueColor="rgba(255,255,255,0.55)" small />}
-          {monthOrderNew !== undefined && <Row label="　新規" value={formatYen(monthOrderNew)} labelColor={labelColor} valueColor="rgba(255,255,255,0.45)" small />}
-          {monthOrderSlide !== undefined && <Row label="　スライド" value={formatYen(monthOrderSlide)} labelColor={labelColor} valueColor="rgba(255,255,255,0.45)" small />}
-          {monthOrderPU !== undefined && <Row label="　単UP" value={formatYen(monthOrderPU)} labelColor={labelColor} valueColor="rgba(255,255,255,0.45)" small />}
+          {monthOrder !== undefined && (
+            <div onClick={() => setShowMonthDetail(!showMonthDetail)} style={{ cursor: "pointer", userSelect: "none" }}>
+              <Row label={`${showMonthDetail ? "-" : "+"} 今月受注`} value={formatYen(monthOrder)} labelColor={labelColor} valueColor="rgba(255,255,255,0.55)" small />
+            </div>
+          )}
+          {showMonthDetail && (
+            <>
+              {monthOrderNew !== undefined && <Row label="　新規" value={formatYen(monthOrderNew)} labelColor={labelColor} valueColor="rgba(255,255,255,0.45)" small />}
+              {monthOrderSlide !== undefined && <Row label="　スライド" value={formatYen(monthOrderSlide)} labelColor={labelColor} valueColor="rgba(255,255,255,0.45)" small />}
+              {monthOrderPU !== undefined && <Row label="　単UP" value={formatYen(monthOrderPU)} labelColor={labelColor} valueColor="rgba(255,255,255,0.45)" small />}
+            </>
+          )}
           <Row label="待機・支援費" value={formatYen(totalDeduction || 0)} labelColor={labelColor} valueColor="#ffb3b3" />
           <Row label="粗利計" value={formatYen(grossProfitTotal || 0)} labelColor={labelColor} valueColor="#4cc9f0" />
           <Row label="見込" value={formatYen(data.forecast)} labelColor={labelColor} valueColor="#a8e6cf" />
@@ -76,10 +85,18 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
         <>
           <Row label="現在粗利" value={formatYen(data.progress)} labelColor={labelColor} valueColor={tc.accentText} />
           {carryover !== undefined && <Row label="- 月初繰越" value={formatYen(carryover)} labelColor={labelColor} valueColor={tc.textMuted} small />}
-          {monthOrder !== undefined && <Row label="- 今月受注" value={formatYen(monthOrder)} labelColor={labelColor} valueColor={tc.textMuted} small />}
-          {monthOrderNew !== undefined && <Row label="　新規" value={formatYen(monthOrderNew)} labelColor={labelColor} valueColor={tc.textMuted} small />}
-          {monthOrderSlide !== undefined && <Row label="　スライド" value={formatYen(monthOrderSlide)} labelColor={labelColor} valueColor={tc.textMuted} small />}
-          {monthOrderPU !== undefined && <Row label="　単UP" value={formatYen(monthOrderPU)} labelColor={labelColor} valueColor={tc.textMuted} small />}
+          {monthOrder !== undefined && (
+            <div onClick={() => setShowMonthDetail(!showMonthDetail)} style={{ cursor: "pointer", userSelect: "none" }}>
+              <Row label={`${showMonthDetail ? "-" : "+"} 今月受注`} value={formatYen(monthOrder)} labelColor={labelColor} valueColor={tc.textMuted} small />
+            </div>
+          )}
+          {showMonthDetail && (
+            <>
+              {monthOrderNew !== undefined && <Row label="　新規" value={formatYen(monthOrderNew)} labelColor={labelColor} valueColor={tc.textMuted} small />}
+              {monthOrderSlide !== undefined && <Row label="　スライド" value={formatYen(monthOrderSlide)} labelColor={labelColor} valueColor={tc.textMuted} small />}
+              {monthOrderPU !== undefined && <Row label="　単UP" value={formatYen(monthOrderPU)} labelColor={labelColor} valueColor={tc.textMuted} small />}
+            </>
+          )}
           {standbyCost !== undefined && <Row label="待機費用" value={formatYen(standbyCost)} labelColor={labelColor} valueColor="#e74c3c" />}
           {supportCost !== undefined && <Row label="支援費等" value={formatYen(supportCost)} labelColor={labelColor} valueColor="#e74c3c" />}
           {(standbyCost !== undefined || supportCost !== undefined) && <Row label="粗利計" value={formatYen(adjustedProgress)} labelColor={labelColor} valueColor={tc.accentText} />}
