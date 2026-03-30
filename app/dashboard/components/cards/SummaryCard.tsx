@@ -53,7 +53,7 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
           )}
         </div>
         {hcInfo && (
-          <div style={{ fontSize: 9, color: labelColor, marginTop: 3, fontWeight: 500 }}>
+          <div style={{ fontSize: 9, color: labelColor, marginTop: 3, fontWeight: 500, textAlign: "right" }}>
             繰越：{hcInfo.hcCarryover}　新：{hcInfo.hcNew}　ス：{hcInfo.hcSlide}
           </div>
         )}
