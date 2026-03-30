@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTheme } from "../../theme-provider";
 import { STAFF_LIST } from "../constants/data";
 
@@ -486,6 +486,227 @@ export function UserManagementView({ isMobile }: { isMobile: boolean }) {
         <div style={{ marginTop: 16, padding: "12px 14px", borderRadius: 8, background: tc.bgSection, fontSize: 12, color: tc.textSecondary, lineHeight: 1.7 }}>
           <b>注意:</b> パスワードはユーザー作成直後のみ表示されます。ページをリロードすると非表示になりますので、必ずメモしてください。
         </div>
+      </div>
+
+      {/* バックアップ / リストア */}
+      <BackupRestoreSection isMobile={isMobile} />
+    </div>
+  );
+}
+
+// ===== バックアップ・リストアセクション =====
+function BackupRestoreSection({ isMobile }: { isMobile: boolean }) {
+  const { t: tc, theme } = useTheme();
+  const isDark = theme === "dark";
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [restoreMode, setRestoreMode] = useState<"merge" | "replace">("merge");
+  const [backupMsg, setBackupMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [confirmReplace, setConfirmReplace] = useState(false);
+
+  const handleExport = async () => {
+    setBackupLoading(true);
+    setBackupMsg(null);
+    try {
+      const res = await fetch("/api/backup");
+      if (!res.ok) throw new Error("エクスポートに失敗しました");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `adash-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setBackupMsg({ type: "success", text: "バックアップファイルをダウンロードしました" });
+    } catch (e: any) {
+      setBackupMsg({ type: "error", text: e.message || "エクスポートに失敗しました" });
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  const handleImport = async (file: File) => {
+    setRestoreLoading(true);
+    setBackupMsg(null);
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      if (!json.data || typeof json.data !== "object") {
+        throw new Error("無効なバックアップファイル形式です");
+      }
+      const res = await fetch("/api/backup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: json.data, mode: restoreMode }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "リストアに失敗しました");
+      }
+      const result = await res.json();
+      const r = result.results || {};
+      const parts = [`営業データ：${r.salesData || 0}件`];
+      if (r.users) parts.push(`ユーザー：${r.users}件`);
+      if (r.masterStaff) parts.push(`担当者マスタ：${r.masterStaff}件`);
+      if (r.masterCompanies) parts.push(`企業マスタ：${r.masterCompanies}件`);
+      if (r.customStaff) parts.push(`カスタム担当：${r.customStaff}件`);
+      if (r.customCompanies) parts.push(`カスタム企業：${r.customCompanies}件`);
+      setBackupMsg({ type: "success", text: `リストア完了（${restoreMode === "replace" ? "置換" : "マージ"}）：${parts.join("、")}。ページをリロードしてください。` });
+      setConfirmReplace(false);
+    } catch (e: any) {
+      setBackupMsg({ type: "error", text: e.message || "リストアに失敗しました" });
+    } finally {
+      setRestoreLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (restoreMode === "replace" && !confirmReplace) {
+      setConfirmReplace(true);
+      return;
+    }
+    handleImport(file);
+  };
+
+  const executeReplace = () => {
+    const file = fileInputRef.current?.files?.[0];
+    if (file) handleImport(file);
+    setConfirmReplace(false);
+  };
+
+  return (
+    <div style={{ background: tc.bgCard, borderRadius: 14, padding: 24, boxShadow: tc.shadow, marginTop: 24 }}>
+      <h2 style={{ fontSize: 18, fontWeight: 700, color: tc.textHeading, marginTop: 0, marginBottom: 20 }}>
+        データバックアップ / リストア
+      </h2>
+
+      {backupMsg && (
+        <div style={{
+          padding: "10px 14px", borderRadius: 8, marginBottom: 16, fontSize: 13,
+          background: backupMsg.type === "success" ? tc.successBg : tc.errorBg,
+          color: backupMsg.type === "success" ? tc.successText : tc.errorText,
+          border: `1px solid ${backupMsg.type === "success" ? tc.successText : tc.errorBorder}`,
+        }}>
+          {backupMsg.text}
+        </div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 20 }}>
+        {/* エクスポート */}
+        <div style={{ flex: 1, padding: 16, borderRadius: 10, background: isDark ? "rgba(255,255,255,0.04)" : "#f8f9fb", border: `1px solid ${tc.border}` }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: "0 0 8px" }}>バックアップ（エクスポート）</h3>
+          <p style={{ fontSize: 12, color: tc.textSecondary, margin: "0 0 14px", lineHeight: 1.6 }}>
+            全データをJSON形式でダウンロードします。定期的にバックアップを取ることをお勧めします。
+          </p>
+          <button
+            onClick={handleExport}
+            disabled={backupLoading}
+            style={{
+              padding: "10px 24px", borderRadius: 8, border: "none",
+              background: "#0077b6", color: "#fff", fontSize: 13, fontWeight: 700,
+              cursor: backupLoading ? "not-allowed" : "pointer", opacity: backupLoading ? 0.6 : 1,
+            }}
+          >
+            {backupLoading ? "ダウンロード中..." : "バックアップをダウンロード"}
+          </button>
+        </div>
+
+        {/* インポート */}
+        <div style={{ flex: 1, padding: 16, borderRadius: 10, background: isDark ? "rgba(255,255,255,0.04)" : "#f8f9fb", border: `1px solid ${tc.border}` }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: "0 0 8px" }}>リストア（インポート）</h3>
+          <p style={{ fontSize: 12, color: tc.textSecondary, margin: "0 0 14px", lineHeight: 1.6 }}>
+            バックアップファイルからデータを復元します。
+          </p>
+
+          <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center" }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: tc.textSecondary }}>モード：</label>
+            {(["merge", "replace"] as const).map(m => (
+              <button
+                key={m}
+                onClick={() => { setRestoreMode(m); setConfirmReplace(false); }}
+                style={{
+                  padding: "4px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  border: `1px solid ${restoreMode === m ? (m === "replace" ? "#e74c3c" : "#0077b6") : tc.border}`,
+                  background: restoreMode === m ? (m === "replace" ? "rgba(231,76,60,0.1)" : "rgba(0,119,182,0.1)") : "transparent",
+                  color: restoreMode === m ? (m === "replace" ? "#e74c3c" : "#0077b6") : tc.textMuted,
+                }}
+              >
+                {m === "merge" ? "マージ（既存に追加）" : "置換（全データ入替）"}
+              </button>
+            ))}
+          </div>
+
+          {restoreMode === "replace" && (
+            <div style={{ padding: "8px 12px", borderRadius: 6, background: "rgba(231,76,60,0.1)", border: "1px solid #e74c3c", fontSize: 11, color: "#e74c3c", marginBottom: 12, lineHeight: 1.6 }}>
+              既存データをすべて削除してからインポートします。この操作は取り消せません。
+            </div>
+          )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            onChange={onFileSelect}
+            style={{ display: "none" }}
+          />
+
+          {confirmReplace ? (
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <span style={{ fontSize: 12, color: "#e74c3c", fontWeight: 700 }}>本当に全データを置換しますか？</span>
+              <button
+                onClick={executeReplace}
+                disabled={restoreLoading}
+                style={{
+                  padding: "8px 18px", borderRadius: 8, border: "none",
+                  background: "#e74c3c", color: "#fff", fontSize: 12, fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                {restoreLoading ? "リストア中..." : "実行する"}
+              </button>
+              <button
+                onClick={() => { setConfirmReplace(false); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                style={{
+                  padding: "8px 18px", borderRadius: 8, border: `1px solid ${tc.border}`,
+                  background: "transparent", color: tc.textMuted, fontSize: 12, fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                キャンセル
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={restoreLoading}
+              style={{
+                padding: "10px 24px", borderRadius: 8, border: "none",
+                background: restoreMode === "replace" ? "#e74c3c" : "#27ae60",
+                color: "#fff", fontSize: 13, fontWeight: 700,
+                cursor: restoreLoading ? "not-allowed" : "pointer", opacity: restoreLoading ? 0.6 : 1,
+              }}
+            >
+              {restoreLoading ? "リストア中..." : "ファイルを選択してリストア"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div style={{ marginTop: 16, padding: "12px 14px", borderRadius: 8, background: tc.bgSection, fontSize: 12, color: tc.textSecondary, lineHeight: 1.7 }}>
+        <b>バックアップについて:</b><br />
+        ・エクスポートすると以下の全データがJSON形式で保存されます：<br />
+        　　営業データ（日別）、予算、繰越、目標、その他登録一覧<br />
+        　　ユーザーアカウント（メール・権限・担当・パスワードハッシュ）<br />
+        　　担当者マスタ、企業マスタ、カスタム担当者、カスタム企業<br />
+        ・マージモード：既存データに上書き追加（同一キーは上書き）<br />
+        ・置換モード：既存データを全削除してからインポート（完全復元向け）<br />
+        ・定期的なバックアップを強くお勧めします
       </div>
     </div>
   );
