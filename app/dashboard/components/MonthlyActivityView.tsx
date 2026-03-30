@@ -65,6 +65,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
   const [editingCellValue, setEditingCellValue] = useState("");
   const [showAllRevenue, setShowAllRevenue] = useState(false);
   const [showAllProfit, setShowAllProfit] = useState(false);
+  const [sortByProfitRate, setSortByProfitRate] = useState(false);
   const [puDetailOpen, setPuDetailOpen] = useState<Record<string, boolean>>({});
   const [amountDetailOpen, setAmountDetailOpen] = useState<Record<string, boolean>>({});
   const [countDetailOpen, setCountDetailOpen] = useState<Record<string, boolean>>({});
@@ -727,7 +728,16 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
           return (
           <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow, borderTop: `3px solid ${color}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0 }}>{title}{valueKey === "profit" && totalRevenue > 0 && <span style={{ fontSize: 10, fontWeight: 400, color: tc.textMuted, marginLeft: 4 }}>平均粗利率：{(Math.round(totalProfit / totalRevenue * 1000) / 10).toFixed(1)}％</span>}</h3>
+              <div style={{ margin: 0 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: tc.textPrimary, margin: 0, display: "inline" }}>{title}</h3>
+                {valueKey === "profit" && totalRevenue > 0 && <span style={{ fontSize: 10, fontWeight: 400, color: tc.textMuted, marginLeft: 4 }}>平均粗利率：{(Math.round(totalProfit / totalRevenue * 1000) / 10).toFixed(1)}％</span>}
+                {valueKey === "profit" && (
+                  <label style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10, color: tc.textMuted, marginTop: 4, cursor: "pointer" }}>
+                    <input type="checkbox" checked={sortByProfitRate} onChange={(e) => setSortByProfitRate(e.target.checked)} style={{ width: 12, height: 12, cursor: "pointer" }} />
+                    粗利率降順（単UP除）
+                  </label>
+                )}
+              </div>
               <div style={{ textAlign: "right" }}>
                 <span style={{ fontSize: 18, fontWeight: 700, color }}>{total > 0 ? fmtAmount(total) : "0"}<span style={{ fontSize: 13 }}>万円</span></span>
                 <div style={{ fontSize: 10, color: tc.textMuted, marginTop: 1 }}>（受：{totalOrderCount}件　単UP：{totalPriceUpCount}件）</div>
@@ -742,7 +752,12 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
                       {i < 3 ? <span style={{ fontSize: 16, flexShrink: 0 }}>{medals[i]}</span> : <span style={{ fontSize: 12, color: tc.textSecondary, fontWeight: 700, width: 20, textAlign: "center", flexShrink: 0 }}>{i + 1}</span>}
-                      <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.company}{valueKey === "profit" && r.revenue > 0 && <span style={{ fontSize: 10, fontWeight: 400, color: tc.textMuted }}>（{(Math.round(r.profit / r.revenue * 1000) / 10).toFixed(1)}％）</span>}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: tc.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.company}{valueKey === "profit" && (() => {
+                        const orderOnly = sortByProfitRate ? r.details.filter((d: any) => d.type === "受注") : null;
+                        const rateRev = sortByProfitRate && orderOnly ? orderOnly.reduce((s: number, d: any) => s + d.revenue, 0) : r.revenue;
+                        const rateProf = sortByProfitRate && orderOnly ? orderOnly.reduce((s: number, d: any) => s + d.profit, 0) : r.profit;
+                        return rateRev > 0 ? <span style={{ fontSize: 10, fontWeight: 400, color: tc.textMuted }}>（{(Math.round(rateProf / rateRev * 1000) / 10).toFixed(1)}％）</span> : null;
+                      })()}</span>
                     </div>
                     <div style={{ flexShrink: 0, marginLeft: 8, display: "flex", alignItems: "center", gap: 4 }}>
                       <span style={{ fontSize: 15, fontWeight: 700, color, display: "inline-block", minWidth: 90, textAlign: "right" }}>{fmtAmount(r[valueKey])}<span style={{ fontSize: 11 }}>万円</span></span>
@@ -785,7 +800,17 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
         return (
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: isMobile ? 12 : 16, marginBottom: 24 }} className="focus-grid">
             {renderCard("当月受注企業売上", byRevenue, totalRevenue, "#e74c3c", "revenue", showAllRevenue, setShowAllRevenue)}
-            {renderCard("当月受注企業粗利", byProfit, totalProfit, "#2ecc71", "profit", showAllProfit, setShowAllProfit)}
+            {(() => {
+              const profitData = sortByProfitRate
+                ? [...byProfit].map(c => {
+                    const orderOnly = c.details.filter(d => d.type === "受注");
+                    const oRev = orderOnly.reduce((s, d) => s + d.revenue, 0);
+                    const oProf = orderOnly.reduce((s, d) => s + d.profit, 0);
+                    return { ...c, _orderRate: oRev > 0 ? oProf / oRev : 0 };
+                  }).sort((a, b) => b._orderRate - a._orderRate)
+                : byProfit;
+              return renderCard("当月受注企業粗利", profitData, totalProfit, "#2ecc71", "profit", showAllProfit, setShowAllProfit);
+            })()}
           </div>
         );
       })()}
