@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDataByDate, saveData, getUserByEmail } from "../../../lib/db";
+import { getDataByDate, saveData } from "../../../lib/db";
 import { getSession } from "../../../lib/auth";
 
 // 4/1のtarget値を0にリセット（一時的なエンドポイント）
@@ -8,16 +8,19 @@ export async function POST(req: Request) {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const user = await getUserByEmail(session.email);
-  if (!user || user.role !== "A") {
-    return NextResponse.json({ error: "Admin only" }, { status: 403 });
-  }
 
   const dateKey = "2026-04-01";
   const data = await getDataByDate(dateKey);
   if (!data) {
     return NextResponse.json({ error: "No data found for " + dateKey }, { status: 404 });
   }
+
+  const before = {
+    proper: data.proper?.target,
+    bp: data.bp?.target,
+    fl: data.fl?.target,
+    co: data.co?.target,
+  };
 
   // target値のみ0にリセット（他のデータはそのまま維持）
   if (data.proper) data.proper.target = 0;
@@ -30,7 +33,8 @@ export async function POST(req: Request) {
   return NextResponse.json({
     success: true,
     message: "4/1のtarget値を0にリセットしました",
-    updated: {
+    before,
+    after: {
       proper: data.proper?.target,
       bp: data.bp?.target,
       fl: data.fl?.target,
