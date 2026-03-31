@@ -78,7 +78,7 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
           )}
           <Row label="待機・支援費" value={formatYen(totalDeduction || 0)} labelColor={labelColor} valueColor="#ffb3b3" />
           <Row label="粗利計" value={formatYen(grossProfitTotal || 0)} labelColor={labelColor} valueColor="#4cc9f0" />
-          <Row label="見込" value={formatYen(data.forecast)} labelColor={labelColor} valueColor="#a8e6cf" />
+          <Row label="予測" value={formatYen(data.forecast)} labelColor={labelColor} valueColor="#a8e6cf" />
           <div style={{ marginBottom: 6, height: 13 }} />
         </>
       ) : (
@@ -100,7 +100,7 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
           {standbyCost !== undefined && <Row label="待機費用" value={formatYen(standbyCost)} labelColor={labelColor} valueColor="#e74c3c" />}
           {supportCost !== undefined && <Row label="支援費等" value={formatYen(supportCost)} labelColor={labelColor} valueColor="#e74c3c" />}
           {(standbyCost !== undefined || supportCost !== undefined) && <Row label="粗利計" value={formatYen(adjustedProgress)} labelColor={labelColor} valueColor={tc.accentText} />}
-          <Row label="見込" value={formatYen(data.forecast)} labelColor={labelColor} valueColor="#2ecc71" />
+          <Row label="予測" value={formatYen(data.forecast)} labelColor={labelColor} valueColor="#2ecc71" />
           {standby !== undefined ? (
             <Row label="待機" value={`${standby}名`} labelColor={labelColor} valueColor="#f39c12" />
           ) : (

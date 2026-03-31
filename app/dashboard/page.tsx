@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Fragment } from "react";
+import { useState, useEffect, useCallback, useMemo, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "../theme-provider";
 import { ADashLogo, ThemeToggle } from "../logo";
@@ -299,10 +299,29 @@ export default function DashboardPage() {
   const flProgress = Math.floor(flProgressMan * 10000);
   const coProgress = Math.floor(coProgressMan * 10000);
 
-  const proper = { ...(displayData.proper || { target: 0, progress: 0, forecast: 0, standby: 0, standbyCost: 0 }), progress: properProgress };
-  const bp = { ...(displayData.bp || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: bpProgress };
-  const fl = { ...(displayData.fl || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: flProgress };
-  const co = { ...(displayData.co || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: coProgress };
+  // 月別目標値を取得（月内の最新の目標値を使用）
+  const monthlyTargets = useMemo(() => {
+    const ym = selectedDate.substring(0, 7);
+    const [y, m] = ym.split("-").map(Number);
+    const daysInMonth = new Date(y, m, 0).getDate();
+    let pTarget = 0, bTarget = 0, fTarget = 0, cTarget = 0;
+    for (let d = daysInMonth; d >= 1; d--) {
+      const dk = `${y}-${("0" + m).slice(-2)}-${("0" + d).slice(-2)}`;
+      const dayData = allData[dk];
+      if (!dayData) continue;
+      if (pTarget === 0 && dayData.proper?.target) pTarget = dayData.proper.target;
+      if (bTarget === 0 && dayData.bp?.target) bTarget = dayData.bp.target;
+      if (fTarget === 0 && dayData.fl?.target) fTarget = dayData.fl.target;
+      if (cTarget === 0 && dayData.co?.target) cTarget = dayData.co.target;
+      if (pTarget && bTarget && fTarget && cTarget) break;
+    }
+    return { proper: pTarget, bp: bTarget, fl: fTarget, co: cTarget };
+  }, [allData, selectedDate]);
+
+  const proper = { ...(displayData.proper || { target: 0, progress: 0, forecast: 0, standby: 0, standbyCost: 0 }), progress: properProgress, target: monthlyTargets.proper };
+  const bp = { ...(displayData.bp || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: bpProgress, target: monthlyTargets.bp };
+  const fl = { ...(displayData.fl || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: flProgress, target: monthlyTargets.fl };
+  const co = { ...(displayData.co || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: coProgress, target: monthlyTargets.co };
   // 進捗計から待機費用・支援費等を引いた調整後進捗
   const properAdjusted = properProgress - (proper.standbyCost || 0);
   const bpAdjusted = bpProgress - (bp.supportCost || 0);
@@ -405,14 +424,14 @@ export default function DashboardPage() {
     if (allData[selectedDate]) {
       const d = allData[selectedDate];
       setInp({
-        properTarget: formatNumStr(d.proper?.target || 0),
+        properTarget: formatNumStr(monthlyTargets.proper || d.proper?.target || 0),
         properForecast: formatNumStr(d.proper?.forecast || 0), properStandby: formatNumStr(d.proper?.standby || 0),
         properStandbyCost: formatNumStr(d.proper?.standbyCost || 0),
-        bpTarget: formatNumStr(d.bp?.target || 0), bpForecast: formatNumStr(d.bp?.forecast || 0),
+        bpTarget: formatNumStr(monthlyTargets.bp || d.bp?.target || 0), bpForecast: formatNumStr(d.bp?.forecast || 0),
         bpSupportCost: formatNumStr(d.bp?.supportCost || 0),
-        flTarget: formatNumStr(d.fl?.target || 0), flForecast: formatNumStr(d.fl?.forecast || 0),
+        flTarget: formatNumStr(monthlyTargets.fl || d.fl?.target || 0), flForecast: formatNumStr(d.fl?.forecast || 0),
         flSupportCost: formatNumStr(d.fl?.supportCost || 0),
-        coTarget: formatNumStr(d.co?.target || 0), coForecast: formatNumStr(d.co?.forecast || 0),
+        coTarget: formatNumStr(monthlyTargets.co || d.co?.target || 0), coForecast: formatNumStr(d.co?.forecast || 0),
         coSupportCost: formatNumStr(d.co?.supportCost || 0),
       });
       {
@@ -474,14 +493,14 @@ export default function DashboardPage() {
       if (fallback && !fallback.isExact) {
         const d = fallback.data;
         setInp({
-          properTarget: formatNumStr(d.proper?.target || 0),
+          properTarget: formatNumStr(monthlyTargets.proper || d.proper?.target || 0),
           properForecast: formatNumStr(d.proper?.forecast || 0), properStandby: formatNumStr(d.proper?.standby || 0),
           properStandbyCost: formatNumStr(d.proper?.standbyCost || 0),
-          bpTarget: formatNumStr(d.bp?.target || 0), bpForecast: formatNumStr(d.bp?.forecast || 0),
+          bpTarget: formatNumStr(monthlyTargets.bp || d.bp?.target || 0), bpForecast: formatNumStr(d.bp?.forecast || 0),
           bpSupportCost: formatNumStr(d.bp?.supportCost || 0),
-          flTarget: formatNumStr(d.fl?.target || 0), flForecast: formatNumStr(d.fl?.forecast || 0),
+          flTarget: formatNumStr(monthlyTargets.fl || d.fl?.target || 0), flForecast: formatNumStr(d.fl?.forecast || 0),
           flSupportCost: formatNumStr(d.fl?.supportCost || 0),
-          coTarget: formatNumStr(d.co?.target || 0), coForecast: formatNumStr(d.co?.forecast || 0),
+          coTarget: formatNumStr(monthlyTargets.co || d.co?.target || 0), coForecast: formatNumStr(d.co?.forecast || 0),
           coSupportCost: formatNumStr(d.co?.supportCost || 0),
         });
         {
@@ -1193,7 +1212,7 @@ export default function DashboardPage() {
                   <div onClick={() => setSectionSalesOpen(!sectionSalesOpen)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "linear-gradient(135deg, #1a1a2e, #16213e)", borderRadius: sectionSalesOpen ? "0" : "0 0 10px 10px", cursor: "pointer", userSelect: "none" as const }}>
                     <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-                      目標・見込 <span style={{ fontSize: 12, color: "#ff4444", fontWeight: 600 }}>※追加・更新は本日日付選択後、保存</span>
+                      予測 <span style={{ fontSize: 12, color: "#ff4444", fontWeight: 600 }}>※追加・更新は本日日付選択後、保存</span>
                     </h2>
                     <span style={{ fontSize: 18, color: "#fff", transform: sectionSalesOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
                   </div>
@@ -1201,24 +1220,24 @@ export default function DashboardPage() {
                     <div style={{ padding: "16px", background: tc.bgSection, borderRadius: "0 0 10px 10px", border: "1px solid " + tc.border, borderTop: "none" }}>
                       <div className="input-4col" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 16 }}>
                         <InputGroup title="プロパー" fields={[
-                          { label: "目標", value: inp.properTarget, key: "properTarget" },
-                          { label: "見込", value: inp.properForecast, key: "properForecast" },
+                          { label: "目標", value: inp.properTarget, key: "properTarget", disabled: true },
+                          { label: "予測", value: inp.properForecast, key: "properForecast" },
                           { label: "待機費用", value: inp.properStandbyCost, key: "properStandbyCost" },
                           { label: "待機（人数）", value: inp.properStandby, key: "properStandby" },
                         ]} onChange={handleNumInput} />
                         <InputGroup title="BP" fields={[
-                          { label: "目標", value: inp.bpTarget, key: "bpTarget" },
-                          { label: "見込", value: inp.bpForecast, key: "bpForecast" },
+                          { label: "目標", value: inp.bpTarget, key: "bpTarget", disabled: true },
+                          { label: "予測", value: inp.bpForecast, key: "bpForecast" },
                           { label: "支援費等", value: inp.bpSupportCost, key: "bpSupportCost" },
                         ]} onChange={handleNumInput} />
                         <InputGroup title="フリーランス" fields={[
-                          { label: "目標", value: inp.flTarget, key: "flTarget" },
-                          { label: "見込", value: inp.flForecast, key: "flForecast" },
+                          { label: "目標", value: inp.flTarget, key: "flTarget", disabled: true },
+                          { label: "予測", value: inp.flForecast, key: "flForecast" },
                           { label: "支援費等", value: inp.flSupportCost, key: "flSupportCost" },
                         ]} onChange={handleNumInput} />
                         <InputGroup title="協業" fields={[
-                          { label: "目標", value: inp.coTarget, key: "coTarget" },
-                          { label: "見込", value: inp.coForecast, key: "coForecast" },
+                          { label: "目標", value: inp.coTarget, key: "coTarget", disabled: true },
+                          { label: "予測", value: inp.coForecast, key: "coForecast" },
                           { label: "支援費等", value: inp.coSupportCost, key: "coSupportCost" },
                         ]} onChange={handleNumInput} />
                       </div>
@@ -1227,7 +1246,7 @@ export default function DashboardPage() {
                           width: "100%", padding: "14px 24px", background: isSaveDatePast ? "#888" : "linear-gradient(135deg, #0077b6, #00b4d8)", color: "#fff",
                           border: "none", borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: (savingSection === "budget" || isSaveDatePast) ? "not-allowed" : "pointer", opacity: (savingSection === "budget" || isSaveDatePast) ? 0.7 : 1,
                         }}>
-                          {isSaveDatePast ? "過去日付のため更新不可" : savingSection === "budget" ? "保存中..." : "目標・見込を保存"}
+                          {isSaveDatePast ? "過去日付のため更新不可" : savingSection === "budget" ? "保存中..." : "予測を保存"}
                         </button>
                       </div>
                     </div>

@@ -2,7 +2,7 @@
 
 import { useTheme } from "../../../theme-provider";
 
-export function InputGroup({ title, fields, onChange }: { title: string; fields: { label: string; value: string; key: string }[]; onChange: (key: string, value: string) => void; }) {
+export function InputGroup({ title, fields, onChange }: { title: string; fields: { label: string; value: string; key: string; disabled?: boolean }[]; onChange: (key: string, value: string) => void; }) {
   const { t: tc } = useTheme();
   return (
     <div>
@@ -10,8 +10,8 @@ export function InputGroup({ title, fields, onChange }: { title: string; fields:
       {fields.map((f) => (
         <div key={f.key} style={{ marginBottom: 10 }}>
           <label style={{ display: "block", fontSize: 12, color: "#666", marginBottom: 3 }}>{f.label}</label>
-          <input type="text" inputMode="numeric" value={f.value} onChange={(e) => onChange(f.key, e.target.value)} placeholder="0"
-            style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 15, textAlign: "right", outline: "none", boxSizing: "border-box" }} />
+          <input type="text" inputMode="numeric" value={f.value} onChange={(e) => onChange(f.key, e.target.value)} placeholder="0" disabled={f.disabled}
+            style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 8, fontSize: 15, textAlign: "right", outline: "none", boxSizing: "border-box", background: f.disabled ? "#f0f0f0" : "#fff", color: f.disabled ? "#999" : "#333", cursor: f.disabled ? "not-allowed" : "text" }} />
         </div>
       ))}
     </div>
