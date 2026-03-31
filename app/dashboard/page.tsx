@@ -650,10 +650,10 @@ export default function DashboardPage() {
 
   const saveBudget = () => {
     saveSectionData("budget", {
-      proper: { target: parseNum(inp.properTarget), progress: 0, forecast: parseNum(inp.properForecast), standby: parseNum(inp.properStandby), standbyCost: parseNum(inp.properStandbyCost) },
-      bp: { target: parseNum(inp.bpTarget), progress: 0, forecast: parseNum(inp.bpForecast), supportCost: parseNum(inp.bpSupportCost) },
-      fl: { target: parseNum(inp.flTarget), progress: 0, forecast: parseNum(inp.flForecast), supportCost: parseNum(inp.flSupportCost) },
-      co: { target: parseNum(inp.coTarget), progress: 0, forecast: parseNum(inp.coForecast), supportCost: parseNum(inp.coSupportCost) },
+      proper: { target: 0, progress: 0, forecast: parseNum(inp.properForecast), standby: parseNum(inp.properStandby), standbyCost: parseNum(inp.properStandbyCost) },
+      bp: { target: 0, progress: 0, forecast: parseNum(inp.bpForecast), supportCost: parseNum(inp.bpSupportCost) },
+      fl: { target: 0, progress: 0, forecast: parseNum(inp.flForecast), supportCost: parseNum(inp.flSupportCost) },
+      co: { target: 0, progress: 0, forecast: parseNum(inp.coForecast), supportCost: parseNum(inp.coSupportCost) },
     });
   };
 
