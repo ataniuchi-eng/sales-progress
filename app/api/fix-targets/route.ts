@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
-import { getDataByDate, saveData } from "../../../lib/db";
+import { getDataByDate, saveData, getUserByEmail } from "../../../lib/db";
 import { getSession } from "../../../lib/auth";
 
 // 4/1のtarget値を0にリセット（一時的なエンドポイント）
 export async function POST(req: Request) {
   const session = await getSession();
-  if (!session || session.role !== "A") {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const user = await getUserByEmail(session.email);
+  if (!user || user.role !== "A") {
+    return NextResponse.json({ error: "Admin only" }, { status: 403 });
   }
 
   const dateKey = "2026-04-01";
