@@ -299,29 +299,11 @@ export default function DashboardPage() {
   const flProgress = Math.floor(flProgressMan * 10000);
   const coProgress = Math.floor(coProgressMan * 10000);
 
-  // 月別目標値を取得（月内の最新の目標値を使用）
-  const monthlyTargets = useMemo(() => {
-    const ym = selectedDate.substring(0, 7);
-    const [y, m] = ym.split("-").map(Number);
-    const daysInMonth = new Date(y, m, 0).getDate();
-    let pTarget = 0, bTarget = 0, fTarget = 0, cTarget = 0;
-    for (let d = daysInMonth; d >= 1; d--) {
-      const dk = `${y}-${("0" + m).slice(-2)}-${("0" + d).slice(-2)}`;
-      const dayData = allData[dk];
-      if (!dayData) continue;
-      if (pTarget === 0 && dayData.proper?.target) pTarget = dayData.proper.target;
-      if (bTarget === 0 && dayData.bp?.target) bTarget = dayData.bp.target;
-      if (fTarget === 0 && dayData.fl?.target) fTarget = dayData.fl.target;
-      if (cTarget === 0 && dayData.co?.target) cTarget = dayData.co.target;
-      if (pTarget && bTarget && fTarget && cTarget) break;
-    }
-    return { proper: pTarget, bp: bTarget, fl: fTarget, co: cTarget };
-  }, [allData, selectedDate]);
-
-  const proper = { ...(displayData.proper || { target: 0, progress: 0, forecast: 0, standby: 0, standbyCost: 0 }), progress: properProgress, target: monthlyTargets.proper };
-  const bp = { ...(displayData.bp || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: bpProgress, target: monthlyTargets.bp };
-  const fl = { ...(displayData.fl || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: flProgress, target: monthlyTargets.fl };
-  const co = { ...(displayData.co || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: coProgress, target: monthlyTargets.co };
+  // 目標 = CA粗利の各所属合計（calcCAProgressByAffiliationのtotal）
+  const proper = { ...(displayData.proper || { target: 0, progress: 0, forecast: 0, standby: 0, standbyCost: 0 }), progress: properProgress, target: properProgress };
+  const bp = { ...(displayData.bp || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: bpProgress, target: bpProgress };
+  const fl = { ...(displayData.fl || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: flProgress, target: flProgress };
+  const co = { ...(displayData.co || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: coProgress, target: coProgress };
   // 進捗計から待機費用・支援費等を引いた調整後進捗
   const properAdjusted = properProgress - (proper.standbyCost || 0);
   const bpAdjusted = bpProgress - (bp.supportCost || 0);
@@ -424,14 +406,13 @@ export default function DashboardPage() {
     if (allData[selectedDate]) {
       const d = allData[selectedDate];
       setInp({
-        properTarget: formatNumStr(monthlyTargets.proper || d.proper?.target || 0),
-        properForecast: formatNumStr(d.proper?.forecast || 0), properStandby: formatNumStr(d.proper?.standby || 0),
+        properTarget: formatNumStr(properProgress), properForecast: formatNumStr(d.proper?.forecast || 0), properStandby: formatNumStr(d.proper?.standby || 0),
         properStandbyCost: formatNumStr(d.proper?.standbyCost || 0),
-        bpTarget: formatNumStr(monthlyTargets.bp || d.bp?.target || 0), bpForecast: formatNumStr(d.bp?.forecast || 0),
+        bpTarget: formatNumStr(bpProgress), bpForecast: formatNumStr(d.bp?.forecast || 0),
         bpSupportCost: formatNumStr(d.bp?.supportCost || 0),
-        flTarget: formatNumStr(monthlyTargets.fl || d.fl?.target || 0), flForecast: formatNumStr(d.fl?.forecast || 0),
+        flTarget: formatNumStr(flProgress), flForecast: formatNumStr(d.fl?.forecast || 0),
         flSupportCost: formatNumStr(d.fl?.supportCost || 0),
-        coTarget: formatNumStr(monthlyTargets.co || d.co?.target || 0), coForecast: formatNumStr(d.co?.forecast || 0),
+        coTarget: formatNumStr(coProgress), coForecast: formatNumStr(d.co?.forecast || 0),
         coSupportCost: formatNumStr(d.co?.supportCost || 0),
       });
       {
@@ -493,14 +474,13 @@ export default function DashboardPage() {
       if (fallback && !fallback.isExact) {
         const d = fallback.data;
         setInp({
-          properTarget: formatNumStr(monthlyTargets.proper || d.proper?.target || 0),
-          properForecast: formatNumStr(d.proper?.forecast || 0), properStandby: formatNumStr(d.proper?.standby || 0),
+          properTarget: formatNumStr(properProgress), properForecast: formatNumStr(d.proper?.forecast || 0), properStandby: formatNumStr(d.proper?.standby || 0),
           properStandbyCost: formatNumStr(d.proper?.standbyCost || 0),
-          bpTarget: formatNumStr(monthlyTargets.bp || d.bp?.target || 0), bpForecast: formatNumStr(d.bp?.forecast || 0),
+          bpTarget: formatNumStr(bpProgress), bpForecast: formatNumStr(d.bp?.forecast || 0),
           bpSupportCost: formatNumStr(d.bp?.supportCost || 0),
-          flTarget: formatNumStr(monthlyTargets.fl || d.fl?.target || 0), flForecast: formatNumStr(d.fl?.forecast || 0),
+          flTarget: formatNumStr(flProgress), flForecast: formatNumStr(d.fl?.forecast || 0),
           flSupportCost: formatNumStr(d.fl?.supportCost || 0),
-          coTarget: formatNumStr(monthlyTargets.co || d.co?.target || 0), coForecast: formatNumStr(d.co?.forecast || 0),
+          coTarget: formatNumStr(coProgress), coForecast: formatNumStr(d.co?.forecast || 0),
           coSupportCost: formatNumStr(d.co?.supportCost || 0),
         });
         {
