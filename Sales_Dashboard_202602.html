@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Dashboard 2026年2月</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f1117;color:#e8eaf0;font-family:'Segoe UI','Hiragino Sans',sans-serif;padding:20px}
+.container{max-width:1400px;margin:0 auto}
+h1{text-align:center;font-size:28px;margin-bottom:8px;color:#4f8cff}
+.subtitle{text-align:center;color:#8892a4;margin-bottom:24px;font-size:14px}
+.section-title{font-size:20px;color:#4f8cff;margin:32px 0 16px;padding-bottom:8px;border-bottom:1px solid #2a2e3f}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+.kpi{background:#1a1d27;border:1px solid #2a2e3f;border-radius:12px;padding:20px 16px;text-align:center}
+.kpi-label{font-size:12px;color:#8892a4;margin-bottom:8px}
+.kpi-value{font-size:24px;font-weight:700;color:#e8eaf0}
+.kpi-sub{font-size:12px;color:#8892a4;margin-top:4px}
+.kpi-accent{color:#4f8cff}.kpi-green{color:#00d68f}.kpi-orange{color:#ffaa00}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.card{background:#1a1d27;border:1px solid #2a2e3f;border-radius:12px;padding:20px}
+.card h3{font-size:16px;margin-bottom:12px}
+.stat-row{display:flex;justify-content:space-between;padding:4px 0;font-size:13px}
+.stat-label{color:#8892a4}.stat-value{font-weight:600}
+.donut-row{display:flex;gap:16px;justify-content:center;margin:16px 0}
+.donut-wrap{text-align:center}.donut-wrap svg{width:120px;height:120px}
+.donut-title{font-size:12px;color:#8892a4;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px}
+th{background:#1a1d27;color:#8892a4;padding:10px 8px;text-align:left;border-bottom:1px solid #2a2e3f;cursor:pointer;user-select:none}
+th:hover{color:#4f8cff}
+td{padding:8px;border-bottom:1px solid #1e2230}
+.num{text-align:right}
+tr.green td{background:rgba(0,214,143,0.08)}
+tr.red td{background:rgba(255,107,107,0.08)}
+tr:hover td{background:rgba(79,140,255,0.06)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-green{background:rgba(0,214,143,0.15);color:#00d68f}
+.badge-blue{background:rgba(79,140,255,0.15);color:#4f8cff}
+.badge-orange{background:rgba(255,170,0,0.15);color:#ffaa00}
+.badge-red{background:rgba(255,107,107,0.15);color:#ff6b6b}
+.bar-chart{margin:16px 0}.bar-row{display:flex;align-items:center;margin:4px 0}
+.bar-label{width:200px;font-size:12px;color:#8892a4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:20px;background:#1e2230;border-radius:4px;margin:0 8px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#4f8cff,#00cec9)}
+.bar-value{width:110px;font-size:12px;text-align:right;color:#e8eaf0}
+.ranking-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ranking-card{background:#1a1d27;border:1px solid #2a2e3f;border-radius:12px;padding:16px}
+.ranking-card h4{font-size:14px;margin-bottom:8px}
+.ranking-card h4.top{color:#00d68f}.ranking-card h4.worst{color:#ff6b6b}
+.note{font-size:11px;color:#8892a4;margin-top:4px;font-style:italic}
+@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.three-col{grid-template-columns:1fr}.ranking-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Sales Dashboard</h1>
+<p class="subtitle">2026年2月 | ITES セールスレポート</p>
+
+<h2 class="section-title">KPI サマリー</h2>
+<div class="kpi-grid">
+<div class="kpi"><div class="kpi-label">総売上</div><div class="kpi-value kpi-accent">¥278,480,908</div><div class="kpi-sub">稼働案件数: 348</div></div>
+<div class="kpi"><div class="kpi-label">総仕入</div><div class="kpi-value">¥213,853,225</div></div>
+<div class="kpi"><div class="kpi-label">総粗利</div><div class="kpi-value kpi-green">¥64,627,683</div><div class="kpi-sub">粗利率: 23.2%</div></div>
+<div class="kpi"><div class="kpi-label">稼働HC</div><div class="kpi-value">348</div><div class="kpi-sub">P:160 / BP:135 / FL:53</div></div>
+<div class="kpi"><div class="kpi-label">平均単価（加重平均）</div><div class="kpi-value">¥800,232</div><div class="kpi-sub">売上÷稼働HC</div></div>
+</div>
+
+<h2 class="section-title">所属別分析</h2>
+<div class="three-col">
+<div class="card"><h3 style="color:#4f8cff">プロパー</h3>
+<div class="stat-row"><span class="stat-label">稼働HC</span><span class="stat-value">160</span></div>
+<div class="stat-row"><span class="stat-label">売上</span><span class="stat-value">¥116,747,516</span></div>
+<div class="stat-row"><span class="stat-label">売上比率</span><span class="stat-value">41.9%</span></div>
+<div class="stat-row"><span class="stat-label">仕入</span><span class="stat-value">¥80,494,657</span></div>
+<div class="stat-row"><span class="stat-label">粗利</span><span class="stat-value" style="color:#00d68f">¥36,252,859</span></div>
+<div class="stat-row"><span class="stat-label">粗利率</span><span class="stat-value">31.1%</span></div>
+<div class="stat-row"><span class="stat-label">平均単価</span><span class="stat-value">¥729,671</span></div>
+<div class="stat-row"><span class="stat-label">1人あたり粗利/月</span><span class="stat-value">¥226,580</span></div>
+</div>
+<div class="card"><h3 style="color:#00cec9">BP</h3>
+<div class="stat-row"><span class="stat-label">稼働HC</span><span class="stat-value">135</span></div>
+<div class="stat-row"><span class="stat-label">売上</span><span class="stat-value">¥118,345,397</span></div>
+<div class="stat-row"><span class="stat-label">売上比率</span><span class="stat-value">42.5%</span></div>
+<div class="stat-row"><span class="stat-label">仕入</span><span class="stat-value">¥97,808,368</span></div>
+<div class="stat-row"><span class="stat-label">粗利</span><span class="stat-value" style="color:#00d68f">¥20,537,029</span></div>
+<div class="stat-row"><span class="stat-label">粗利率</span><span class="stat-value">17.4%</span></div>
+<div class="stat-row"><span class="stat-label">平均単価</span><span class="stat-value">¥876,632</span></div>
+<div class="stat-row"><span class="stat-label">1人あたり粗利/月</span><span class="stat-value">¥152,126</span></div>
+</div>
+<div class="card"><h3 style="color:#e84393">フリーランス</h3>
+<div class="stat-row"><span class="stat-label">稼働HC</span><span class="stat-value">53</span></div>
+<div class="stat-row"><span class="stat-label">売上</span><span class="stat-value">¥43,387,995</span></div>
+<div class="stat-row"><span class="stat-label">売上比率</span><span class="stat-value">15.6%</span></div>
+<div class="stat-row"><span class="stat-label">仕入</span><span class="stat-value">¥35,550,200</span></div>
+<div class="stat-row"><span class="stat-label">粗利</span><span class="stat-value" style="color:#00d68f">¥7,837,795</span></div>
+<div class="stat-row"><span class="stat-label">粗利率</span><span class="stat-value">18.1%</span></div>
+<div class="stat-row"><span class="stat-label">平均単価</span><span class="stat-value">¥818,641</span></div>
+<div class="stat-row"><span class="stat-label">1人あたり粗利/月</span><span class="stat-value">¥147,882</span></div>
+</div>
+</div>
+
+<div class="donut-row">
+<div class="donut-wrap"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.9" fill="none" stroke="#4f8cff" stroke-width="3" stroke-dasharray="45.97701149425287 54.02298850574713" stroke-dashoffset="-0" transform="rotate(-90 18 18)"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="#00cec9" stroke-width="3" stroke-dasharray="38.793103448275865 61.206896551724135" stroke-dashoffset="-45.97701149425287" transform="rotate(-90 18 18)"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="#e84393" stroke-width="3" stroke-dasharray="15.229885057471265 84.77011494252874" stroke-dashoffset="-84.77011494252874" transform="rotate(-90 18 18)"/><text x="18" y="19" text-anchor="middle" font-size="6" fill="#e8eaf0">348</text></svg><div class="donut-title">HC構成比</div></div>
+<div class="donut-wrap"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.9" fill="none" stroke="#4f8cff" stroke-width="3" stroke-dasharray="41.92298740996636 58.07701259003364" stroke-dashoffset="-0" transform="rotate(-90 18 18)"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="#00cec9" stroke-width="3" stroke-dasharray="42.4967721665142 57.5032278334858" stroke-dashoffset="-41.92298740996636" transform="rotate(-90 18 18)"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="#e84393" stroke-width="3" stroke-dasharray="15.580240423519445 84.41975957648056" stroke-dashoffset="-84.41975957648056" transform="rotate(-90 18 18)"/><text x="18" y="19" text-anchor="middle" font-size="6" fill="#e8eaf0">278,480,908</text></svg><div class="donut-title">売上構成比</div></div>
+<div class="donut-wrap"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.9" fill="none" stroke="#4f8cff" stroke-width="3" stroke-dasharray="56.09493844920914 43.90506155079086" stroke-dashoffset="-0" transform="rotate(-90 18 18)"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="#00cec9" stroke-width="3" stroke-dasharray="31.77744899194359 68.22255100805641" stroke-dashoffset="-56.09493844920914" transform="rotate(-90 18 18)"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="#e84393" stroke-width="3" stroke-dasharray="12.127612558847268 87.87238744115274" stroke-dashoffset="-87.87238744115272" transform="rotate(-90 18 18)"/><text x="18" y="19" text-anchor="middle" font-size="6" fill="#e8eaf0">64,627,683</text></svg><div class="donut-title">粗利構成比</div></div>
+</div>
+<div style="text-align:center;font-size:12px;color:#8892a4;margin-bottom:8px">
+<span style="color:#4f8cff">● プロパー</span>&nbsp;&nbsp;<span style="color:#00cec9">● BP</span>&nbsp;&nbsp;<span style="color:#e84393">● フリーランス</span>
+</div>
+
+<h2 class="section-title">個人別 粗利率ランキング</h2>
+<h3 style="color:#8892a4;font-size:15px;margin:16px 0 8px">プロパー <span class="note">※タレンシップは個別仕入不明のため除く</span></h3>
+<div class="ranking-grid">
+<div class="ranking-card"><h4 class="top">粗利率 TOP10</h4>
+<table><thead><tr><th>氏名</th><th>アサイン先</th><th class="num">売上</th><th class="num">仕入</th><th class="num">粗利</th><th class="num">粗利率</th></tr></thead>
+<tbody><tr class="green"><td>坂本 和俊</td><td>日鉄ソリューションズ株式会社</td><td class="num">¥950,000</td><td class="num">¥0</td><td class="num">¥950,000</td><td class="num">100.0%</td></tr><tr class="green"><td>佐久間 温也（BP）</td><td>日鉄ソリューションズ株式会社</td><td class="num">¥100,000</td><td class="num">¥0</td><td class="num">¥100,000</td><td class="num">100.0%</td></tr><tr class="green"><td>篠原　明子</td><td>アビームコンサルティング株式会社</td><td class="num">¥780,000</td><td class="num">¥0</td><td class="num">¥780,000</td><td class="num">100.0%</td></tr><tr class="green"><td>岩津 悠幹</td><td>リレセス株式会社</td><td class="num">¥535,000</td><td class="num">¥0</td><td class="num">¥535,000</td><td class="num">100.0%</td></tr><tr class="green"><td>酒井大士</td><td>株式会社エルシーツー</td><td class="num">¥704,000</td><td class="num">¥0</td><td class="num">¥704,000</td><td class="num">100.0%</td></tr><tr class="green"><td>渋井 真里亜</td><td>株式会社エルシーツー</td><td class="num">¥669,750</td><td class="num">¥0</td><td class="num">¥669,750</td><td class="num">100.0%</td></tr><tr class="green"><td>麻生 順一</td><td>日鉄ソリューションズ株式会社</td><td class="num">¥150,000</td><td class="num">¥0</td><td class="num">¥150,000</td><td class="num">100.0%</td></tr><tr class="green"><td>五木田 葵</td><td>INTLOOP株式会社</td><td class="num">¥650,000</td><td class="num">¥0</td><td class="num">¥650,000</td><td class="num">100.0%</td></tr><tr class="green"><td>中島 雄生</td><td>INTLOOP株式会社</td><td class="num">¥669,788</td><td class="num">¥0</td><td class="num">¥669,788</td><td class="num">100.0%</td></tr><tr class="green"><td>三橋 大治郎</td><td>株式会社トラント</td><td class="num">¥570,000</td><td class="num">¥0</td><td class="num">¥570,000</td><td class="num">100.0%</td></tr></tbody></table></div>
+<div class="ranking-card"><h4 class="worst">粗利率 WORST10</h4>
+<table><thead><tr><th>氏名</th><th>アサイン先</th><th class="num">売上</th><th class="num">仕入</th><th class="num">粗利</th><th class="num">粗利率</th></tr></thead>
+<tbody><tr class="red"><td>岸田 巧</td><td>NTT-ATシステムズ株式会社</td><td class="num">¥23,333</td><td class="num">¥425,000</td><td class="num">¥-401,667</td><td class="num">-1721.5%</td></tr><tr class="red"><td>杉田 真広</td><td>NTT-ATシステムズ株式会社</td><td class="num">¥23,333</td><td class="num">¥324,000</td><td class="num">¥-300,667</td><td class="num">-1288.6%</td></tr><tr class="red"><td>岸田 巧</td><td>NTT-ATシステムズ株式会社</td><td class="num">¥31,667</td><td class="num">¥425,000</td><td class="num">¥-393,333</td><td class="num">-1242.1%</td></tr><tr class="red"><td>岸田 巧</td><td>NTT-ATシステムズ株式会社</td><td class="num">¥33,667</td><td class="num">¥425,000</td><td class="num">¥-391,333</td><td class="num">-1162.4%</td></tr><tr class="red"><td>杉田 真広</td><td>NTT-ATシステムズ株式会社</td><td class="num">¥31,666</td><td class="num">¥365,000</td><td class="num">¥-333,334</td><td class="num">-1052.7%</td></tr><tr class="red"><td>杉田 真広</td><td>NTT-ATシステムズ株式会社</td><td class="num">¥33,666</td><td class="num">¥324,000</td><td class="num">¥-290,334</td><td class="num">-862.4%</td></tr><tr class="red"><td>小嶋 直樹</td><td>株式会社LASSIC</td><td class="num">¥75,000</td><td class="num">¥567,000</td><td class="num">¥-492,000</td><td class="num">-656.0%</td></tr><tr class="red"><td>岸田 巧</td><td>NTT-ATシステムズ株式会社</td><td class="num">¥205,500</td><td class="num">¥425,000</td><td class="num">¥-219,500</td><td class="num">-106.8%</td></tr><tr class="red"><td>杉田 真広</td><td>NTT-ATシステムズ株式会社</td><td class="num">¥205,500</td><td class="num">¥324,000</td><td class="num">¥-118,500</td><td class="num">-57.7%</td></tr><tr class="red"><td>岸田 巧</td><td>NTT-ATシステムズ株式会社</td><td class="num">¥272,167</td><td class="num">¥425,000</td><td class="num">¥-152,833</td><td class="num">-56.2%</td></tr></tbody></table></div>
+</div>
+
+<h3 style="color:#8892a4;font-size:15px;margin:16px 0 8px">BP</h3>
+<div class="ranking-grid">
+<div class="ranking-card"><h4 class="top">粗利率 TOP10</h4>
+<table><thead><tr><th>氏名</th><th>アサイン先</th><th class="num">売上</th><th class="num">仕入</th><th class="num">粗利</th><th class="num">粗利率</th></tr></thead>
+<tbody><tr class="green"><td>黄 依娜</td><td>富士ソフト株式会社</td><td class="num">¥39,500</td><td class="num">¥0</td><td class="num">¥39,500</td><td class="num">100.0%</td></tr><tr class="green"><td>辻　正好</td><td>葵屋株式会社</td><td class="num">¥100,000</td><td class="num">¥0</td><td class="num">¥100,000</td><td class="num">100.0%</td></tr><tr class="green"><td>石川 智基</td><td>ACP有限責任事業組合</td><td class="num">¥300,000</td><td class="num">¥0</td><td class="num">¥300,000</td><td class="num">100.0%</td></tr><tr class="green"><td>山本 尚樹</td><td>ACP有限責任事業組合</td><td class="num">¥320,000</td><td class="num">¥0</td><td class="num">¥320,000</td><td class="num">100.0%</td></tr><tr class="green"><td>羽鳥　智哉（BP）</td><td>日鉄ソリューションズ株式会社</td><td class="num">¥200,000</td><td class="num">¥0</td><td class="num">¥200,000</td><td class="num">100.0%</td></tr><tr class="green"><td>栗山 修一（BP）</td><td>日鉄ソリューションズ株式会社</td><td class="num">¥97,800</td><td class="num">¥0</td><td class="num">¥97,800</td><td class="num">100.0%</td></tr><tr class="green"><td>黄 依娜</td><td>富士ソフト株式会社</td><td class="num">¥47,500</td><td class="num">¥0</td><td class="num">¥47,500</td><td class="num">100.0%</td></tr><tr class="green"><td>渡辺 健司</td><td>ACP有限責任事業組合</td><td class="num">¥390,000</td><td class="num">¥0</td><td class="num">¥390,000</td><td class="num">100.0%</td></tr><tr class="green"><td>上杉凌雅</td><td>ジャパンシステム株式会社</td><td class="num">¥64,200</td><td class="num">¥0</td><td class="num">¥64,200</td><td class="num">100.0%</td></tr><tr class="green"><td>羽鳥　智哉（BP）</td><td>日鉄ソリューションズ株式会社</td><td class="num">¥100,000</td><td class="num">¥0</td><td class="num">¥100,000</td><td class="num">100.0%</td></tr></tbody></table></div>
+<div class="ranking-card"><h4 class="worst">粗利率 WORST10</h4>
+<table><thead><tr><th>氏名</th><th>アサイン先</th><th class="num">売上</th><th class="num">仕入</th><th class="num">粗利</th><th class="num">粗利率</th></tr></thead>
+<tbody><tr class="red"><td>亀田 愛美</td><td>日鉄ソリューションズ株式会社</td><td class="num">¥750,000</td><td class="num">¥830,000</td><td class="num">¥-80,000</td><td class="num">-10.7%</td></tr><tr class="red"><td>岡本 美穂</td><td>ジャパンシステム株式会社</td><td class="num">¥578,700</td><td class="num">¥607,250</td><td class="num">¥-28,550</td><td class="num">-4.9%</td></tr><tr class="red"><td>SliceCheeseチーム</td><td>株式会社NTTデータ</td><td class="num">¥1,500,000</td><td class="num">¥1,550,000</td><td class="num">¥-50,000</td><td class="num">-3.3%</td></tr><tr class="red"><td>加部芳紀</td><td>三菱電機デジタルイノベーション株式会社</td><td class="num">¥3,017,700</td><td class="num">¥2,910,000</td><td class="num">¥107,700</td><td class="num">3.6%</td></tr><tr class="red"><td>石室屋 拓</td><td>株式会社NTTデータ先端技術</td><td class="num">¥583,020</td><td class="num">¥561,000</td><td class="num">¥22,020</td><td class="num">3.8%</td></tr><tr class="red"><td>岩田 裕一</td><td>富士ソフト株式会社</td><td class="num">¥902,500</td><td class="num">¥860,000</td><td class="num">¥42,500</td><td class="num">4.7%</td></tr><tr class="red"><td>行比　拓也</td><td>GVA TECH株式会社</td><td class="num">¥630,000</td><td class="num">¥600,000</td><td class="num">¥30,000</td><td class="num">4.8%</td></tr><tr class="red"><td>小林 大介</td><td>株式会社レックアイ</td><td class="num">¥780,000</td><td class="num">¥740,000</td><td class="num">¥40,000</td><td class="num">5.1%</td></tr><tr class="red"><td>小暮 千尋</td><td>富士ソフト株式会社</td><td class="num">¥750,500</td><td class="num">¥710,000</td><td class="num">¥40,500</td><td class="num">5.4%</td></tr><tr class="red"><td>原　拓郎</td><td>日鉄ソリューションズ株式会社</td><td class="num">¥575,000</td><td class="num">¥540,000</td><td class="num">¥35,000</td><td class="num">6.1%</td></tr></tbody></table></div>
+</div>
+
+<h3 style="color:#8892a4;font-size:15px;margin:16px 0 8px">フリーランス</h3>
+<div class="ranking-grid">
+<div class="ranking-card"><h4 class="top">粗利率 TOP10</h4>
+<table><thead><tr><th>氏名</th><th>アサイン先</th><th class="num">売上</th><th class="num">仕入</th><th class="num">粗利</th><th class="num">粗利率</th></tr></thead>
+<tbody><tr class="green"><td>栗山 修一（セルフリ）</td><td>日鉄ソリューションズ株式会社</td><td class="num">¥130,000</td><td class="num">¥0</td><td class="num">¥130,000</td><td class="num">100.0%</td></tr><tr class="green"><td>清野 邦之</td><td>NTT-ATシステムズ株式会社</td><td class="num">¥33,667</td><td class="num">¥0</td><td class="num">¥33,667</td><td class="num">100.0%</td></tr><tr class="green"><td>清野 邦之</td><td>NTT-ATシステムズ株式会社</td><td class="num">¥272,167</td><td class="num">¥0</td><td class="num">¥272,167</td><td class="num">100.0%</td></tr><tr class="green"><td>清野 邦之</td><td>NTT-ATシステムズ株式会社</td><td class="num">¥23,334</td><td class="num">¥0</td><td class="num">¥23,334</td><td class="num">100.0%</td></tr><tr class="green"><td>清野 邦之</td><td>NTT-ATシステムズ株式会社</td><td class="num">¥205,500</td><td class="num">¥0</td><td class="num">¥205,500</td><td class="num">100.0%</td></tr><tr class="green"><td>栗山修一</td><td>日鉄ソリューションズ株式会社</td><td class="num">¥103,000</td><td class="num">¥0</td><td class="num">¥103,000</td><td class="num">100.0%</td></tr><tr class="green"><td>柳下 祥宏</td><td>株式会社NTTデータ先端技術</td><td class="num">¥650,000</td><td class="num">¥50,000</td><td class="num">¥600,000</td><td class="num">92.3%</td></tr><tr class="green"><td>東森 友暉</td><td>日鉄ソリューションズ株式会社</td><td class="num">¥945,000</td><td class="num">¥603,000</td><td class="num">¥342,000</td><td class="num">36.2%</td></tr><tr class="green"><td>鈴木峻也</td><td>株式会社 エヌ・エー・シー</td><td class="num">¥750,000</td><td class="num">¥500,000</td><td class="num">¥250,000</td><td class="num">33.3%</td></tr><tr class="green"><td>鶴野 藍蘭</td><td>PwC Japan合同会社</td><td class="num">¥825,000</td><td class="num">¥550,000</td><td class="num">¥275,000</td><td class="num">33.3%</td></tr></tbody></table></div>
+<div class="ranking-card"><h4 class="worst">粗利率 WORST10</h4>
+<table><thead><tr><th>氏名</th><th>アサイン先</th><th class="num">売上</th><th class="num">仕入</th><th class="num">粗利</th><th class="num">粗利率</th></tr></thead>
+<tbody><tr class="red"><td>清野 邦之</td><td>NTT-ATシステムズ株式会社</td><td class="num">¥31,667</td><td class="num">¥650,000</td><td class="num">¥-618,333</td><td class="num">-1952.6%</td></tr><tr class="red"><td>柳下 祥宏</td><td>株式会社NTTデータ先端技術</td><td class="num">¥650,000</td><td class="num">¥1,100,000</td><td class="num">¥-450,000</td><td class="num">-69.2%</td></tr><tr class="red"><td>亀井 勇樹</td><td>GVA　TECH株式会社</td><td class="num">¥720,000</td><td class="num">¥752,500</td><td class="num">¥-32,500</td><td class="num">-4.5%</td></tr><tr class="red"><td>李 珍宰</td><td>日鉄ソリューションズ株式会社</td><td class="num">¥625,000</td><td class="num">¥625,000</td><td class="num">¥0</td><td class="num">0.0%</td></tr><tr class="red"><td>川口 貴信</td><td>株式会社ウエルストーン</td><td class="num">¥362,700</td><td class="num">¥354,200</td><td class="num">¥8,500</td><td class="num">2.3%</td></tr><tr class="red"><td>北 隼機</td><td>日鉄ソリューションズ株式会社</td><td class="num">¥520,000</td><td class="num">¥500,000</td><td class="num">¥20,000</td><td class="num">3.8%</td></tr><tr class="red"><td>藤村　拓也</td><td>株式会社カカクコム</td><td class="num">¥1,200,000</td><td class="num">¥1,150,000</td><td class="num">¥50,000</td><td class="num">4.2%</td></tr><tr class="red"><td>伊藤 公雄</td><td>株式会社OSK</td><td class="num">¥900,000</td><td class="num">¥850,000</td><td class="num">¥50,000</td><td class="num">5.6%</td></tr><tr class="red"><td>平野 雅士</td><td>ジャパンシステム株式会社</td><td class="num">¥800,000</td><td class="num">¥750,000</td><td class="num">¥50,000</td><td class="num">6.2%</td></tr><tr class="red"><td>福山 了</td><td>伊藤忠テクノソリューションズ株式会社</td><td class="num">¥1,400,000</td><td class="num">¥1,300,000</td><td class="num">¥100,000</td><td class="num">7.1%</td></tr></tbody></table></div>
+</div>
+
+<h2 class="section-title">クライアント別分析 TOP15</h2>
+<table><thead><tr><th>クライアント名</th><th class="num">HC</th><th class="num">売上</th><th class="num">全体比率</th><th class="num">粗利</th><th class="num">粗利率</th><th>所属構成</th><th>評価</th></tr></thead>
+<tbody><tr><td>日鉄ソリューションズ株式会社</td><td class="num">33</td><td class="num">¥25,743,710</td><td class="num">9.2%</td><td class="num">¥6,607,210</td><td class="num">25.7%</td><td>P:6/B:15/FL:12</td><td><span class="badge badge-green">高利益</span></td></tr><tr><td>ジャパンシステム株式会社</td><td class="num">30</td><td class="num">¥22,594,417</td><td class="num">8.1%</td><td class="num">¥4,210,640</td><td class="num">18.6%</td><td>P:10/B:18/FL:2</td><td><span class="badge badge-blue">標準</span></td></tr><tr><td>株式会社ＮＴＴデータ・ニューソン</td><td class="num">17</td><td class="num">¥15,833,055</td><td class="num">5.7%</td><td class="num">¥3,165,507</td><td class="num">20.0%</td><td>P:2/B:11/FL:4</td><td><span class="badge badge-blue">標準</span></td></tr><tr><td>株式会社OSK</td><td class="num">17</td><td class="num">¥14,528,500</td><td class="num">5.2%</td><td class="num">¥2,433,190</td><td class="num">16.7%</td><td>P:1/B:10/FL:6</td><td><span class="badge badge-blue">標準</span></td></tr><tr><td>伊藤忠テクノソリューションズ株式会社</td><td class="num">13</td><td class="num">¥14,105,450</td><td class="num">5.1%</td><td class="num">¥9,205,450</td><td class="num">65.3%</td><td>P:10/B:2/FL:1</td><td><span class="badge badge-green">最高利益</span></td></tr><tr><td>PwC Japan合同会社</td><td class="num">11</td><td class="num">¥13,909,000</td><td class="num">5.0%</td><td class="num">¥3,899,667</td><td class="num">28.0%</td><td>P:4/B:4/FL:3</td><td><span class="badge badge-green">高利益</span></td></tr><tr><td>GVA　TECH株式会社</td><td class="num">8</td><td class="num">¥9,350,000</td><td class="num">3.4%</td><td class="num">¥1,327,500</td><td class="num">14.2%</td><td>P:0/B:7/FL:1</td><td><span class="badge badge-orange">要改善</span></td></tr><tr><td>ACP有限責任事業組合</td><td class="num">10</td><td class="num">¥8,439,159</td><td class="num">3.0%</td><td class="num">¥4,105,159</td><td class="num">48.6%</td><td>P:6/B:4/FL:0</td><td><span class="badge badge-green">最高利益</span></td></tr><tr><td>株式会社カカクコム</td><td class="num">5</td><td class="num">¥6,000,000</td><td class="num">2.2%</td><td class="num">¥970,000</td><td class="num">16.2%</td><td>P:0/B:4/FL:1</td><td><span class="badge badge-blue">標準</span></td></tr><tr><td>富士ソフト株式会社</td><td class="num">8</td><td class="num">¥4,770,000</td><td class="num">1.7%</td><td class="num">¥2,550,000</td><td class="num">53.5%</td><td>P:3/B:5/FL:0</td><td><span class="badge badge-green">最高利益</span></td></tr><tr><td>株式会社ノースサンド</td><td class="num">4</td><td class="num">¥4,700,000</td><td class="num">1.7%</td><td class="num">¥1,826,000</td><td class="num">38.9%</td><td>P:3/B:1/FL:0</td><td><span class="badge badge-green">最高利益</span></td></tr><tr><td>株式会社 Pro-SPIRE</td><td class="num">6</td><td class="num">¥4,530,000</td><td class="num">1.6%</td><td class="num">¥1,973,000</td><td class="num">43.6%</td><td>P:6/B:0/FL:0</td><td><span class="badge badge-green">最高利益</span></td></tr><tr><td>株式会社アイ・エス・ビー</td><td class="num">6</td><td class="num">¥4,420,000</td><td class="num">1.6%</td><td class="num">¥4,420,000</td><td class="num">100.0%</td><td>P:6/B:0/FL:0</td><td><span class="badge badge-green">最高利益</span></td></tr><tr><td>Sky株式会社</td><td class="num">6</td><td class="num">¥4,329,323</td><td class="num">1.6%</td><td class="num">¥4,329,323</td><td class="num">100.0%</td><td>P:6/B:0/FL:0</td><td><span class="badge badge-green">最高利益</span></td></tr><tr><td>株式会社 エヌ・エー・シー</td><td class="num">6</td><td class="num">¥4,029,600</td><td class="num">1.4%</td><td class="num">¥820,080</td><td class="num">20.4%</td><td>P:1/B:4/FL:1</td><td><span class="badge badge-green">高利益</span></td></tr></tbody></table>
+<div class="bar-chart"><div class="bar-row"><div class="bar-label">日鉄ソリューションズ株式会社</div><div class="bar-track"><div class="bar-fill" style="width:100.0%"></div></div><div class="bar-value">¥25,743,710</div></div><div class="bar-row"><div class="bar-label">ジャパンシステム株式会社</div><div class="bar-track"><div class="bar-fill" style="width:87.8%"></div></div><div class="bar-value">¥22,594,417</div></div><div class="bar-row"><div class="bar-label">株式会社ＮＴＴデータ・ニューソン</div><div class="bar-track"><div class="bar-fill" style="width:61.5%"></div></div><div class="bar-value">¥15,833,055</div></div><div class="bar-row"><div class="bar-label">株式会社OSK</div><div class="bar-track"><div class="bar-fill" style="width:56.4%"></div></div><div class="bar-value">¥14,528,500</div></div><div class="bar-row"><div class="bar-label">伊藤忠テクノソリューションズ株式会社</div><div class="bar-track"><div class="bar-fill" style="width:54.8%"></div></div><div class="bar-value">¥14,105,450</div></div><div class="bar-row"><div class="bar-label">PwC Japan合同会社</div><div class="bar-track"><div class="bar-fill" style="width:54.0%"></div></div><div class="bar-value">¥13,909,000</div></div><div class="bar-row"><div class="bar-label">GVA　TECH株式会社</div><div class="bar-track"><div class="bar-fill" style="width:36.3%"></div></div><div class="bar-value">¥9,350,000</div></div><div class="bar-row"><div class="bar-label">ACP有限責任事業組合</div><div class="bar-track"><div class="bar-fill" style="width:32.8%"></div></div><div class="bar-value">¥8,439,159</div></div><div class="bar-row"><div class="bar-label">株式会社カカクコム</div><div class="bar-track"><div class="bar-fill" style="width:23.3%"></div></div><div class="bar-value">¥6,000,000</div></div><div class="bar-row"><div class="bar-label">富士ソフト株式会社</div><div class="bar-track"><div class="bar-fill" style="width:18.5%"></div></div><div class="bar-value">¥4,770,000</div></div><div class="bar-row"><div class="bar-label">株式会社ノースサンド</div><div class="bar-track"><div class="bar-fill" style="width:18.3%"></div></div><div class="bar-value">¥4,700,000</div></div><div class="bar-row"><div class="bar-label">株式会社 Pro-SPIRE</div><div class="bar-track"><div class="bar-fill" style="width:17.6%"></div></div><div class="bar-value">¥4,530,000</div></div><div class="bar-row"><div class="bar-label">株式会社アイ・エス・ビー</div><div class="bar-track"><div class="bar-fill" style="width:17.2%"></div></div><div class="bar-value">¥4,420,000</div></div><div class="bar-row"><div class="bar-label">Sky株式会社</div><div class="bar-track"><div class="bar-fill" style="width:16.8%"></div></div><div class="bar-value">¥4,329,323</div></div><div class="bar-row"><div class="bar-label">株式会社 エヌ・エー・シー</div><div class="bar-track"><div class="bar-fill" style="width:15.7%"></div></div><div class="bar-value">¥4,029,600</div></div></div>
+
+<h2 class="section-title">仕入先別分析 TOP15</h2>
+<table><thead><tr><th>仕入先企業</th><th class="num">HC</th><th class="num">支払額</th><th class="num">全体比率</th></tr></thead>
+<tbody><tr><td>セルプロモート株式会社</td><td class="num">109</td><td class="num">¥51,574,238</td><td class="num">24.1%</td></tr><tr><td>Talenship株式会社</td><td class="num">56</td><td class="num">¥29,681,419</td><td class="num">13.9%</td></tr><tr><td>個人事業主</td><td class="num">12</td><td class="num">¥7,007,700</td><td class="num">3.3%</td></tr><tr><td>株式会社SliceCheese</td><td class="num">4</td><td class="num">¥6,050,000</td><td class="num">2.8%</td></tr><tr><td>リレセス株式会社</td><td class="num">9</td><td class="num">¥5,907,805</td><td class="num">2.8%</td></tr><tr><td>株式会社Branding Engineer</td><td class="num">6</td><td class="num">¥5,280,000</td><td class="num">2.5%</td></tr><tr><td>株式会社テックビズ</td><td class="num">7</td><td class="num">¥4,667,890</td><td class="num">2.2%</td></tr><tr><td>株式会社Konnect-linK</td><td class="num">2</td><td class="num">¥3,600,000</td><td class="num">1.7%</td></tr><tr><td>株式会社YHコーポレーション</td><td class="num">2</td><td class="num">¥3,310,000</td><td class="num">1.5%</td></tr><tr><td>株式会社KICONIA WORKS</td><td class="num">5</td><td class="num">¥3,077,500</td><td class="num">1.4%</td></tr><tr><td>株式会社STG</td><td class="num">4</td><td class="num">¥2,869,220</td><td class="num">1.3%</td></tr><tr><td>インターノウス株式会社</td><td class="num">3</td><td class="num">¥2,750,000</td><td class="num">1.3%</td></tr><tr><td>株式会社ビット</td><td class="num">3</td><td class="num">¥2,124,650</td><td class="num">1.0%</td></tr><tr><td>アフア合同会社</td><td class="num">1</td><td class="num">¥2,000,000</td><td class="num">0.9%</td></tr><tr><td>株式会社ビズリンク</td><td class="num">2</td><td class="num">¥2,000,000</td><td class="num">0.9%</td></tr></tbody></table>
+
+<h2 class="section-title">支援費 TOP15</h2>
+<table><thead><tr><th>対象者</th><th>所属</th><th class="num">売上</th><th class="num">支払額</th></tr></thead>
+<tbody><tr><td>支援費（伊藤 公雄）</td><td>フリーランス</td><td class="num">¥0</td><td class="num">¥590,000</td></tr><tr><td>山尾　巧（支援費）</td><td>BP</td><td class="num">¥0</td><td class="num">¥200,000</td></tr><tr><td>小倉 建史朗</td><td>フリーランス</td><td class="num">¥0</td><td class="num">¥150,000</td></tr><tr><td>＜支援費＞藤原 正悟</td><td>プロパー</td><td class="num">¥0</td><td class="num">¥150,000</td></tr><tr><td>支援費（福岡 美歩）</td><td>BP</td><td class="num">¥0</td><td class="num">¥150,000</td></tr><tr><td>支援費（瀧澤 春弓樹）</td><td>BP</td><td class="num">¥0</td><td class="num">¥110,000</td></tr><tr><td>常名 晟生（支援費）</td><td>プロパー</td><td class="num">¥0</td><td class="num">¥100,000</td></tr><tr><td>支援費（鯉江 友也）</td><td>プロパー</td><td class="num">¥0</td><td class="num">¥90,000</td></tr><tr><td>支援費(木村太一)</td><td>プロパー</td><td class="num">¥0</td><td class="num">¥70,000</td></tr><tr><td>＜支援費＞岩田 裕一</td><td>BP</td><td class="num">¥0</td><td class="num">¥60,000</td></tr><tr><td>清野 邦之（支援費）</td><td>フリーランス</td><td class="num">¥0</td><td class="num">¥30,000</td></tr></tbody></table>
+<div class="stat-row"><span class="stat-label">支援費合計</span><span class="stat-value" style="color:#ff6b6b">¥1,700,000</span></div>
+<div style="font-size:12px;color:#8892a4;margin-top:8px">※支援費の定義：売上が０円で仕入が１円以上のもの</div>
+
+<script>
+document.querySelectorAll('th').forEach(th=>{
+th.addEventListener('click',function(){
+const table=this.closest('table'),tbody=table.querySelector('tbody'),rows=Array.from(tbody.querySelectorAll('tr')),idx=Array.from(this.parentNode.children).indexOf(this),isNum=this.classList.contains('num'),asc=this.dataset.sort!=='asc';
+this.dataset.sort=asc?'asc':'desc';
+rows.sort((a,b)=>{let va=a.children[idx]?.textContent?.trim()||'',vb=b.children[idx]?.textContent?.trim()||'';
+if(isNum){va=parseFloat(va.replace(/[¥,%]/g,'').replace(/,/g,''))||0;vb=parseFloat(vb.replace(/[¥,%]/g,'').replace(/,/g,''))||0;return asc?va-vb:vb-va}
+return asc?va.localeCompare(vb,'ja'):vb.localeCompare(va,'ja')});
+rows.forEach(r=>tbody.appendChild(r))})}); 
+</script>
+</div></body></html>
