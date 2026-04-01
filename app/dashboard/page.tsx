@@ -299,11 +299,28 @@ export default function DashboardPage() {
   const flProgress = Math.floor(flProgressMan * 10000);
   const coProgress = Math.floor(coProgressMan * 10000);
 
-  // 目標 = CA粗利の各所属合計（calcCAProgressByAffiliationのtotal）
-  const proper = { ...(displayData.proper || { target: 0, progress: 0, forecast: 0, standby: 0, standbyCost: 0 }), progress: properProgress, target: properProgress };
-  const bp = { ...(displayData.bp || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: bpProgress, target: bpProgress };
-  const fl = { ...(displayData.fl || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: flProgress, target: flProgress };
-  const co = { ...(displayData.co || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: coProgress, target: coProgress };
+  // 目標 = CA粗利の月別目標値（budget-amountCA_${affiliation}-${YYYY-MM}キーから取得）
+  const caBudgetTargets = useMemo(() => {
+    const ym = selectedDate.substring(0, 7);
+    const affiliations = ["プロパー", "BP", "フリーランス", "協業"] as const;
+    const result: Record<string, number> = {};
+    for (const aff of affiliations) {
+      const budgetKey = `budget-amountCA_${aff}-${ym}`;
+      const budgetData = allData[budgetKey];
+      if (budgetData && typeof budgetData === "object") {
+        const total = STAFF_LIST.reduce((sum, staff) => sum + (budgetData[staff] || 0), 0);
+        result[aff] = Math.round(total * 10000);
+      } else {
+        result[aff] = 0;
+      }
+    }
+    return result;
+  }, [allData, selectedDate]);
+
+  const proper = { ...(displayData.proper || { target: 0, progress: 0, forecast: 0, standby: 0, standbyCost: 0 }), progress: properProgress, target: caBudgetTargets["プロパー"] };
+  const bp = { ...(displayData.bp || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: bpProgress, target: caBudgetTargets["BP"] };
+  const fl = { ...(displayData.fl || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: flProgress, target: caBudgetTargets["フリーランス"] };
+  const co = { ...(displayData.co || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: coProgress, target: caBudgetTargets["協業"] };
   // 進捗計から待機費用・支援費等を引いた調整後進捗
   const properAdjusted = properProgress - (proper.standbyCost || 0);
   const bpAdjusted = bpProgress - (bp.supportCost || 0);
