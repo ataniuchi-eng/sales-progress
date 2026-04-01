@@ -306,7 +306,7 @@ export default function DashboardPage() {
     const result: Record<string, number> = {};
     for (const aff of affiliations) {
       const budgetKey = `budget-amountCA_${aff}-${ym}`;
-      const budgetData = allData[budgetKey];
+      const budgetData = allData[budgetKey] as unknown as Record<string, number> | undefined;
       if (budgetData && typeof budgetData === "object") {
         const total = STAFF_LIST.reduce((sum, staff) => sum + (budgetData[staff] || 0), 0);
         result[aff] = Math.round(total * 10000);
