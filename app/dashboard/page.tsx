@@ -844,7 +844,7 @@ export default function DashboardPage() {
                       const h = new Date().getHours();
                       const greeting = (h >= 5 && h < 12) ? "おはよう" : (h >= 12 && h < 17) ? "こんにちわ" : "こんばんわ";
                       const name = isAdmin ? "管理者" : (currentStaffName || "");
-                      const cheers = ["ファイト！", "頑張ろう！", "いい日に！", "絶好調！", "全力で！", "最高の1日を！", "今日もGO！", "やるぞ！", "攻めよう！", "笑顔で！", "突き進め！", "いける！", "負けない！", "楽しもう！", "燃えろ！", "目標達成！", "強気で！", "前向きに！", "勝ちに行こう！", "一歩ずつ！"];
+                      const cheers = ["Let's go!", "You got this!", "Make it count!", "Stay sharp!", "Full throttle!", "Crush it!", "Keep pushing!", "On fire!", "Go big!", "Stay hungry!", "Own it!", "No limits!", "Be bold!", "All in!", "Rise up!", "Level up!", "Game on!", "Stay focused!", "Make it happen!", "One step ahead!"];
                       const dayIdx = new Date().getDate() + (name ? name.charCodeAt(0) : 0);
                       const cheer = cheers[dayIdx % cheers.length];
                       return `${greeting} ${name}さん　${cheer}`;
