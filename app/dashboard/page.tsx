@@ -67,7 +67,7 @@ export default function DashboardPage() {
   const [raAcqCompanies, setRaAcqCompanies] = useState<RACompany[]>([]);
   const [raJoinCompanies, setRaJoinCompanies] = useState<RACompany[]>([]);
   const [staffActivities, setStaffActivities] = useState<StaffActivity[]>([]);
-  const [affiliationProgress, setAffiliationProgress] = useState<Record<string, { progress: number; target: number }>>({});
+  // affiliationProgress はメインレベルで計算（後述のuseMemo）
 
   // カスタム企業リスト（DBから取得・DB保存）
   const [customCompanies, setCustomCompanies] = useState<string[]>([]);
@@ -209,9 +209,10 @@ export default function DashboardPage() {
   const result = getLatestDataForDate(allData, selectedDate);
   const displayData = result ? result.data : emptyData();
 
-  // CA粗利の前月繰越データをロード
+  // CA粗利の前月繰越データ・件数目標をロード
   const [caCarryovers, setCaCarryovers] = useState<Record<string, Record<string, number>>>({});
   const [caCountCarryovers, setCaCountCarryovers] = useState<Record<string, Record<string, number>>>({});
+  const [caCountTargets, setCaCountTargets] = useState<Record<string, Record<string, number>>>({});
   useEffect(() => {
     const loadCarryovers = async () => {
       try {
@@ -220,12 +221,15 @@ export default function DashboardPage() {
         const data = await res.json();
         const co: Record<string, Record<string, number>> = {};
         const cco: Record<string, Record<string, number>> = {};
+        const ct: Record<string, Record<string, number>> = {};
         for (const key of Object.keys(data)) {
           if (key.startsWith("carryover-")) co[key] = data[key];
           if (key.startsWith("countCarryover-")) cco[key] = data[key];
+          if (key.startsWith("countTarget-")) ct[key] = data[key];
         }
         setCaCarryovers(co);
         setCaCountCarryovers(cco);
+        setCaCountTargets(ct);
       } catch {}
     };
     loadCarryovers();
@@ -316,6 +320,43 @@ export default function DashboardPage() {
     }
     return result;
   }, [allData, selectedDate]);
+
+  // 所属別の稼働HC進捗・目標をメインレベルで計算（月別タブに依存しない）
+  const affiliationProgress = useMemo(() => {
+    const ym = selectedDate.substring(0, 7);
+    const [y, m] = ym.split("-").map(Number);
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const caSubs = ["プロパー", "BP", "フリーランス", "協業"];
+    const result: Record<string, { progress: number; target: number }> = {};
+    let totalProgress = 0, totalTarget = 0;
+    caSubs.forEach(sub => {
+      const progress = STAFF_LIST.reduce((sum, s) => {
+        // 月間CA件数
+        const monthCount = Array.from({ length: daysInMonth }, (_, i) => {
+          const dk = `${y}-${("0" + m).slice(-2)}-${("0" + (i + 1)).slice(-2)}`;
+          const dayData = allData[dk];
+          if (!dayData || !Array.isArray(dayData.staffActivities)) return 0;
+          const entry = dayData.staffActivities.find((st: any) => st.staff === s);
+          if (!entry) return 0;
+          const entries = (entry as any).caEntries || [];
+          return entries.filter((e: any) => e.affiliation === sub).length;
+        }).reduce((a, b) => a + b, 0);
+        // 繰越件数
+        const carryKey = `countCarryover-ordersCA_${sub}-${ym}`;
+        const carry = caCountCarryovers[carryKey]?.[s] || 0;
+        return sum + monthCount + carry;
+      }, 0);
+      const target = STAFF_LIST.reduce((sum, s) => {
+        const key = `countTarget-ordersCA_${sub}-${ym}`;
+        return sum + (caCountTargets[key]?.[s] || 0);
+      }, 0);
+      result[sub] = { progress, target };
+      totalProgress += progress;
+      totalTarget += target;
+    });
+    result["全体"] = { progress: totalProgress, target: totalTarget };
+    return result;
+  }, [allData, selectedDate, caCountCarryovers, caCountTargets]);
 
   const proper = { ...(displayData.proper || { target: 0, progress: 0, forecast: 0, standby: 0, standbyCost: 0 }), progress: properProgress, target: caBudgetTargets["プロパー"] };
   const bp = { ...(displayData.bp || { target: 0, progress: 0, forecast: 0, supportCost: 0 }), progress: bpProgress, target: caBudgetTargets["BP"] };
@@ -779,7 +820,7 @@ export default function DashboardPage() {
         </div>
 
         {activeTab === "monthly" && (
-          <MonthlyActivityView allData={allData} setAllData={setAllData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} currentStaffName={currentStaffName} isAdmin={isAdmin} userRole={userRole} subStaffName={subStaffName} onAffiliationProgress={setAffiliationProgress} />
+          <MonthlyActivityView allData={allData} setAllData={setAllData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} currentStaffName={currentStaffName} isAdmin={isAdmin} userRole={userRole} subStaffName={subStaffName} />
         )}
 
         {activeTab === "analysis" && (

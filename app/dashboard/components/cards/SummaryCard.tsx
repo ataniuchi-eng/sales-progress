@@ -49,7 +49,7 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
           {hcInfo && (
             <span style={{ fontSize: 11, fontWeight: 700, color: isTotal ? "#4cc9f0" : tc.accentText, whiteSpace: "nowrap" }}>
               稼働HC：{hcInfo.hcCarryover + hcInfo.hcNew + hcInfo.hcSlide}
-              {countInfo && <span style={{ fontWeight: 400, color: labelColor }}>/{countInfo.target}</span>}
+              {countInfo && countInfo.target > 0 && <span style={{ fontWeight: 400, color: labelColor }}>/{countInfo.target}</span>}
             </span>
           )}
         </div>
