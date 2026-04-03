@@ -373,6 +373,7 @@ export default function DashboardPage() {
     forecast: proper.forecast + bp.forecast + fl.forecast + co.forecast,
   };
   const totalAdjusted = properAdjusted + bpAdjusted + flAdjusted + coAdjusted;
+  const totalCarryAll = Math.floor(properBreakdown.carryover * 10000) + Math.floor(bpBreakdown.carryover * 10000) + Math.floor(flBreakdown.carryover * 10000) + Math.floor(coBreakdown.carryover * 10000);
 
   // 所属別 企業粗利ランキング集計（RA受注ベース）
   const getCompanyProfitByAffiliation = useCallback((affiliation: string): { company: string; profit: number }[] => {
@@ -824,7 +825,7 @@ export default function DashboardPage() {
         )}
 
         {activeTab === "analysis" && (
-          <SalesAnalysisView allData={allData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} />
+          <SalesAnalysisView allData={allData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} totalTarget={total.target} totalCarryover={totalCarryAll} />
         )}
 
         {activeTab === "users" && isAdmin && (

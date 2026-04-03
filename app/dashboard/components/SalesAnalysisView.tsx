@@ -10,9 +10,11 @@ interface Props {
   monthlyYM: string;
   setMonthlyYM: (ym: string) => void;
   isMobile: boolean;
+  totalTarget?: number;
+  totalCarryover?: number;
 }
 
-export function SalesAnalysisView({ allData, monthlyYM, setMonthlyYM, isMobile }: Props) {
+export function SalesAnalysisView({ allData, monthlyYM, setMonthlyYM, isMobile, totalTarget = 0, totalCarryover = 0 }: Props) {
   const { t: tc, theme } = useTheme();
   const isDark = theme === "dark";
   const [analysisMode, setAnalysisMode] = useState<"funnel" | "matrix">("funnel");
@@ -128,6 +130,16 @@ export function SalesAnalysisView({ allData, monthlyYM, setMonthlyYM, isMobile }
             <div style={{ marginLeft: 132, fontSize: 12, fontWeight: 600, color: tc.textPrimary, paddingTop: 4, borderTop: `1px solid ${tc.border}` }}>
               設定→受注 総合転換率：<span style={{ color: "#2ecc71", fontSize: 14 }}>{cvSetToOrder}%</span>
             </div>
+            {(() => {
+              const monthlyOrderTarget = totalTarget - totalCarryover;
+              const requiredSetups = cvSetToOrder > 0 ? Math.ceil(monthlyOrderTarget / (cvSetToOrder / 100)) : 0;
+              return (
+                <div style={{ marginLeft: 132, fontSize: 12, fontWeight: 600, color: tc.textPrimary, marginTop: 6 }}>
+                  <div>今月受注粗利目標：<span style={{ color: "#0077b6" }}>¥{Math.max(0, monthlyOrderTarget).toLocaleString()}</span></div>
+                  <div style={{ marginTop: 2 }}>必要面談設定数：<span style={{ color: "#e63946", fontSize: 14 }}>{requiredSetups > 0 ? requiredSetups : "—"}</span></div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 
