@@ -812,7 +812,7 @@ export default function DashboardPage() {
             { key: "main" as const, label: "メイン" },
             { key: "monthly" as const, label: "月別営業活動成績" },
             { key: "analysis" as const, label: "営業分析" },
-            ...(isAdmin ? [{ key: "blacklist" as const, label: "営業ブラックリスト" }] : []),
+            { key: "blacklist" as const, label: "営業ブラックリスト" },
             ...(isAdmin ? [{ key: "users" as const, label: "ユーザー追加" }] : []),
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
@@ -830,7 +830,7 @@ export default function DashboardPage() {
           <SalesAnalysisView allData={allData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} totalTarget={total.target} totalCarryover={totalCarryAll} totalProgress={total.progress} totalHC={(properBreakdown.hcCarryover + properBreakdown.hcNew + properBreakdown.hcSlide) + (bpBreakdown.hcCarryover + bpBreakdown.hcNew + bpBreakdown.hcSlide) + (flBreakdown.hcCarryover + flBreakdown.hcNew + flBreakdown.hcSlide) + (coBreakdown.hcCarryover + coBreakdown.hcNew + coBreakdown.hcSlide)} />
         )}
 
-        {activeTab === "blacklist" && isAdmin && (
+        {activeTab === "blacklist" && (
           <BlacklistView isMobile={isMobile} />
         )}
 
