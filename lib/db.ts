@@ -337,3 +337,62 @@ export async function addMasterCompany(name: string): Promise<void> {
     ON CONFLICT (name) DO NOTHING
   `;
 }
+
+// ===== 営業ブラックリスト =====
+
+export interface BlacklistEntry {
+  id: number;
+  name: string;
+  affiliation: string;
+  age: number | null;
+  prefecture: string | null;
+  reason: string;
+  registered_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+async function ensureBlacklistTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS sales_blacklist (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      affiliation VARCHAR(255) NOT NULL,
+      age INTEGER,
+      prefecture VARCHAR(100),
+      reason VARCHAR(150) NOT NULL,
+      registered_by VARCHAR(255) NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
+}
+
+export async function getBlacklist(): Promise<BlacklistEntry[]> {
+  await ensureBlacklistTable();
+  const { rows } = await sql`SELECT * FROM sales_blacklist ORDER BY created_at DESC`;
+  return rows as BlacklistEntry[];
+}
+
+export async function addBlacklistEntry(entry: { name: string; affiliation: string; age: number | null; prefecture: string | null; reason: string; registered_by: string }): Promise<BlacklistEntry> {
+  await ensureBlacklistTable();
+  const { rows } = await sql`
+    INSERT INTO sales_blacklist (name, affiliation, age, prefecture, reason, registered_by)
+    VALUES (${entry.name}, ${entry.affiliation}, ${entry.age}, ${entry.prefecture}, ${entry.reason}, ${entry.registered_by})
+    RETURNING *
+  `;
+  return rows[0] as BlacklistEntry;
+}
+
+export async function updateBlacklistEntry(id: number, entry: { name: string; affiliation: string; age: number | null; prefecture: string | null; reason: string; registered_by: string }): Promise<void> {
+  await ensureBlacklistTable();
+  await sql`
+    UPDATE sales_blacklist SET name = ${entry.name}, affiliation = ${entry.affiliation}, age = ${entry.age}, prefecture = ${entry.prefecture}, reason = ${entry.reason}, registered_by = ${entry.registered_by}, updated_at = NOW()
+    WHERE id = ${id}
+  `;
+}
+
+export async function deleteBlacklistEntry(id: number): Promise<void> {
+  await ensureBlacklistTable();
+  await sql`DELETE FROM sales_blacklist WHERE id = ${id}`;
+}

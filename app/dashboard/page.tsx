@@ -30,6 +30,7 @@ import { useAuth } from "./hooks/useAuth";
 import { useDataManagement } from "./hooks/useDataManagement";
 import { PrevDayResultSection } from "./components/sections/PrevDayResultSection";
 import { SalesAnalysisView } from "./components/SalesAnalysisView";
+import { BlacklistView } from "./components/BlacklistView";
 
 // ===== メインコンポーネント =====
 export default function DashboardPage() {
@@ -51,7 +52,7 @@ export default function DashboardPage() {
   const [toast, setToast] = useState("");
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [activeTab, setActiveTab] = useState<"main" | "monthly" | "analysis" | "users">("main");
+  const [activeTab, setActiveTab] = useState<"main" | "monthly" | "analysis" | "blacklist" | "users">("main");
   const [monthlyYM, setMonthlyYM] = useState(`${new Date().getFullYear()}-${("0" + (new Date().getMonth() + 1)).slice(-2)}`);
 
   const [inp, setInp] = useState({
@@ -811,6 +812,7 @@ export default function DashboardPage() {
             { key: "main" as const, label: "メイン" },
             { key: "monthly" as const, label: "月別営業活動成績" },
             { key: "analysis" as const, label: "営業分析" },
+            ...(isAdmin ? [{ key: "blacklist" as const, label: "営業ブラックリスト" }] : []),
             ...(isAdmin ? [{ key: "users" as const, label: "ユーザー追加" }] : []),
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
@@ -826,6 +828,10 @@ export default function DashboardPage() {
 
         {activeTab === "analysis" && (
           <SalesAnalysisView allData={allData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} totalTarget={total.target} totalCarryover={totalCarryAll} totalProgress={total.progress} totalHC={(properBreakdown.hcCarryover + properBreakdown.hcNew + properBreakdown.hcSlide) + (bpBreakdown.hcCarryover + bpBreakdown.hcNew + bpBreakdown.hcSlide) + (flBreakdown.hcCarryover + flBreakdown.hcNew + flBreakdown.hcSlide) + (coBreakdown.hcCarryover + coBreakdown.hcNew + coBreakdown.hcSlide)} />
+        )}
+
+        {activeTab === "blacklist" && isAdmin && (
+          <BlacklistView isMobile={isMobile} />
         )}
 
         {activeTab === "users" && isAdmin && (
