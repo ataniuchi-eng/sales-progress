@@ -825,7 +825,7 @@ export default function DashboardPage() {
         )}
 
         {activeTab === "analysis" && (
-          <SalesAnalysisView allData={allData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} totalTarget={total.target} totalCarryover={totalCarryAll} />
+          <SalesAnalysisView allData={allData} monthlyYM={monthlyYM} setMonthlyYM={setMonthlyYM} isMobile={isMobile} totalTarget={total.target} totalCarryover={totalCarryAll} totalProgress={total.progress} totalHC={(properBreakdown.hcCarryover + properBreakdown.hcNew + properBreakdown.hcSlide) + (bpBreakdown.hcCarryover + bpBreakdown.hcNew + bpBreakdown.hcSlide) + (flBreakdown.hcCarryover + flBreakdown.hcNew + flBreakdown.hcSlide) + (coBreakdown.hcCarryover + coBreakdown.hcNew + coBreakdown.hcSlide)} />
         )}
 
         {activeTab === "users" && isAdmin && (

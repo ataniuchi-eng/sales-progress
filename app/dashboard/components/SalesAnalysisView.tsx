@@ -12,9 +12,11 @@ interface Props {
   isMobile: boolean;
   totalTarget?: number;
   totalCarryover?: number;
+  totalProgress?: number;
+  totalHC?: number;
 }
 
-export function SalesAnalysisView({ allData, monthlyYM, setMonthlyYM, isMobile, totalTarget = 0, totalCarryover = 0 }: Props) {
+export function SalesAnalysisView({ allData, monthlyYM, setMonthlyYM, isMobile, totalTarget = 0, totalCarryover = 0, totalProgress = 0, totalHC = 0 }: Props) {
   const { t: tc, theme } = useTheme();
   const isDark = theme === "dark";
   const [analysisMode, setAnalysisMode] = useState<"funnel" | "matrix">("funnel");
@@ -131,11 +133,16 @@ export function SalesAnalysisView({ allData, monthlyYM, setMonthlyYM, isMobile, 
               設定→受注 総合転換率：<span style={{ color: "#2ecc71", fontSize: 14 }}>{cvSetToOrder}%</span>
             </div>
             {(() => {
-              const monthlyOrderTarget = totalTarget - totalCarryover;
-              const requiredSetups = cvSetToOrder > 0 ? Math.ceil(monthlyOrderTarget / (cvSetToOrder / 100)) : 0;
+              const monthlyOrderTarget = Math.max(0, totalTarget - totalCarryover);
+              const avgProfit = totalHC > 0 ? Math.floor(totalProgress / totalHC) : 0;
+              const requiredOrders = avgProfit > 0 ? Math.ceil(monthlyOrderTarget / avgProfit) : 0;
+              const requiredOrdersDisplay = requiredOrders * 2;
+              const requiredSetups = cvSetToOrder > 0 ? Math.ceil(requiredOrdersDisplay / (cvSetToOrder / 100)) : 0;
               return (
                 <div style={{ marginLeft: 132, fontSize: 12, fontWeight: 600, color: tc.textPrimary, marginTop: 6 }}>
-                  <div>今月受注粗利目標：<span style={{ color: "#0077b6" }}>¥{Math.max(0, monthlyOrderTarget).toLocaleString()}</span></div>
+                  <div>今月受注粗利目標：<span style={{ color: "#0077b6" }}>¥{monthlyOrderTarget.toLocaleString()}</span></div>
+                  <div style={{ marginTop: 2 }}>現在平均単価：<span style={{ color: "#0077b6" }}>{avgProfit > 0 ? `¥${avgProfit.toLocaleString()}` : "—"}</span></div>
+                  <div style={{ marginTop: 2 }}>必要受注数：<span style={{ color: "#e67e22", fontSize: 14 }}>{requiredOrdersDisplay > 0 ? requiredOrdersDisplay : "—"}</span></div>
                   <div style={{ marginTop: 2 }}>必要面談設定数：<span style={{ color: "#e63946", fontSize: 14 }}>{requiredSetups > 0 ? requiredSetups : "—"}</span></div>
                 </div>
               );
