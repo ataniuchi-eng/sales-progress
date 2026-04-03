@@ -45,7 +45,7 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
     <div style={{ background: bg, borderRadius: 14, padding: "20px 16px", boxShadow: tc.shadow, color, minWidth: 0 }}>
       <div style={{ marginBottom: 12, paddingBottom: 6, borderBottom: `1px solid ${trackColor}` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: 16, fontWeight: 700 }}>{title}</span>
+          <span style={{ fontSize: title.length > 3 ? 13 : 16, fontWeight: 700, whiteSpace: "nowrap" }}>{title}</span>
           {hcInfo && (
             <span style={{ fontSize: 11, fontWeight: 700, color: isTotal ? "#4cc9f0" : tc.accentText, whiteSpace: "nowrap" }}>
               稼働HC：{hcInfo.hcCarryover + hcInfo.hcNew + hcInfo.hcSlide}
