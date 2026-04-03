@@ -44,7 +44,7 @@ const calcAge = (birthDate: string): number => {
   return age;
 };
 
-const emptyForm = { name: "", affiliation: "", birthDate: "", prefecture: "", reason: "", registered_by: "" };
+const emptyForm = { name: "", affiliation: "", age: "", birthDate: "", prefecture: "", reason: "", registered_by: "" };
 
 export function BlacklistView({ isMobile }: { isMobile: boolean }) {
   const { t: tc, theme } = useTheme();
@@ -77,7 +77,7 @@ export function BlacklistView({ isMobile }: { isMobile: boolean }) {
     if (form.reason.length > 150) { showToast("理由は150文字以内で入力してください"); return; }
     setSubmitting(true);
     try {
-      const age = form.birthDate ? calcAge(form.birthDate) : null;
+      const age = form.birthDate ? calcAge(form.birthDate) : (form.age ? Number(form.age) : null);
       const body = { name: form.name, affiliation: form.affiliation, age, birth_date: form.birthDate || null, prefecture: form.prefecture || null, reason: form.reason, registered_by: form.registered_by };
       if (editingId) {
         const res = await fetch("/api/blacklist", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editingId, ...body }) });
@@ -99,7 +99,7 @@ export function BlacklistView({ isMobile }: { isMobile: boolean }) {
 
   const startEdit = (entry: BlacklistEntry) => {
     setEditingId(entry.id);
-    setForm({ name: entry.name, affiliation: entry.affiliation, birthDate: entry.birth_date || "", prefecture: entry.prefecture || "", reason: entry.reason, registered_by: entry.registered_by });
+    setForm({ name: entry.name, affiliation: entry.affiliation, age: entry.age?.toString() || "", birthDate: entry.birth_date ? entry.birth_date.split("T")[0] : "", prefecture: entry.prefecture || "", reason: entry.reason, registered_by: entry.registered_by });
   };
 
   const cancelEdit = () => { setEditingId(null); setForm(emptyForm); };
@@ -132,8 +132,8 @@ export function BlacklistView({ isMobile }: { isMobile: boolean }) {
             </select>
           </div>
           <div>
-            <label style={{ fontSize: 11, color: tc.textMuted, fontWeight: 600 }}>年齢{form.birthDate ? `（${calcAge(form.birthDate)}歳）` : ""}</label>
-            <input type="number" min={18} max={99} value={form.birthDate ? calcAge(form.birthDate) : ""} readOnly style={{ ...inputStyle, background: isDark ? "#0f172a" : "#f0f2f5", cursor: "default" }} placeholder="生年月日から自動計算" />
+            <label style={{ fontSize: 11, color: tc.textMuted, fontWeight: 600 }}>年齢{form.birthDate ? "（生年月日から自動計算）" : ""}</label>
+            <input type="number" min={18} max={99} value={form.birthDate ? calcAge(form.birthDate) : form.age} readOnly={!!form.birthDate} onChange={e => setForm(f => ({ ...f, age: e.target.value }))} style={{ ...inputStyle, ...(form.birthDate ? { background: isDark ? "#0f172a" : "#f0f2f5", cursor: "default" } : {}) }} placeholder="18以上" />
           </div>
           <div>
             <label style={{ fontSize: 11, color: tc.textMuted, fontWeight: 600 }}>生年月日</label>
@@ -188,7 +188,7 @@ export function BlacklistView({ isMobile }: { isMobile: boolean }) {
                     <td style={{ padding: "8px 6px", fontWeight: 600, whiteSpace: "nowrap" }}>{entry.name}</td>
                     <td style={{ padding: "8px 6px", whiteSpace: "nowrap" }}>{entry.affiliation}</td>
                     <td style={{ padding: "8px 6px", whiteSpace: "nowrap" }}>{entry.age != null ? `${entry.age}歳` : "—"}</td>
-                    <td style={{ padding: "8px 6px", whiteSpace: "nowrap", fontSize: 11 }}>{entry.birth_date ?? "—"}</td>
+                    <td style={{ padding: "8px 6px", whiteSpace: "nowrap", fontSize: 11 }}>{entry.birth_date ? entry.birth_date.split("T")[0].replace(/-/g, "/") : "—"}</td>
                     <td style={{ padding: "8px 6px", whiteSpace: "nowrap" }}>{entry.prefecture ?? "—"}</td>
                     <td style={{ padding: "8px 6px", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={entry.reason}>{entry.reason.length > 30 ? entry.reason.slice(0, 30) + "…" : entry.reason}</td>
                     <td style={{ padding: "8px 6px", whiteSpace: "nowrap" }}>{entry.registered_by}</td>
