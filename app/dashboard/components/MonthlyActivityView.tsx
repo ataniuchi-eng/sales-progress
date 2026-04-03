@@ -895,7 +895,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
               if (aff === "全体") return getStaffMonthPriceUpTotal(staff, et);
               return getStaffMonthPriceUpByAffiliation(staff, et, aff);
             };
-            // 達成率ランキング
+            // 達成率ランキング（今月営業粗利目標0の担当は除外）
             const rateRanked = STAFF_LIST
               .map(staff => {
                 const budget = getBudgetForField(staff, selRate);
@@ -903,9 +903,9 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                 const month = getMonthForField(staff, selRate);
                 const progress = carry + month;
                 const rate = budget > 0 ? Math.round((progress / budget) * 1000) / 10 : 0;
-                return { staff, rate, budget };
+                return { staff, rate, budget, monthlyTarget: budget - carry };
               })
-              .filter(s => s.budget > 0)
+              .filter(s => s.budget > 0 && s.monthlyTarget > 0)
               .sort((a, b) => b.rate - a.rate)
               .slice(0, 5);
             const allBudget = STAFF_LIST.reduce((sum, s) => sum + getBudgetForField(s, selRate), 0);
@@ -945,6 +945,7 @@ export function MonthlyActivityView({ allData, setAllData, monthlyYM, setMonthly
                     </div>
                   ))
                 )}
+                <div style={{ fontSize: 9, color: tc.textMuted, marginTop: 6 }}>※ 今月営業粗利目標0の担当は除外</div>
               </div>
               {/* 金額カード */}
               <div style={{ background: tc.bgCard, borderRadius: 14, padding: "16px", boxShadow: tc.shadow }}>
