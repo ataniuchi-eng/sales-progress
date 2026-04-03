@@ -345,6 +345,7 @@ export interface BlacklistEntry {
   name: string;
   affiliation: string;
   age: number | null;
+  birth_date: string | null;
   prefecture: string | null;
   reason: string;
   registered_by: string;
@@ -359,6 +360,7 @@ async function ensureBlacklistTable() {
       name VARCHAR(255) NOT NULL,
       affiliation VARCHAR(255) NOT NULL,
       age INTEGER,
+      birth_date DATE,
       prefecture VARCHAR(100),
       reason VARCHAR(150) NOT NULL,
       registered_by VARCHAR(255) NOT NULL,
@@ -366,6 +368,9 @@ async function ensureBlacklistTable() {
       updated_at TIMESTAMP DEFAULT NOW()
     )
   `;
+  try {
+    await sql`ALTER TABLE sales_blacklist ADD COLUMN IF NOT EXISTS birth_date DATE`;
+  } catch (e) {}
 }
 
 export async function getBlacklist(): Promise<BlacklistEntry[]> {
@@ -374,20 +379,20 @@ export async function getBlacklist(): Promise<BlacklistEntry[]> {
   return rows as BlacklistEntry[];
 }
 
-export async function addBlacklistEntry(entry: { name: string; affiliation: string; age: number | null; prefecture: string | null; reason: string; registered_by: string }): Promise<BlacklistEntry> {
+export async function addBlacklistEntry(entry: { name: string; affiliation: string; age: number | null; birth_date: string | null; prefecture: string | null; reason: string; registered_by: string }): Promise<BlacklistEntry> {
   await ensureBlacklistTable();
   const { rows } = await sql`
-    INSERT INTO sales_blacklist (name, affiliation, age, prefecture, reason, registered_by)
-    VALUES (${entry.name}, ${entry.affiliation}, ${entry.age}, ${entry.prefecture}, ${entry.reason}, ${entry.registered_by})
+    INSERT INTO sales_blacklist (name, affiliation, age, birth_date, prefecture, reason, registered_by)
+    VALUES (${entry.name}, ${entry.affiliation}, ${entry.age}, ${entry.birth_date}, ${entry.prefecture}, ${entry.reason}, ${entry.registered_by})
     RETURNING *
   `;
   return rows[0] as BlacklistEntry;
 }
 
-export async function updateBlacklistEntry(id: number, entry: { name: string; affiliation: string; age: number | null; prefecture: string | null; reason: string; registered_by: string }): Promise<void> {
+export async function updateBlacklistEntry(id: number, entry: { name: string; affiliation: string; age: number | null; birth_date: string | null; prefecture: string | null; reason: string; registered_by: string }): Promise<void> {
   await ensureBlacklistTable();
   await sql`
-    UPDATE sales_blacklist SET name = ${entry.name}, affiliation = ${entry.affiliation}, age = ${entry.age}, prefecture = ${entry.prefecture}, reason = ${entry.reason}, registered_by = ${entry.registered_by}, updated_at = NOW()
+    UPDATE sales_blacklist SET name = ${entry.name}, affiliation = ${entry.affiliation}, age = ${entry.age}, birth_date = ${entry.birth_date}, prefecture = ${entry.prefecture}, reason = ${entry.reason}, registered_by = ${entry.registered_by}, updated_at = NOW()
     WHERE id = ${id}
   `;
 }

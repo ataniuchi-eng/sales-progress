@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   }
   try {
     const body = await request.json();
-    const { name, affiliation, age, prefecture, reason, registered_by } = body;
+    const { name, affiliation, age, birth_date, prefecture, reason, registered_by } = body;
     if (!name?.trim() || !affiliation?.trim() || !reason?.trim() || !registered_by?.trim()) {
       return NextResponse.json({ error: "必須項目が不足しています" }, { status: 400 });
     }
@@ -32,7 +32,8 @@ export async function POST(request: Request) {
     }
     const entry = await addBlacklistEntry({
       name: name.trim(), affiliation: affiliation.trim(),
-      age: age ? Number(age) : null, prefecture: prefecture?.trim() || null,
+      age: age != null ? Number(age) : null, birth_date: birth_date || null,
+      prefecture: prefecture?.trim() || null,
       reason: reason.trim(), registered_by: registered_by.trim(),
     });
     return NextResponse.json(entry);
@@ -49,13 +50,14 @@ export async function PATCH(request: Request) {
   }
   try {
     const body = await request.json();
-    const { id, name, affiliation, age, prefecture, reason, registered_by } = body;
+    const { id, name, affiliation, age, birth_date, prefecture, reason, registered_by } = body;
     if (!id || !name?.trim() || !affiliation?.trim() || !reason?.trim() || !registered_by?.trim()) {
       return NextResponse.json({ error: "必須項目が不足しています" }, { status: 400 });
     }
     await updateBlacklistEntry(id, {
       name: name.trim(), affiliation: affiliation.trim(),
-      age: age ? Number(age) : null, prefecture: prefecture?.trim() || null,
+      age: age != null ? Number(age) : null, birth_date: birth_date || null,
+      prefecture: prefecture?.trim() || null,
       reason: reason.trim(), registered_by: registered_by.trim(),
     });
     return NextResponse.json({ success: true });

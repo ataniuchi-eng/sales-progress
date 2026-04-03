@@ -9,12 +9,15 @@ interface BlacklistEntry {
   name: string;
   affiliation: string;
   age: number | null;
+  birth_date: string | null;
   prefecture: string | null;
   reason: string;
   registered_by: string;
   created_at: string;
   updated_at: string;
 }
+
+const AFFILIATIONS = ["プロパー", "BP", "フリーランス", "協業"];
 
 const PREFECTURES = [
   "北海道","青森","岩手","宮城","秋田","山形","福島",
@@ -25,7 +28,23 @@ const PREFECTURES = [
   "福岡","佐賀","長崎","熊本","大分","宮崎","鹿児島","沖縄",
 ];
 
-const emptyForm = { name: "", affiliation: "", age: "", prefecture: "", reason: "", registered_by: "" };
+// 18歳以上の生年月日上限
+const maxBirthDate = (() => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 18);
+  return d.toISOString().split("T")[0];
+})();
+
+const calcAge = (birthDate: string): number => {
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+};
+
+const emptyForm = { name: "", affiliation: "", birthDate: "", prefecture: "", reason: "", registered_by: "" };
 
 export function BlacklistView({ isMobile }: { isMobile: boolean }) {
   const { t: tc, theme } = useTheme();
@@ -58,7 +77,8 @@ export function BlacklistView({ isMobile }: { isMobile: boolean }) {
     if (form.reason.length > 150) { showToast("理由は150文字以内で入力してください"); return; }
     setSubmitting(true);
     try {
-      const body = { ...form, age: form.age ? Number(form.age) : null, prefecture: form.prefecture || null };
+      const age = form.birthDate ? calcAge(form.birthDate) : null;
+      const body = { name: form.name, affiliation: form.affiliation, age, birth_date: form.birthDate || null, prefecture: form.prefecture || null, reason: form.reason, registered_by: form.registered_by };
       if (editingId) {
         const res = await fetch("/api/blacklist", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editingId, ...body }) });
         if (res.ok) { showToast("更新しました"); setEditingId(null); setForm(emptyForm); fetchList(); }
@@ -79,7 +99,7 @@ export function BlacklistView({ isMobile }: { isMobile: boolean }) {
 
   const startEdit = (entry: BlacklistEntry) => {
     setEditingId(entry.id);
-    setForm({ name: entry.name, affiliation: entry.affiliation, age: entry.age?.toString() || "", prefecture: entry.prefecture || "", reason: entry.reason, registered_by: entry.registered_by });
+    setForm({ name: entry.name, affiliation: entry.affiliation, birthDate: entry.birth_date || "", prefecture: entry.prefecture || "", reason: entry.reason, registered_by: entry.registered_by });
   };
 
   const cancelEdit = () => { setEditingId(null); setForm(emptyForm); };
@@ -106,11 +126,18 @@ export function BlacklistView({ isMobile }: { isMobile: boolean }) {
           </div>
           <div>
             <label style={{ fontSize: 11, color: tc.textMuted, fontWeight: 600 }}>所属 *</label>
-            <input value={form.affiliation} onChange={e => setForm(f => ({ ...f, affiliation: e.target.value }))} style={inputStyle} placeholder="所属会社名" />
+            <select value={form.affiliation} onChange={e => setForm(f => ({ ...f, affiliation: e.target.value }))} style={selectStyle}>
+              <option value="">選択</option>
+              {AFFILIATIONS.map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
           </div>
           <div>
-            <label style={{ fontSize: 11, color: tc.textMuted, fontWeight: 600 }}>年齢</label>
-            <input type="number" value={form.age} onChange={e => setForm(f => ({ ...f, age: e.target.value }))} style={inputStyle} placeholder="任意" />
+            <label style={{ fontSize: 11, color: tc.textMuted, fontWeight: 600 }}>年齢{form.birthDate ? `（${calcAge(form.birthDate)}歳）` : ""}</label>
+            <input type="number" min={18} max={99} value={form.birthDate ? calcAge(form.birthDate) : ""} readOnly style={{ ...inputStyle, background: isDark ? "#0f172a" : "#f0f2f5", cursor: "default" }} placeholder="生年月日から自動計算" />
+          </div>
+          <div>
+            <label style={{ fontSize: 11, color: tc.textMuted, fontWeight: 600 }}>生年月日</label>
+            <input type="date" value={form.birthDate} max={maxBirthDate} onChange={e => setForm(f => ({ ...f, birthDate: e.target.value }))} style={inputStyle} />
           </div>
           <div>
             <label style={{ fontSize: 11, color: tc.textMuted, fontWeight: 600 }}>居住県</label>
@@ -150,7 +177,7 @@ export function BlacklistView({ isMobile }: { isMobile: boolean }) {
             <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 700, fontSize: 13 }}>
               <thead>
                 <tr>
-                  {["氏名", "所属", "年齢", "居住県", "理由", "登録者", "登録日", "操作"].map(h => (
+                  {["氏名", "所属", "年齢", "生年月日", "居住県", "理由", "登録者", "登録日", "操作"].map(h => (
                     <th key={h} style={{ padding: "8px 6px", textAlign: "left", borderBottom: `2px solid ${tc.border}`, fontSize: 11, fontWeight: 700, color: tc.textMuted, whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
@@ -160,7 +187,8 @@ export function BlacklistView({ isMobile }: { isMobile: boolean }) {
                   <tr key={entry.id} style={{ borderBottom: `1px solid ${tc.border}` }}>
                     <td style={{ padding: "8px 6px", fontWeight: 600, whiteSpace: "nowrap" }}>{entry.name}</td>
                     <td style={{ padding: "8px 6px", whiteSpace: "nowrap" }}>{entry.affiliation}</td>
-                    <td style={{ padding: "8px 6px", whiteSpace: "nowrap" }}>{entry.age ?? "—"}</td>
+                    <td style={{ padding: "8px 6px", whiteSpace: "nowrap" }}>{entry.age != null ? `${entry.age}歳` : "—"}</td>
+                    <td style={{ padding: "8px 6px", whiteSpace: "nowrap", fontSize: 11 }}>{entry.birth_date ?? "—"}</td>
                     <td style={{ padding: "8px 6px", whiteSpace: "nowrap" }}>{entry.prefecture ?? "—"}</td>
                     <td style={{ padding: "8px 6px", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={entry.reason}>{entry.reason.length > 30 ? entry.reason.slice(0, 30) + "…" : entry.reason}</td>
                     <td style={{ padding: "8px 6px", whiteSpace: "nowrap" }}>{entry.registered_by}</td>
