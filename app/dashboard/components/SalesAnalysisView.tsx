@@ -144,6 +144,7 @@ export function SalesAnalysisView({ allData, monthlyYM, setMonthlyYM, isMobile, 
                   <div style={{ marginTop: 2 }}>現在平均単価：<span style={{ color: "#0077b6" }}>{avgProfit > 0 ? `¥${avgProfit.toLocaleString()}` : "—"}</span></div>
                   <div style={{ marginTop: 2 }}>必要受注数：<span style={{ color: "#e67e22", fontSize: 14 }}>{requiredOrdersDisplay > 0 ? requiredOrdersDisplay : "—"}</span></div>
                   <div style={{ marginTop: 2 }}>必要面談設定数：<span style={{ color: "#e63946", fontSize: 14 }}>{requiredSetups > 0 ? requiredSetups : "—"}</span></div>
+                  <div style={{ marginTop: 4, fontSize: 9, fontWeight: 400, color: tc.textMuted }}>※ 必要受注数・面談設定数はRA/CAダブルカウント</div>
                 </div>
               );
             })()}
