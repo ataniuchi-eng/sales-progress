@@ -54,9 +54,14 @@ export function SummaryCard({ title, data, rate, isTotal, standby, standbyCost, 
           )}
         </div>
         {hcInfo && (
-          <div style={{ fontSize: 9, color: labelColor, marginTop: 3, fontWeight: 500, textAlign: "right" }}>
-            繰越：{hcInfo.hcCarryover}　新：{hcInfo.hcNew}　ス：{hcInfo.hcSlide}
-          </div>
+          <>
+            <div style={{ fontSize: 9, color: labelColor, marginTop: 3, fontWeight: 500, textAlign: "right" }}>
+              繰越：{hcInfo.hcCarryover}　新：{hcInfo.hcNew}　ス：{hcInfo.hcSlide}
+            </div>
+            <div style={{ fontSize: 9, color: labelColor, marginTop: 2, fontWeight: 500, textAlign: "right" }}>
+              平均粗利：{(() => { const hc = hcInfo.hcCarryover + hcInfo.hcNew + hcInfo.hcSlide; return hc > 0 ? `¥${Math.floor(data.progress / hc).toLocaleString()}` : "—"; })()}
+            </div>
+          </>
         )}
       </div>
       <Row label="目標" value={formatYen(data.target)} labelColor={labelColor} valueColor={isTotal ? "#fff" : tc.textPrimary} />
